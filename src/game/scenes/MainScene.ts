@@ -28,7 +28,7 @@ export class MainScene extends Phaser.Scene {
 
   private activeAgent: string | null = null;
   private activeSkills: string[] = [];
-  private activeTool: ToolId | null = null;
+  private activeTool: ToolId = "none";
 
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
@@ -51,7 +51,7 @@ export class MainScene extends Phaser.Scene {
     this.hallucination = 0;
     this.activeAgent = null;
     this.activeSkills = [];
-    this.activeTool = null;
+    this.activeTool = "none";
     this.currentSessionIndex = 0;
     this.chatHistory = [];
     this.isProcessing = false;
@@ -113,11 +113,6 @@ export class MainScene extends Phaser.Scene {
       getActiveAgent: () => this.activeAgent,
       getActiveSkills: () => this.activeSkills,
       getActiveTool: () => this.activeTool,
-      resetContextSelection: () => {
-        this.activeAgent = null;
-        this.activeSkills = [];
-        this.activeTool = "none";
-      },
       syncStorageUi: () => this.storageController.syncUi(),
       isProcessing: () => this.isProcessing,
       setIsProcessing: (value) => {

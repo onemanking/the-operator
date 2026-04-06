@@ -31,8 +31,7 @@ interface SessionControllerBindings {
   getPatienceBarFill: () => Phaser.GameObjects.Rectangle;
   getActiveAgent: () => string | null;
   getActiveSkills: () => string[];
-  getActiveTool: () => ToolId | null;
-  resetContextSelection: () => void;
+  getActiveTool: () => ToolId;
   syncStorageUi: () => void;
   isProcessing: () => boolean;
   setIsProcessing: (value: boolean) => void;
@@ -65,9 +64,6 @@ export class MainSceneSessionController {
     this.bindings.setChatHistory([]);
     this.bindings.getTaskTextObj().setText("");
     this.updateTerminalDisplay();
-
-    this.bindings.resetContextSelection();
-    this.bindings.syncStorageUi();
 
     const session =
       this.bindings.getSessions()[this.bindings.getCurrentSessionIndex()];

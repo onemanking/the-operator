@@ -23,8 +23,8 @@ interface StorageControllerBindings {
   setActiveAgent: (value: string | null) => void;
   getActiveSkills: () => string[];
   setActiveSkills: (value: string[]) => void;
-  getActiveTool: () => ToolId | null;
-  setActiveTool: (value: ToolId | null) => void;
+  getActiveTool: () => ToolId;
+  setActiveTool: (value: ToolId) => void;
   isProcessing: () => boolean;
 }
 

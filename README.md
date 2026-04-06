@@ -36,6 +36,23 @@ Review your performance. You earn credits for successful inferences and catching
 - **Vite**: Build tool and development server.
 - **Web Audio API**: Custom `SoundSynth` class for procedural retro sound effects.
 
+## Code Architecture
+- **React Shell**: `App.tsx` and `src/components/GameViewport.tsx` only mount and destroy the Phaser game.
+- **Scene Flow**: `BootScene -> BriefingScene -> MainScene -> MaintenanceScene`.
+- **MainScene Composition**: `src/game/scenes/MainScene.ts` is an orchestration layer that wires focused modules under `src/game/scenes/main/`.
+- **Runtime State**: `MainScene.ts` currently owns shift/session/context state and passes focused bindings into scene modules.
+- **Controllers**:
+  - `hudController.ts` renders terminal/HUD elements from state.
+  - `storageController.ts` owns disk drives, storage rack, and tool-selection interactions.
+  - `sessionController.ts` owns session flow, response handling, and progression.
+- **Session Content**: `src/game/data/SessionData.ts` remains the content source for prompt/session definitions.
+
+## Development Verification
+- Run `npm run lint` after code changes and `npm run build` after structural or bundling changes.
+- When HUD/UI is added or updated, also run the game in a browser and verify the actual Phaser canvas output.
+- Browser UI smoke check should confirm the updated HUD/UI is visible, aligned, not clipped or overlapping unexpectedly, and that the main related interaction still works.
+- For scene-specific UI, verify the scene state that exposes the changed HUD before considering the work complete.
+
 ## How to Play
 1. Read the daily briefing.
 2. When a prompt appears, read it carefully.

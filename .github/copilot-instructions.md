@@ -6,6 +6,8 @@
 - Keep the scene flow linear unless the task requires a routing change: BootScene -> BriefingScene -> MainScene -> MaintenanceScene.
 - Pass game state between scenes through scene.start(sceneName, data) and typed init(data) methods. Reuse shared scene data types from src/game/types.
 - Prefer extracting reusable Phaser helpers, config, and types into focused modules instead of growing scene classes.
+- MainScene should stay as an orchestration layer. Runtime responsibilities should be split across focused modules such as hudController, storageController, and sessionController.
+- When extracting additional MainScene logic, prefer reducing long getter/setter binding chains and keep cross-module responsibilities explicit.
 
 ## Build And Test
 
@@ -13,6 +15,8 @@
 - Start local development with npm run dev.
 - Run TypeScript validation with npm run lint before finishing code changes.
 - Run npm run build when changing structure, bundling, or shared modules.
+- When changing Phaser HUD/UI, run the game in a browser and use browser tools to verify the updated scene visually on the live canvas before finishing.
+- Browser-based HUD/UI verification must check that new or changed elements are visible, not unintentionally overlapping or clipped, and that the primary related interaction still works.
 - There is no automated test suite yet; do not claim runtime behavior was tested unless you ran it manually.
 
 ## Conventions
@@ -29,9 +33,11 @@
 - Use [README.md](README.md) as the source of truth for game concept, gameplay loop, and art direction.
 - Use the existing area instructions in [.github/instructions](.github/instructions) when a task touches gameplay, UI, tests, data, shaders, or other specialized areas.
 - Link to existing docs and instruction files instead of duplicating large design explanations in code comments or new instruction files.
+- Update README.md when scene architecture, workflow expectations, or manual verification requirements change in a user-visible way.
 
 ## Pitfalls
 
 - npm run lint is only a type check; it will not catch gameplay regressions.
+- npm run lint and npm run build will not catch Phaser HUD/UI layout regressions; browser verification is required for visual changes.
 - Web Audio can stay suspended until user interaction, so avoid assuming audio starts automatically.
 - Hardcoded session arrays currently drive gameplay progression; treat changes there as gameplay changes, not just copy edits.

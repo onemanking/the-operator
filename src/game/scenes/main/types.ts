@@ -65,3 +65,10 @@ export interface ToolButtonDefinition {
   label: string;
   toolId: ToolId;
 }
+
+export interface StorageTabButton {
+  tab: StorageTab;
+  body: Phaser.GameObjects.Rectangle;
+  lip: Phaser.GameObjects.Rectangle;
+  label: Phaser.GameObjects.Text;
+}

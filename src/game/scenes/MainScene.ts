@@ -8,97 +8,32 @@ import {
   FOLLOW_UP_2_REPLIES,
   TIMEOUT_REPLIES,
 } from "../data/SessionData";
-
-interface ChatMessage {
-  sender: "SYSTEM" | "USER" | "LLM";
-  text: string;
-}
-
-type DiskType = "agent" | "skill";
-type DriveId = DiskType;
-type StorageTab = "all" | DiskType;
-
-interface StorageDiskDefinition {
-  label: string;
-  type: DiskType;
-  color: number;
-}
-
-interface StorageDiskInstance {
-  definition: StorageDiskDefinition;
-  container: Phaser.GameObjects.Container;
-  handle: Phaser.GameObjects.Rectangle;
-  width: number;
-  height: number;
-}
-
-interface DriveConfig {
-  id: DriveId;
-  title: string;
-  acceptType: DiskType;
-  snapPoint: Phaser.Math.Vector2;
-  hoverBounds: Phaser.Geom.Rectangle;
-  capacity: number;
-  housingY: number;
-  housingHeight: number;
-  lcdY: number;
-}
-
-interface DriveUi {
-  glow: Phaser.GameObjects.Rectangle;
-  frame: Phaser.GameObjects.Rectangle;
-  mouth: Phaser.GameObjects.Rectangle;
-  light: Phaser.GameObjects.Arc;
-  statusText: Phaser.GameObjects.Text;
-  mountedText: Phaser.GameObjects.Text;
-  ejectButton: Phaser.GameObjects.Rectangle;
-  ejectLabel: Phaser.GameObjects.Text;
-}
-
-interface DiskLoadResult {
-  success: boolean;
-  driveId?: DriveId;
-  statusMessage: string;
-}
-
-const STORAGE_DISKS: StorageDiskDefinition[] = [
-  { label: "Coding_Agent.md", type: "agent", color: 0x99958a },
-  { label: "General_Agent.md", type: "agent", color: 0x99958a },
-  { label: "Python_Skill.md", type: "skill", color: 0x7a8a99 },
-  { label: "Creative_Skill.md", type: "skill", color: 0x7a8a99 },
-];
+import { ShiftSceneData } from "../types/SceneData";
+import {
+  STORAGE_DISKS,
+  STORAGE_TABS,
+  TOOL_BUTTONS,
+  createDriveConfigs,
+} from "./main/config";
+import {
+  ChatMessage,
+  DiskLoadResult,
+  DriveConfig,
+  DriveId,
+  DriveUi,
+  StorageDiskDefinition,
+  StorageDiskInstance,
+  StorageTab,
+  ToolId,
+} from "./main/types";
 
 export class MainScene extends Phaser.Scene {
-  private readonly diskWidth = 180;
-  private readonly diskHeight = 60;
   private readonly diskRackX = 20;
   private readonly rackVisibleRows = 6;
   private readonly rackItemSpacing = 72;
   private readonly rackStartY = 132;
-  private readonly driveConfigs: Record<DriveId, DriveConfig> = {
-    agent: {
-      id: "agent",
-      title: "DRIVE A: AGENT",
-      acceptType: "agent",
-      snapPoint: new Phaser.Math.Vector2(536, 539),
-      hoverBounds: new Phaser.Geom.Rectangle(488, 525, 96, 28),
-      capacity: 1,
-      housingY: 508,
-      housingHeight: 60,
-      lcdY: 546,
-    },
-    skill: {
-      id: "skill",
-      title: "DRIVE B: SKILLS",
-      acceptType: "skill",
-      snapPoint: new Phaser.Math.Vector2(536, 608),
-      hoverBounds: new Phaser.Geom.Rectangle(488, 594, 96, 28),
-      capacity: 2,
-      housingY: 578,
-      housingHeight: 72,
-      lcdY: 621,
-    },
-  };
+  private readonly driveConfigs: Record<DriveId, DriveConfig> =
+    createDriveConfigs();
 
   private day: number = 1;
   private money: number = 0;
@@ -118,7 +53,7 @@ export class MainScene extends Phaser.Scene {
 
   private activeAgent: string | null = null;
   private activeSkills: string[] = [];
-  private activeTool: string | null = null;
+  private activeTool: ToolId | null = null;
 
   private driveModules = {} as Record<DriveId, DriveUi>;
   private toolStatusLight!: Phaser.GameObjects.Arc;
@@ -152,7 +87,7 @@ export class MainScene extends Phaser.Scene {
     super("MainScene");
   }
 
-  init(data: any) {
+  init(data: ShiftSceneData) {
     this.day = data.day;
     this.money = data.money;
     this.accuracy = data.accuracy;
@@ -425,18 +360,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   createStorageTabs() {
-    const tabSpecs: Array<{
-      tab: StorageTab;
-      label: string;
-      x: number;
-      width: number;
-    }> = [
-      { tab: "all", label: "ALL", x: 18, width: 42 },
-      { tab: "agent", label: "AGENTS", x: 64, width: 70 },
-      { tab: "skill", label: "SKILLS", x: 138, width: 64 },
-    ];
-
-    tabSpecs.forEach(({ tab, label, x, width }) => {
+    STORAGE_TABS.forEach(({ tab, label, x, width }) => {
       const lip = this.add
         .rectangle(x + 12, 50, width - 24, 10, 0x6f6658)
         .setOrigin(0);
@@ -720,7 +644,7 @@ export class MainScene extends Phaser.Scene {
       fontStyle: "bold",
     });
 
-    const createBtn = (y: number, label: string, toolId: string) => {
+    const createBtn = (y: number, label: string, toolId: ToolId) => {
       this.add.rectangle(824, y + 4, 180, 60, 0x111111).setOrigin(0);
 
       const btn = this.add
@@ -747,9 +671,9 @@ export class MainScene extends Phaser.Scene {
       });
     };
 
-    createBtn(70, "[ SEARCH ]", "search");
-    createBtn(150, "[ CALCULATE ]", "calculate");
-    createBtn(230, "[ CLEAR TOOL ]", "none");
+    TOOL_BUTTONS.forEach(({ y, label, toolId }) => {
+      createBtn(y, label, toolId);
+    });
   }
 
   createActionButtons() {

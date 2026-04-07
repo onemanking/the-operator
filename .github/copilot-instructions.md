@@ -15,7 +15,7 @@
 - Start local development with npm run dev.
 - Run TypeScript validation with npm run lint before finishing code changes.
 - Run npm run build when changing structure, bundling, or shared modules.
-- When changing Phaser HUD/UI, run the game in a browser and use the browser-use skill as the default verification workflow to inspect the updated scene visually on the live canvas before finishing.
+- When changing Phaser HUD/UI, run the game in a browser and use browser tools to verify the updated scene visually on the live canvas before finishing.
 - Browser-based HUD/UI verification must check that new or changed elements are visible, not unintentionally overlapping or clipped, and that the primary related interaction still works.
 - There is no automated test suite yet; do not claim runtime behavior was tested unless you ran it manually.
 

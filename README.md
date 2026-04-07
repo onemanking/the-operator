@@ -49,7 +49,7 @@ Review your performance. You earn credits for successful inferences and catching
 
 ## Development Verification
 - Run `npm run lint` after code changes and `npm run build` after structural or bundling changes.
-- When HUD/UI is added or updated, also run the game in a browser and use the browser-use workflow to verify the actual Phaser canvas output.
+- When HUD/UI is added or updated, also run the game in a browser and verify the actual Phaser canvas output.
 - Browser UI smoke check should confirm the updated HUD/UI is visible, aligned, not clipped or overlapping unexpectedly, and that the main related interaction still works.
 - For scene-specific UI, verify the scene state that exposes the changed HUD before considering the work complete.
 

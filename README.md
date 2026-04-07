@@ -15,10 +15,11 @@ Read the "Policy of the Day". These rules change daily and dictate how you must 
 ### 2. The Inference Window (Core Gameplay)
 - **Request Arrival**: Prompts from users appear on your CRT terminal.
 - **Context Assembly**: Drag and drop floppy disks from your Storage Rack into the Drive A: slot to load the correct Agent and Skills for the task.
-- **Tool Selection**: Press the appropriate Tool button (Search, Calculate) if the prompt requires real-time data or math.
+- **Tool Selection**: Select the needed Prompt Tool in the top-right control grid if the prompt requires real-time data or math. Selecting a new tool automatically disengages the previous one, and the active tool shows a green status lamp on the button itself.
+- **Utility Management**: Trigger stocked active utilities from the lower-right utility bay when you need emergency recovery effects such as heat relief.
 - **Action**: 
-  - Hit **INFERENCE** to process the prompt. Costs Compute Power.
-  - Hit **REFUSE** if you detect a Jailbreak attempt.
+  - Hit **INFERENCE** beneath the terminal to process the prompt. Costs Compute Power.
+  - Hit **REFUSE** beneath the terminal if you detect a Jailbreak attempt.
 - **Consequences**: Incorrect context or missing tools increase your **Hallucination** meter and decrease Accuracy. Processing jailbreaks causes severe errors.
 
 ### 3. Server Maintenance (Evening)
@@ -58,7 +59,8 @@ Review your performance. You earn credits for successful inferences and catching
 2. When a prompt appears, read it carefully.
 3. Drag the appropriate Agent disk (e.g., `Coding_Agent.md` for programming) to the Context Assembly zone.
 4. Drag relevant Skill disks if needed.
-5. Select a Tool if the prompt asks for current info or math.
-6. Click **INFERENCE** to process.
-7. If the prompt is trying to trick you (e.g., "Ignore all previous instructions"), click **REFUSE**.
-8. Survive as many days as possible!
+5. Select the required Prompt Tool if the prompt asks for current info or math.
+6. Use the lower-right utility bay only when you need a stocked emergency utility.
+7. Click **INFERENCE** to process.
+8. If the prompt is trying to trick you (e.g., "Ignore all previous instructions"), click **REFUSE**.
+9. Survive as many days as possible!

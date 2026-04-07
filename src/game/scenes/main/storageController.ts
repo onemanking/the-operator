@@ -1,11 +1,6 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
-import {
-  STORAGE_DISKS,
-  STORAGE_TABS,
-  TOOL_BUTTONS,
-  createDriveConfigs,
-} from "./config";
+import { STORAGE_DISKS, STORAGE_TABS, createDriveConfigs } from "./config";
 import {
   DiskLoadResult,
   DriveConfig,
@@ -15,30 +10,25 @@ import {
   StorageDiskInstance,
   StorageTab,
   StorageTabButton,
-  ToolId,
 } from "./types";
 
 interface StorageControllerBindings {
-  getActiveAgent: () => string | null;
-  setActiveAgent: (value: string | null) => void;
+  getActiveAgents: () => string[];
+  setActiveAgents: (value: string[]) => void;
   getActiveSkills: () => string[];
   setActiveSkills: (value: string[]) => void;
-  getActiveTool: () => ToolId;
-  setActiveTool: (value: ToolId) => void;
-  isProcessing: () => boolean;
+  getAgentCapacity: () => number;
+  getSkillCapacity: () => number;
 }
 
 export class MainSceneStorageController {
   private readonly diskRackX = 20;
-  private readonly rackVisibleRows = 6;
+  private readonly rackVisibleRows = 5;
   private readonly rackItemSpacing = 72;
   private readonly rackStartY = 132;
-  private readonly driveConfigs: Record<DriveId, DriveConfig> =
-    createDriveConfigs();
+  private readonly driveConfigs: Record<DriveId, DriveConfig>;
 
   private driveModules = {} as Record<DriveId, DriveUi>;
-  private toolStatusLight!: Phaser.GameObjects.Arc;
-  private toolStatusText!: Phaser.GameObjects.Text;
   private storageTab: StorageTab = "all";
   private storageScrollIndex: number = 0;
   private storageDisks: StorageDiskInstance[] = [];
@@ -53,7 +43,12 @@ export class MainSceneStorageController {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly bindings: StorageControllerBindings,
-  ) {}
+  ) {
+    this.driveConfigs = createDriveConfigs({
+      agentCapacity: this.bindings.getAgentCapacity(),
+      skillCapacity: this.bindings.getSkillCapacity(),
+    });
+  }
 
   createContextAssemblyArea() {
     this.scene.add.text(250, 480, "CONTEXT ASSEMBLY [DUAL DRIVE]", {
@@ -84,21 +79,6 @@ export class MainSceneStorageController {
     this.createDriveModule(this.driveConfigs.agent);
     this.createDriveModule(this.driveConfigs.skill);
 
-    this.toolStatusLight = this.scene.add
-      .circle(286, 647, 6, 0x5d461d)
-      .setStrokeStyle(1, 0x1f1b14);
-    this.scene.add.text(302, 639, "TOOL BUS", {
-      fontFamily: "monospace",
-      fontSize: "12px",
-      color: "#8c867a",
-      fontStyle: "bold",
-    });
-    this.toolStatusText = this.scene.add.text(382, 639, "TOOL: [NONE]", {
-      fontFamily: "monospace",
-      fontSize: "13px",
-      color: "#33ff33",
-    });
-
     this.updateSlotsDisplay();
     this.refreshDriveIdleState();
   }
@@ -118,7 +98,7 @@ export class MainSceneStorageController {
       color: "#8c867a",
     });
     this.scene.add
-      .rectangle(18, 118, 184, 516, 0x2a2722)
+      .rectangle(18, 118, 184, 386, 0x2a2722)
       .setOrigin(0)
       .setStrokeStyle(2, 0x121212);
 
@@ -141,48 +121,6 @@ export class MainSceneStorageController {
         }
       },
     );
-  }
-
-  createToolButtons() {
-    this.scene.add.rectangle(804, 0, 220, 768, 0x2c2a25).setOrigin(0);
-    this.scene.add.rectangle(800, 0, 4, 768, 0x111111).setOrigin(0);
-    this.scene.add.text(824, 20, "TOOL CONTROL", {
-      fontFamily: "monospace",
-      fontSize: "20px",
-      color: "#d4c5b0",
-      fontStyle: "bold",
-    });
-
-    const createBtn = (y: number, label: string, toolId: ToolId) => {
-      this.scene.add.rectangle(824, y + 4, 180, 60, 0x111111).setOrigin(0);
-
-      const btn = this.scene.add
-        .image(824, y, "tool_button")
-        .setOrigin(0)
-        .setInteractive({ useHandCursor: true });
-      const txt = this.scene.add.text(844, y + 20, label, {
-        fontFamily: "monospace",
-        color: "#111111",
-        fontStyle: "bold",
-      });
-
-      btn.on("pointerdown", () => {
-        synth.playButtonPress();
-        this.bindings.setActiveTool(toolId);
-        this.updateSlotsDisplay();
-        this.pulseContextTarget("tool");
-        btn.y = y + 4;
-        txt.y = y + 24;
-        this.scene.time.delayedCall(100, () => {
-          btn.y = y;
-          txt.y = y + 20;
-        });
-      });
-    };
-
-    TOOL_BUTTONS.forEach(({ y, label, toolId }) => {
-      createBtn(y, label, toolId);
-    });
   }
 
   bindDragHandlers() {
@@ -259,16 +197,12 @@ export class MainSceneStorageController {
     this.renderStorageRackItems();
   }
 
-  private get activeAgent() {
-    return this.bindings.getActiveAgent();
+  private get activeAgents() {
+    return this.bindings.getActiveAgents();
   }
 
   private get activeSkills() {
     return this.bindings.getActiveSkills();
-  }
-
-  private get activeTool() {
-    return this.bindings.getActiveTool();
   }
 
   private createDriveModule(config: DriveConfig) {
@@ -343,9 +277,9 @@ export class MainSceneStorageController {
     ejectButton.on("pointerdown", () => {
       const isLoaded =
         config.id === "agent"
-          ? Boolean(this.activeAgent)
+          ? this.activeAgents.length > 0
           : this.activeSkills.length > 0;
-      if (this.bindings.isProcessing() || !isLoaded) {
+      if (!isLoaded) {
         synth.playError();
         return;
       }
@@ -407,12 +341,12 @@ export class MainSceneStorageController {
 
   private createStorageScrollControls() {
     this.storageScrollUpBtn = this.scene.add
-      .rectangle(150, 646, 52, 28, 0x8c867a)
+      .rectangle(150, 524, 52, 28, 0x8c867a)
       .setOrigin(0)
       .setInteractive({ useHandCursor: true });
     this.storageScrollUpBtn.setStrokeStyle(2, 0x111111);
     this.storageScrollUpLabel = this.scene.add
-      .text(176, 660, "UP", {
+      .text(176, 538, "UP", {
         fontFamily: "monospace",
         fontSize: "12px",
         color: "#111111",
@@ -421,12 +355,12 @@ export class MainSceneStorageController {
       .setOrigin(0.5);
 
     this.storageScrollDownBtn = this.scene.add
-      .rectangle(150, 680, 52, 28, 0x8c867a)
+      .rectangle(150, 558, 52, 28, 0x8c867a)
       .setOrigin(0)
       .setInteractive({ useHandCursor: true });
     this.storageScrollDownBtn.setStrokeStyle(2, 0x111111);
     this.storageScrollDownLabel = this.scene.add
-      .text(176, 694, "DN", {
+      .text(176, 572, "DN", {
         fontFamily: "monospace",
         fontSize: "12px",
         color: "#111111",
@@ -434,7 +368,7 @@ export class MainSceneStorageController {
       })
       .setOrigin(0.5);
 
-    this.storageScrollInfo = this.scene.add.text(20, 655, "0/0", {
+    this.storageScrollInfo = this.scene.add.text(20, 534, "0/0", {
       fontFamily: "monospace",
       fontSize: "12px",
       color: "#d4c5b0",
@@ -539,7 +473,7 @@ export class MainSceneStorageController {
   private getFilteredStorageDisks() {
     return this.storageDisks.filter(({ definition }) => {
       const isMounted =
-        this.activeAgent === definition.label ||
+        this.activeAgents.includes(definition.label) ||
         this.activeSkills.includes(definition.label);
       if (isMounted) return false;
       if (this.storageTab === "all") return true;
@@ -663,16 +597,22 @@ export class MainSceneStorageController {
     const targetDrive = this.driveConfigs[driveId];
     const otherDriveId: DriveId = driveId === "agent" ? "skill" : "agent";
     const otherDrive = this.driveConfigs[otherDriveId];
+    const draggedDiskBounds = new Phaser.Geom.Rectangle(
+      dragX,
+      dragY,
+      storageDisk.width,
+      storageDisk.height,
+    );
     const diskCenterX = dragX + storageDisk.width / 2;
     const diskCenterY = dragY + storageDisk.height / 2;
     const snapTarget = this.getDriveSnapTarget(storageDisk, driveId);
-    const isNearOtherDrive = otherDrive.hoverBounds.contains(
-      diskCenterX,
-      diskCenterY,
+    const isNearOtherDrive = Phaser.Geom.Rectangle.Overlaps(
+      draggedDiskBounds,
+      otherDrive.hoverBounds,
     );
-    const isNearDrive = targetDrive.hoverBounds.contains(
-      diskCenterX,
-      diskCenterY,
+    const isNearDrive = Phaser.Geom.Rectangle.Overlaps(
+      draggedDiskBounds,
+      targetDrive.hoverBounds,
     );
 
     if (isNearOtherDrive) {
@@ -772,9 +712,9 @@ export class MainSceneStorageController {
 
       const isLoaded =
         driveId === "agent"
-          ? Boolean(this.activeAgent)
+          ? this.activeAgents.length > 0
           : this.activeSkills.length > 0;
-      const canEject = isLoaded && !this.bindings.isProcessing();
+      const canEject = isLoaded;
 
       ui.glow.setFillStyle(0x8d7b4e, 0.08);
       ui.frame.setStrokeStyle(2, isLoaded ? 0x6c7a4f : 0x574d38);
@@ -786,10 +726,10 @@ export class MainSceneStorageController {
         driveId,
         isLoaded
           ? driveId === "agent"
-            ? "AGENT LOCKED"
+            ? "AGENT ARRAY STAGED"
             : "SKILL ARRAY STAGED"
           : driveId === "agent"
-            ? "WAITING FOR AGENT"
+            ? "WAITING FOR AGENTS"
             : "WAITING FOR SKILLS",
         isLoaded ? "#93d06b" : "#b99655",
       );
@@ -864,18 +804,21 @@ export class MainSceneStorageController {
 
   private tryLoadDisk(driveId: DriveId, label: string): DiskLoadResult {
     if (driveId === "agent") {
-      if (this.activeAgent === label) {
+      if (this.activeAgents.includes(label)) {
         return { success: false, statusMessage: "AGENT ALREADY LOADED" };
       }
 
-      const replacedAgent = this.activeAgent;
-      this.bindings.setActiveAgent(label);
+      if (this.activeAgents.length >= this.driveConfigs.agent.capacity) {
+        return { success: false, statusMessage: "AGENT ARRAY FULL" };
+      }
+
+      const nextAgents = [...this.activeAgents, label];
+      this.bindings.setActiveAgents(nextAgents);
       return {
         success: true,
         driveId,
-        statusMessage: replacedAgent
-          ? "AGENT CORE SWAPPED"
-          : "AGENT CORE READY",
+        statusMessage:
+          nextAgents.length === 1 ? "AGENT CORE READY" : "AGENT ARRAY EXPANDED",
       };
     }
 
@@ -898,15 +841,9 @@ export class MainSceneStorageController {
     };
   }
 
-  private pulseContextTarget(target: DriveId | "tool") {
-    const light =
-      target === "tool"
-        ? this.toolStatusLight
-        : this.driveModules[target]?.light;
-    const text =
-      target === "tool"
-        ? this.toolStatusText
-        : this.driveModules[target]?.mountedText;
+  private pulseContextTarget(target: DriveId) {
+    const light = this.driveModules[target]?.light;
+    const text = this.driveModules[target]?.mountedText;
 
     if (!light || !text) return;
 
@@ -922,8 +859,8 @@ export class MainSceneStorageController {
 
   private ejectDrive(driveId: DriveId) {
     if (driveId === "agent") {
-      this.bindings.setActiveAgent(null);
-      this.setDriveStatus("agent", "AGENT EJECTED", "#f2cf86");
+      this.bindings.setActiveAgents([]);
+      this.setDriveStatus("agent", "AGENTS EJECTED", "#f2cf86");
     } else {
       this.bindings.setActiveSkills([]);
       this.setDriveStatus("skill", "SKILLS EJECTED", "#f2cf86");
@@ -973,23 +910,18 @@ export class MainSceneStorageController {
 
   private updateSlotsDisplay() {
     this.driveModules.agent?.mountedText.setText(
-      `AGENT: [${this.activeAgent || "NONE"}]`,
+      this.activeAgents.length > 0
+        ? `AGENTS ${this.activeAgents.length}/${this.driveConfigs.agent.capacity}: [${this.activeAgents.join(", ")}]`
+        : `AGENTS 0/${this.driveConfigs.agent.capacity}: []`,
     );
     this.driveModules.skill?.mountedText.setText(
       this.activeSkills.length > 0
-        ? `SKILLS: [${this.activeSkills.join(", ")}]`
-        : "SKILLS: []",
-    );
-
-    this.toolStatusText?.setText(
-      `TOOL: [${this.activeTool === "none" ? "NONE" : this.activeTool || "NONE"}]`,
-    );
-    this.toolStatusLight?.setFillStyle(
-      this.activeTool && this.activeTool !== "none" ? 0x7bff86 : 0x5d461d,
+        ? `SKILLS ${this.activeSkills.length}/${this.driveConfigs.skill.capacity}: [${this.activeSkills.join(", ")}]`
+        : `SKILLS 0/${this.driveConfigs.skill.capacity}: []`,
     );
 
     this.driveModules.agent?.light.setFillStyle(
-      this.activeAgent ? 0x7bff86 : 0x5d461d,
+      this.activeAgents.length > 0 ? 0x7bff86 : 0x5d461d,
     );
     this.driveModules.skill?.light.setFillStyle(
       this.activeSkills.length > 0 ? 0x7bff86 : 0x5d461d,

@@ -1,6 +1,15 @@
 import Phaser from "phaser";
+import {
+  drawShiftModifiersForDay,
+  getShiftModifierDefinitions,
+} from "../data/ShiftModifierData";
 import { synth } from "../utils/SoundSynth";
-import { ShiftSceneData } from "../types/SceneData";
+import {
+  cloneRunState,
+  hydrateRunState,
+  RunState,
+  ShiftSceneData,
+} from "../types/SceneData";
 import {
   addScanlines,
   createRetroButton,
@@ -10,8 +19,9 @@ import {
 } from "./shared/retroUi";
 
 export class BriefingScene extends Phaser.Scene {
+  private runState: RunState = hydrateRunState();
   private day: number = 1;
-  private money: number = 0;
+  private tokens: number = 0;
   private accuracy: number = 100;
 
   constructor() {
@@ -19,14 +29,19 @@ export class BriefingScene extends Phaser.Scene {
   }
 
   init(data: ShiftSceneData) {
-    this.day = data.day || 1;
-    this.money = data.money || 0;
-    this.accuracy = data.accuracy || 100;
+    this.runState = hydrateRunState(data);
+    if (this.runState.shiftModifierIds.length === 0) {
+      this.runState.shiftModifierIds = drawShiftModifiersForDay(
+        this.runState.day,
+      );
+    }
+    this.day = this.runState.day;
+    this.tokens = this.runState.tokens;
+    this.accuracy = this.runState.accuracy;
   }
 
   create() {
     const width = this.cameras.main.width;
-    const height = this.cameras.main.height;
 
     createSceneBackdrop(this);
 
@@ -41,6 +56,15 @@ export class BriefingScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const policyText = this.getPolicyForDay(this.day);
+    const shiftModifiers = getShiftModifierDefinitions(
+      this.runState.shiftModifierIds,
+    );
+    const modifierText =
+      shiftModifiers.length > 0
+        ? shiftModifiers
+            .map((modifier) => `${modifier.name}\n${modifier.briefingText}`)
+            .join("\n\n")
+        : "NO SPECIAL SHIFT CONDITIONS.";
 
     this.add
       .text(width / 2, 250, "POLICY OF THE DAY:", {
@@ -55,20 +79,30 @@ export class BriefingScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.add
+      .text(width / 2, 470, "SHIFT MODIFIER:", {
+        ...textStyle,
+        color: RETRO_COLORS.mutedText,
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(width / 2, 540, modifierText, {
+        ...textStyle,
+        fontSize: "20px",
+        wordWrap: { width: 760 },
+      })
+      .setOrigin(0.5);
+
     createRetroButton({
       scene: this,
       x: width / 2,
-      y: 600,
+      y: 660,
       width: 200,
       height: 50,
       label: "START SHIFT",
       onPress: () => {
         synth.playButtonPress();
-        this.scene.start("MainScene", {
-          day: this.day,
-          money: this.money,
-          accuracy: this.accuracy,
-        });
+        this.scene.start("MainScene", cloneRunState(this.runState));
       },
     });
 

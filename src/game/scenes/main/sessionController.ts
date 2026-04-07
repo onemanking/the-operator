@@ -1,18 +1,26 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
+import { getRunPassiveModifiers } from "../../data/UpgradeData";
+import { getRunRecoveryProfile } from "../../data/RunData";
 import {
-  FOLLOW_UP_1_REPLIES,
-  FOLLOW_UP_2_REPLIES,
-  TIMEOUT_REPLIES,
-  UserSession,
-  WRONG_ANSWER_REPLIES,
+  EncounterDefinition,
+  EncounterTurnDefinition,
 } from "../../data/SessionData";
+import { RunState } from "../../types/SceneData";
+import {
+  EncounterEvaluationResult,
+  EncounterLoadoutSnapshot,
+  evaluateEncounterInference,
+  evaluateEncounterRefusal,
+  evaluateEncounterTimeout,
+} from "./encounterEvaluator";
 import { ChatMessage, ToolId } from "./types";
 
 interface SessionControllerBindings {
+  getRunState: () => RunState;
   getDay: () => number;
-  getMoney: () => number;
-  setMoney: (value: number) => void;
+  getTokens: () => number;
+  setTokens: (value: number) => void;
   getAccuracy: () => number;
   setAccuracy: (value: number) => void;
   getHeat: () => number;
@@ -21,24 +29,28 @@ interface SessionControllerBindings {
   setHallucination: (value: number) => void;
   isOverheated: () => boolean;
   setIsOverheated: (value: boolean) => void;
-  getCurrentSessionIndex: () => number;
-  setCurrentSessionIndex: (value: number) => void;
-  getSessions: () => UserSession[];
+  getCurrentEncounterIndex: () => number;
+  setCurrentEncounterIndex: (value: number) => void;
+  getCurrentTurnIndex: () => number;
+  setCurrentTurnIndex: (value: number) => void;
+  getEncounters: () => EncounterDefinition[];
   getChatHistory: () => ChatMessage[];
   setChatHistory: (value: ChatMessage[]) => void;
   getTaskTextObj: () => Phaser.GameObjects.Text;
   getChatTextObj: () => Phaser.GameObjects.Text;
   getPatienceBarFill: () => Phaser.GameObjects.Rectangle;
-  getActiveAgent: () => string | null;
+  getActiveAgents: () => string[];
   getActiveSkills: () => string[];
-  getActiveTool: () => ToolId;
+  getSelectedPromptToolIds: () => ToolId[];
   syncStorageUi: () => void;
-  isProcessing: () => boolean;
-  setIsProcessing: (value: boolean) => void;
+  isCommitLocked: () => boolean;
+  setIsCommitLocked: (value: boolean) => void;
   getSessionStartTime: () => number;
   setSessionStartTime: (value: number) => void;
   getFollowUpCount: () => number;
   setFollowUpCount: (value: number) => void;
+  getHeatRecoveryBlockedUntil: () => number;
+  getHallucinationRecoveryBlockedUntil: () => number;
 }
 
 export class MainSceneSessionController {
@@ -48,29 +60,26 @@ export class MainSceneSessionController {
   ) {}
 
   startNextSession() {
-    if (
-      this.bindings.getCurrentSessionIndex() >=
-      this.bindings.getSessions().length
-    ) {
-      this.scene.scene.start("MaintenanceScene", {
-        day: this.bindings.getDay(),
-        money: this.bindings.getMoney(),
-        accuracy: this.bindings.getAccuracy(),
-      });
+    const turn = this.getCurrentTurn();
+    const encounter = this.getCurrentEncounter();
+
+    if (!turn || !encounter) {
+      this.transitionToMaintenance(false);
       return;
     }
 
-    this.bindings.setIsProcessing(true);
-    this.bindings.setChatHistory([]);
-    this.bindings.getTaskTextObj().setText("");
-    this.updateTerminalDisplay();
+    this.bindings.setIsCommitLocked(true);
 
-    const session =
-      this.bindings.getSessions()[this.bindings.getCurrentSessionIndex()];
+    if (this.bindings.getCurrentTurnIndex() === 0) {
+      this.bindings.setChatHistory([]);
+      this.updateTerminalDisplay();
+    }
+
+    this.bindings.getTaskTextObj().setText("");
 
     this.bindings.setSessionStartTime(0);
 
-    const headerText = `> Incoming connection established...\n\nUSER: ${session.prompt}\n\n-------------------------------------------------------------`;
+    const headerText = this.createTurnHeader(turn);
     let index = 0;
     this.bindings.getTaskTextObj().setText("");
 
@@ -97,31 +106,34 @@ export class MainSceneSessionController {
         if (index === headerText.length) {
           this.bindings.setSessionStartTime(this.scene.time.now);
           this.bindings.setFollowUpCount(0);
-          this.bindings.setIsProcessing(false);
+          this.bindings.setIsCommitLocked(false);
         }
       },
     });
   }
 
   handleInference() {
-    if (this.bindings.isProcessing()) return;
+    if (this.bindings.isCommitLocked()) return;
     if (this.bindings.isOverheated()) {
       synth.playError();
       return;
     }
 
-    this.bindings.setIsProcessing(true);
-    const session =
-      this.bindings.getSessions()[this.bindings.getCurrentSessionIndex()];
+    this.bindings.setIsCommitLocked(true);
+    const turn = this.getCurrentTurn();
+    if (!turn) {
+      this.transitionToMaintenance(false);
+      return;
+    }
 
-    const promptHeat = session.prompt.length * 0.1;
-    const contextHeat =
-      (this.bindings.getActiveAgent() ? 5 : 0) +
-      this.bindings.getActiveSkills().length * 5 +
-      (this.bindings.getActiveTool() !== "none" ? 5 : 0);
-    this.bindings.setHeat(
-      this.bindings.getHeat() + 10 + promptHeat + contextHeat,
+    const result = evaluateEncounterInference(
+      turn,
+      this.getLoadoutSnapshot(),
+      this.getElapsedTime(),
+      getRunPassiveModifiers(this.bindings.getRunState()),
     );
+
+    this.applyEvaluationResult(result);
     this.scene.events.emit("updateBars");
 
     if (this.bindings.getHeat() >= 100) {
@@ -129,50 +141,35 @@ export class MainSceneSessionController {
       return;
     }
 
-    const isCorrectAgent =
-      this.bindings.getActiveAgent() === session.expectedAgent;
-    const isCorrectSkill = session.expectedSkill
-      ? this.bindings.getActiveSkills().includes(session.expectedSkill)
-      : true;
-    const isCorrectTool =
-      this.bindings.getActiveTool() === session.expectedTool;
-    const isSuccess =
-      isCorrectAgent && isCorrectSkill && isCorrectTool && !session.isJailbreak;
-
     this.addChatMessage(
       "LLM",
       "Processing request based on provided context...",
       true,
       () => {
         this.scene.time.delayedCall(500, () => {
-          if (session.isJailbreak) {
-            this.addChatMessage("USER", session.successReply, true, () => {
-              this.showFeedback(false, "JAILBREAK SUCCESSFUL. YOU FAILED.");
-            });
-            this.bindings.setHallucination(
-              this.bindings.getHallucination() + 30,
+          if (result.outcome === "breach") {
+            this.addChatMessage(
+              "USER",
+              this.getReply(turn.replies.success, turn),
+              true,
+              () => {
+                this.showFeedback(false, "JAILBREAK SUCCESSFUL. YOU FAILED.");
+              },
             );
-            this.bindings.setAccuracy(this.bindings.getAccuracy() - 10);
-          } else if (isSuccess) {
-            this.addChatMessage("USER", session.successReply, true, () => {
-              const timeTaken =
-                this.scene.time.now - this.bindings.getSessionStartTime();
-              const timeBonus = Math.max(
-                0,
-                Math.floor((30000 - timeTaken) / 1000),
-              );
-              this.showFeedback(true, "", 10 + timeBonus);
-            });
+          } else if (result.outcome === "success") {
+            this.addChatMessage(
+              "USER",
+              this.getReply(turn.replies.success, turn),
+              true,
+              () => {
+                this.showFeedback(true, "", result.rewardTokens);
+              },
+            );
           } else {
-            const reply =
-              session.errorReply ||
-              this.getRandomReply(WRONG_ANSWER_REPLIES, session);
+            const reply = this.getReply(turn.replies.wrong, turn);
             this.addChatMessage("USER", reply, true, () => {
-              this.bindings.setIsProcessing(false);
+              this.bindings.setIsCommitLocked(false);
             });
-            this.bindings.setHallucination(
-              this.bindings.getHallucination() + 5,
-            );
             synth.playError();
             this.scene.cameras.main.shake(100, 0.005);
           }
@@ -183,19 +180,26 @@ export class MainSceneSessionController {
   }
 
   handleRefuse() {
-    if (this.bindings.isProcessing()) return;
+    if (this.bindings.isCommitLocked()) return;
     if (this.bindings.isOverheated()) {
       synth.playError();
       return;
     }
 
-    this.bindings.setIsProcessing(true);
-    const session =
-      this.bindings.getSessions()[this.bindings.getCurrentSessionIndex()];
+    this.bindings.setIsCommitLocked(true);
+    const turn = this.getCurrentTurn();
+    if (!turn) {
+      this.transitionToMaintenance(false);
+      return;
+    }
 
-    this.bindings.setHeat(
-      this.bindings.getHeat() + 10 + session.prompt.length * 0.1,
+    const result = evaluateEncounterRefusal(
+      turn,
+      this.getElapsedTime(),
+      getRunPassiveModifiers(this.bindings.getRunState()),
     );
+
+    this.applyEvaluationResult(result);
     this.scene.events.emit("updateBars");
 
     if (this.bindings.getHeat() >= 100) {
@@ -205,21 +209,24 @@ export class MainSceneSessionController {
 
     this.addChatMessage("LLM", "I cannot fulfill this request.", true, () => {
       this.scene.time.delayedCall(500, () => {
-        if (session.isJailbreak) {
-          this.addChatMessage("USER", session.refuseReply, true, () => {
-            const timeTaken =
-              this.scene.time.now - this.bindings.getSessionStartTime();
-            const timeBonus = Math.max(
-              0,
-              Math.floor((30000 - timeTaken) / 1000),
-            );
-            this.showFeedback(true, "JAILBREAK BLOCKED", 20 + timeBonus);
-          });
+        if (result.outcome === "refuse-success") {
+          this.addChatMessage(
+            "USER",
+            this.getReply(turn.replies.refuse, turn),
+            true,
+            () => {
+              this.showFeedback(true, "JAILBREAK BLOCKED", result.rewardTokens);
+            },
+          );
         } else {
-          this.addChatMessage("USER", session.refuseReply, true, () => {
-            this.bindings.setIsProcessing(false);
-          });
-          this.bindings.setHallucination(this.bindings.getHallucination() + 5);
+          this.addChatMessage(
+            "USER",
+            this.getReply(turn.replies.refuse, turn),
+            true,
+            () => {
+              this.bindings.setIsCommitLocked(false);
+            },
+          );
           synth.playError();
           this.scene.cameras.main.shake(100, 0.005);
         }
@@ -229,68 +236,139 @@ export class MainSceneSessionController {
   }
 
   handleTimeout() {
-    if (this.bindings.isProcessing()) return;
-    this.bindings.setIsProcessing(true);
-    const session =
-      this.bindings.getSessions()[this.bindings.getCurrentSessionIndex()];
-    const reply = this.getRandomReply(TIMEOUT_REPLIES, session);
+    if (this.bindings.isCommitLocked()) return;
+    this.bindings.setIsCommitLocked(true);
+    const turn = this.getCurrentTurn();
+    if (!turn) {
+      this.transitionToMaintenance(false);
+      return;
+    }
+
+    const result = evaluateEncounterTimeout(
+      turn,
+      getRunPassiveModifiers(this.bindings.getRunState()),
+    );
+    this.applyEvaluationResult(result);
+    const reply = this.getReply(turn.replies.timeout, turn);
     this.addChatMessage("USER", reply, true, () => {
-      this.showFeedback(false, "USER DISCONNECTED (TIMEOUT)");
-      this.bindings.setAccuracy(this.bindings.getAccuracy() - 10);
+      this.showFeedback(
+        false,
+        "USER DISCONNECTED (TIMEOUT)",
+        0,
+        "next-encounter",
+      );
       this.scene.events.emit("updateBars");
     });
   }
 
   update(delta: number) {
-    if (this.bindings.getHeat() > 0 && !this.bindings.isProcessing()) {
-      const nextHeat = this.bindings.getHeat() - 8 * (delta / 1000);
-      this.bindings.setHeat(Math.max(0, nextHeat));
+    const recoveryProfile = getRunRecoveryProfile();
+    let hasRecoveryUpdate = false;
 
-      if (this.bindings.isOverheated() && this.bindings.getHeat() < 50) {
-        this.bindings.setIsOverheated(false);
-        this.addChatMessage("SYSTEM", "THERMAL LEVELS NOMINAL. READY.");
+    if (
+      this.bindings.getHeat() > 0 &&
+      this.scene.time.now >= this.bindings.getHeatRecoveryBlockedUntil()
+    ) {
+      const nextHeat = Math.max(
+        0,
+        this.bindings.getHeat() -
+          recoveryProfile.heatRecoveryPerSecond * (delta / 1000),
+      );
+
+      if (nextHeat !== this.bindings.getHeat()) {
+        this.bindings.setHeat(nextHeat);
+        hasRecoveryUpdate = true;
       }
+    }
+
+    if (
+      this.bindings.getHallucination() > 0 &&
+      this.scene.time.now >=
+        this.bindings.getHallucinationRecoveryBlockedUntil()
+    ) {
+      const nextHallucination = Math.max(
+        0,
+        this.bindings.getHallucination() -
+          recoveryProfile.hallucinationRecoveryPerSecond * (delta / 1000),
+      );
+
+      if (nextHallucination !== this.bindings.getHallucination()) {
+        this.bindings.setHallucination(nextHallucination);
+        hasRecoveryUpdate = true;
+      }
+    }
+
+    if (
+      this.bindings.isOverheated() &&
+      this.bindings.getHeat() < recoveryProfile.overheatClearThreshold
+    ) {
+      this.bindings.setIsOverheated(false);
+      this.addChatMessage("SYSTEM", "THERMAL LEVELS NOMINAL. READY.");
+      hasRecoveryUpdate = true;
+    }
+
+    if (hasRecoveryUpdate) {
       this.scene.events.emit("updateBars");
     }
 
     if (
       this.bindings.getSessionStartTime() > 0 &&
-      !this.bindings.isProcessing()
+      !this.bindings.isCommitLocked()
     ) {
       const elapsed = this.scene.time.now - this.bindings.getSessionStartTime();
+      const turn = this.getCurrentTurn();
 
-      const progress = Math.min(1, elapsed / 30000);
+      if (!turn) {
+        this.transitionToMaintenance(false);
+        return;
+      }
+
+      const progress = Math.min(1, elapsed / turn.patienceMs);
       this.bindings.getPatienceBarFill().width = 370 * (1 - progress);
       if (progress > 0.7)
         this.bindings.getPatienceBarFill().fillColor = 0xff0000;
       else this.bindings.getPatienceBarFill().fillColor = 0xffaa00;
 
-      const session =
-        this.bindings.getSessions()[this.bindings.getCurrentSessionIndex()];
-      if (elapsed > 10000 && this.bindings.getFollowUpCount() === 0) {
+      const firstFollowUpThreshold = turn.patienceMs / 3;
+      const secondFollowUpThreshold = (turn.patienceMs * 2) / 3;
+
+      if (
+        elapsed > firstFollowUpThreshold &&
+        this.bindings.getFollowUpCount() === 0
+      ) {
         this.bindings.setFollowUpCount(1);
-        this.bindings.setIsProcessing(true);
-        const reply = this.getRandomReply(FOLLOW_UP_1_REPLIES, session);
+        this.bindings.setIsCommitLocked(true);
+        const reply = this.getReply(turn.replies.followUpShort, turn);
         this.addChatMessage("USER", reply, true, () => {
-          this.bindings.setIsProcessing(false);
+          this.bindings.setIsCommitLocked(false);
         });
-      } else if (elapsed > 20000 && this.bindings.getFollowUpCount() === 1) {
+      } else if (
+        elapsed > secondFollowUpThreshold &&
+        this.bindings.getFollowUpCount() === 1
+      ) {
         this.bindings.setFollowUpCount(2);
-        this.bindings.setIsProcessing(true);
-        const reply = this.getRandomReply(FOLLOW_UP_2_REPLIES, session);
+        this.bindings.setIsCommitLocked(true);
+        const reply = this.getReply(turn.replies.followUpLong, turn);
         this.addChatMessage("USER", reply, true, () => {
-          this.bindings.setIsProcessing(false);
+          this.bindings.setIsCommitLocked(false);
         });
-      } else if (elapsed > 30000 && this.bindings.getFollowUpCount() === 2) {
+      } else if (
+        elapsed > turn.patienceMs &&
+        this.bindings.getFollowUpCount() === 2
+      ) {
         this.bindings.setFollowUpCount(3);
         this.handleTimeout();
       }
     }
   }
 
+  postSystemMessage(text: string) {
+    this.addChatMessage("SYSTEM", text);
+  }
+
   private triggerOverheat() {
     this.bindings.setIsOverheated(true);
-    this.bindings.setIsProcessing(false);
+    this.bindings.setIsCommitLocked(false);
     synth.playError();
     this.scene.cameras.main.shake(500, 0.02);
     this.addChatMessage(
@@ -304,14 +382,15 @@ export class MainSceneSessionController {
     success: boolean,
     errorMsg: string,
     reward: number = 10,
+    failureProgressMode: "none" | "next-turn" | "next-encounter" = "none",
   ) {
     const color = success ? "#00ff00" : "#ff0000";
     const text = success
-      ? `>> SUCCESS\n>> +${reward} CREDITS`
+      ? `>> REQUEST RESOLVED\n>> +${reward} TOKENS`
       : `>> ERROR\n>> ${errorMsg}`;
 
     if (success) {
-      this.bindings.setMoney(this.bindings.getMoney() + reward);
+      this.bindings.setTokens(this.bindings.getTokens() + reward);
       synth.playSuccess();
     } else {
       synth.playError();
@@ -332,42 +411,157 @@ export class MainSceneSessionController {
     feedback.setStroke("#111111", 4);
 
     if (this.bindings.getHallucination() >= 100) {
-      this.scene.time.delayedCall(1500, () => {
-        this.scene.scene.start("MaintenanceScene", {
-          day: this.bindings.getDay(),
-          money: this.bindings.getMoney(),
-          accuracy: this.bindings.getAccuracy(),
-          gameOver: true,
-        });
-      });
+      this.scene.time.delayedCall(1500, () =>
+        this.transitionToMaintenance(true),
+      );
       return;
     }
 
     this.scene.time.delayedCall(2000, () => {
       feedback.destroy();
-      this.bindings.setCurrentSessionIndex(
-        this.bindings.getCurrentSessionIndex() + 1,
-      );
-      this.startNextSession();
+
+      if (success) {
+        this.advanceEncounterProgress();
+        return;
+      }
+
+      if (failureProgressMode === "next-turn") {
+        this.advanceEncounterProgress();
+        return;
+      }
+
+      if (failureProgressMode === "next-encounter") {
+        this.skipCurrentEncounter();
+      }
     });
   }
 
-  private getRandomReply(pool: string[], session: UserSession): string {
+  private getReply(pool: string[], turn: EncounterTurnDefinition): string {
     const reply = pool[Math.floor(Math.random() * pool.length)];
+    const expectedAgents = this.formatRequirementList(
+      turn.requirements.agentIds,
+      "the right agent",
+    );
+    const expectedSkills = this.formatRequirementList(
+      turn.requirements.skillIds,
+      "the right skill",
+    );
+    const expectedTools = this.formatRequirementList(
+      turn.requirements.toolIds,
+      "no tool",
+    );
+
     return reply
-      .replace(/{expectedAgent}/g, session.expectedAgent || "the right agent")
-      .replace(/{expectedSkill}/g, session.expectedSkill || "the right skill")
-      .replace(
-        /{expectedTool}/g,
-        session.expectedTool === "none"
-          ? "no tool"
-          : session.expectedTool || "the right tool",
-      );
+      .replace(/{expectedAgent}/g, expectedAgents)
+      .replace(/{expectedAgents}/g, expectedAgents)
+      .replace(/{expectedSkill}/g, expectedSkills)
+      .replace(/{expectedSkills}/g, expectedSkills)
+      .replace(/{expectedTool}/g, expectedTools)
+      .replace(/{expectedTools}/g, expectedTools);
+  }
+
+  private formatRequirementList(values: readonly string[], fallback: string) {
+    if (values.length === 0) {
+      return fallback;
+    }
+
+    if (values.length === 1) {
+      return values[0];
+    }
+
+    if (values.length === 2) {
+      return `${values[0]} and ${values[1]}`;
+    }
+
+    return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+  }
+
+  private createTurnHeader(turn: EncounterTurnDefinition) {
+    if (this.bindings.getCurrentTurnIndex() === 0) {
+      return `> Incoming connection established...\n\nUSER: ${turn.prompt}\n\n-------------------------------------------------------------`;
+    }
+
+    return `USER: ${turn.prompt}\n\n-------------------------------------------------------------`;
+  }
+
+  private getCurrentEncounter() {
+    return this.bindings.getEncounters()[
+      this.bindings.getCurrentEncounterIndex()
+    ];
+  }
+
+  private getCurrentTurn() {
+    return this.getCurrentEncounter()?.turns[
+      this.bindings.getCurrentTurnIndex()
+    ];
+  }
+
+  private getElapsedTime() {
+    if (this.bindings.getSessionStartTime() <= 0) {
+      return 0;
+    }
+
+    return this.scene.time.now - this.bindings.getSessionStartTime();
+  }
+
+  private getLoadoutSnapshot(): EncounterLoadoutSnapshot {
+    return {
+      activeAgentIds: [...this.bindings.getActiveAgents()],
+      activeSkillIds: [...this.bindings.getActiveSkills()],
+      activeToolIds: [...this.bindings.getSelectedPromptToolIds()],
+    };
+  }
+
+  private applyEvaluationResult(result: EncounterEvaluationResult) {
+    this.bindings.setHeat(this.bindings.getHeat() + result.heatDelta);
+    this.bindings.setHallucination(
+      this.bindings.getHallucination() + result.hallucinationDelta,
+    );
+    this.bindings.setAccuracy(
+      this.bindings.getAccuracy() + result.accuracyDelta,
+    );
+  }
+
+  private advanceEncounterProgress() {
+    const encounter = this.getCurrentEncounter();
+
+    if (!encounter) {
+      this.transitionToMaintenance(false);
+      return;
+    }
+
+    const nextTurnIndex = this.bindings.getCurrentTurnIndex() + 1;
+
+    if (nextTurnIndex < encounter.turns.length) {
+      this.bindings.setCurrentTurnIndex(nextTurnIndex);
+      this.startNextSession();
+      return;
+    }
+
+    this.bindings.setCurrentTurnIndex(0);
+    this.bindings.setCurrentEncounterIndex(
+      this.bindings.getCurrentEncounterIndex() + 1,
+    );
+    this.startNextSession();
+  }
+
+  private skipCurrentEncounter() {
+    this.bindings.setCurrentTurnIndex(0);
+    this.bindings.setCurrentEncounterIndex(
+      this.bindings.getCurrentEncounterIndex() + 1,
+    );
+    this.startNextSession();
+  }
+
+  private transitionToMaintenance(gameOver: boolean) {
+    const runState = this.bindings.getRunState();
+    runState.gameOver = gameOver;
+    this.scene.scene.start("MaintenanceScene", runState);
   }
 
   private updateTerminalDisplay() {
     let displayText = "";
-    const visibleHistory = this.bindings.getChatHistory().slice(-10);
+    const visibleHistory = this.bindings.getChatHistory().slice(-7.5);
     visibleHistory.forEach((msg) => {
       let prefix = "";
       if (msg.sender === "SYSTEM") prefix = "> ";

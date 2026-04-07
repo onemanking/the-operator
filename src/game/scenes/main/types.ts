@@ -8,7 +8,23 @@ export interface ChatMessage {
 export type DiskType = "agent" | "skill";
 export type DriveId = DiskType;
 export type StorageTab = "all" | DiskType;
-export type ToolId = "search" | "calculate" | "none";
+export const PROMPT_TOOL_IDS = ["search", "calculate"] as const;
+export type ToolId = (typeof PROMPT_TOOL_IDS)[number];
+
+export interface PromptToolDefinition {
+  toolId: ToolId;
+  label: string;
+  shortLabel: string;
+}
+
+export function isToolId(value: string): value is ToolId {
+  return PROMPT_TOOL_IDS.includes(value as ToolId);
+}
+
+export interface CapacitySummary {
+  used: number;
+  total: number;
+}
 
 export interface StorageDiskDefinition {
   label: string;
@@ -58,12 +74,6 @@ export interface StorageTabDefinition {
   label: string;
   x: number;
   width: number;
-}
-
-export interface ToolButtonDefinition {
-  y: number;
-  label: string;
-  toolId: ToolId;
 }
 
 export interface StorageTabButton {

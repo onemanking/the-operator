@@ -1,10 +1,12 @@
 import Phaser from "phaser";
+import { RUN_CONFIG } from "../../data/RunData";
 import {
   DriveConfig,
   DriveId,
+  PromptToolDefinition,
   StorageDiskDefinition,
   StorageTabDefinition,
-  ToolButtonDefinition,
+  ToolId,
 } from "./types";
 
 export const STORAGE_DISKS: StorageDiskDefinition[] = [
@@ -20,21 +22,41 @@ export const STORAGE_TABS: StorageTabDefinition[] = [
   { tab: "skill", label: "SKILLS", x: 138, width: 64 },
 ];
 
-export const TOOL_BUTTONS: ToolButtonDefinition[] = [
-  { y: 70, label: "[ SEARCH ]", toolId: "search" },
-  { y: 150, label: "[ CALCULATE ]", toolId: "calculate" },
-  { y: 230, label: "[ CLEAR TOOL ]", toolId: "none" },
+export const PROMPT_TOOLS: PromptToolDefinition[] = [
+  { toolId: "search", label: "SEARCH", shortLabel: "SRCH" },
+  { toolId: "calculate", label: "CALCULATE", shortLabel: "CALC" },
 ];
 
-export function createDriveConfigs(): Record<DriveId, DriveConfig> {
+export function getPromptToolDefinition(toolId: string) {
+  return PROMPT_TOOLS.find((tool) => tool.toolId === toolId);
+}
+
+export function sortPromptToolIds(toolIds: readonly ToolId[]) {
+  const order = new Map(
+    PROMPT_TOOLS.map((tool, index) => [tool.toolId, index] as const),
+  );
+
+  return [...toolIds].sort((left, right) => {
+    return (
+      (order.get(left) ?? Number.MAX_SAFE_INTEGER) -
+      (order.get(right) ?? Number.MAX_SAFE_INTEGER)
+    );
+  });
+}
+
+export function createDriveConfigs(capacityOverrides?: {
+  agentCapacity?: number;
+  skillCapacity?: number;
+}): Record<DriveId, DriveConfig> {
   return {
     agent: {
       id: "agent",
       title: "DRIVE A: AGENT",
       acceptType: "agent",
       snapPoint: new Phaser.Math.Vector2(536, 539),
-      hoverBounds: new Phaser.Geom.Rectangle(488, 525, 96, 28),
-      capacity: 1,
+      hoverBounds: new Phaser.Geom.Rectangle(428, 513, 216, 52),
+      capacity:
+        capacityOverrides?.agentCapacity ?? RUN_CONFIG.defaultAgentCapacity,
       housingY: 508,
       housingHeight: 60,
       lcdY: 546,
@@ -44,8 +66,9 @@ export function createDriveConfigs(): Record<DriveId, DriveConfig> {
       title: "DRIVE B: SKILLS",
       acceptType: "skill",
       snapPoint: new Phaser.Math.Vector2(536, 608),
-      hoverBounds: new Phaser.Geom.Rectangle(488, 594, 96, 28),
-      capacity: 2,
+      hoverBounds: new Phaser.Geom.Rectangle(428, 582, 216, 52),
+      capacity:
+        capacityOverrides?.skillCapacity ?? RUN_CONFIG.defaultSkillCapacity,
       housingY: 578,
       housingHeight: 72,
       lcdY: 621,

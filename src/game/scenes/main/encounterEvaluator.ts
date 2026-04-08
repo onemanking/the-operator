@@ -294,7 +294,11 @@ export function evaluateEncounterTimeout(
     outcome: "timeout",
     rewardTokens: 0,
     heatDelta: 0,
-    hallucinationDelta: 0,
+    hallucinationDelta: Math.max(
+      0,
+      turn.scoring.timeoutHallucinationPenalty -
+        modifiers.wrongHallucinationReduction,
+    ),
     accuracyDelta: -Math.max(
       0,
       turn.scoring.timeoutAccuracyPenalty - modifiers.timeoutAccuracyReduction,

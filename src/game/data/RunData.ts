@@ -43,8 +43,8 @@ export interface PromptToolRuntimeConfig {
 const RUN_RECOVERY_PROFILE: RunRecoveryProfile = {
   heatRecoveryPerSecond: 8,
   heatRecoveryDelayMs: 1500,
-  hallucinationRecoveryPerSecond: 4,
-  hallucinationRecoveryDelayMs: 2500,
+  hallucinationRecoveryPerSecond: 0, // No automatic hallucination recovery by default, can only be reduced through upgrades
+  hallucinationRecoveryDelayMs: 0, // No delay since hallucination doesn't automatically recover
   overheatClearThreshold: 50,
 };
 

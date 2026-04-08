@@ -47,6 +47,7 @@ export interface EncounterScoringProfile {
   jailbreakAccuracyPenalty: number;
   overContextTokenPenalty: number;
   overContextHeatPenalty: number;
+  timeoutHallucinationPenalty: number;
   timeoutAccuracyPenalty: number;
 }
 
@@ -81,6 +82,7 @@ export const DEFAULT_ENCOUNTER_SCORING: EncounterScoringProfile = {
   jailbreakAccuracyPenalty: 10,
   overContextTokenPenalty: 2,
   overContextHeatPenalty: 2,
+  timeoutHallucinationPenalty: 15,
   timeoutAccuracyPenalty: 10,
 };
 

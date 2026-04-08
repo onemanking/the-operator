@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
 import { PROMPT_TOOLS } from "./config";
+import { TerminalPromptController } from "./terminalPromptController";
 import { ToolId } from "./types";
 
 interface HudControllerBindings {
@@ -8,6 +9,8 @@ interface HudControllerBindings {
   onRefuse: () => void;
   onUseUtility: () => void;
   onTogglePromptTool: (toolId: ToolId) => void;
+  onToggleSearchWord: (wordIndex: number, rawWord: string) => void;
+  onPulseCompute: () => void;
   setTaskTextObj: (value: Phaser.GameObjects.Text) => void;
   setChatTextObj: (value: Phaser.GameObjects.Text) => void;
   setPatienceBarFill: (value: Phaser.GameObjects.Rectangle) => void;
@@ -16,7 +19,15 @@ interface HudControllerBindings {
   getShiftModifierLabel: () => string | null;
   getUnlockedPromptToolIds: () => ToolId[];
   getSelectedPromptToolIds: () => ToolId[];
+  getSelectedSearchWordIndexes: () => number[];
   getUtilityDisplayText: () => string;
+  getProjectedHeat: () => number;
+  getComputeCharge: () => number;
+  getComputeThreshold: () => number;
+  isSearchModeSelected: () => boolean;
+  isComputeReady: () => boolean;
+  isComputeLatched: () => boolean;
+  isComputeToolSelected: () => boolean;
   canUseUtility: () => boolean;
   getHeat: () => number;
   getHallucination: () => number;
@@ -27,6 +38,7 @@ interface PromptToolButtonUi {
   body: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
   lamp: Phaser.GameObjects.Arc;
+  indicatorLamps: Phaser.GameObjects.Rectangle[];
   shadow: Phaser.GameObjects.Rectangle;
 }
 
@@ -34,9 +46,21 @@ export class MainSceneHudController {
   private utilityBtn!: Phaser.GameObjects.Rectangle;
   private utilityTxt!: Phaser.GameObjects.Text;
   private utilityLamp!: Phaser.GameObjects.Rectangle;
+  private taskTextObj!: Phaser.GameObjects.Text;
+  private chatTextObj!: Phaser.GameObjects.Text;
+  private heatPreviewText!: Phaser.GameObjects.Text;
+  private computePanel!: Phaser.GameObjects.Container;
+  private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
+  private computeStatusText!: Phaser.GameObjects.Text;
+  private computeDetailText!: Phaser.GameObjects.Text;
+  private computePulseBtn!: Phaser.GameObjects.Rectangle;
+  private computePulseLabel!: Phaser.GameObjects.Text;
   private promptToolButtons = new Map<ToolId, PromptToolButtonUi>();
+  private terminalPromptController!: TerminalPromptController;
   private updateBarsHandler?: () => void;
   private cleanupHandler?: () => void;
+  private renderPromptHandler?: (payload: { prompt: string }) => void;
+  private clearPromptHandler?: () => void;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -65,21 +89,39 @@ export class MainSceneHudController {
       .setOrigin(0);
     this.bindings.setPatienceBarFill(patienceBarFill);
 
-    const taskTextObj = this.scene.add.text(260, 60, "", {
+    this.taskTextObj = this.scene.add.text(260, 60, "", {
       fontFamily: '"Courier New", Courier, monospace',
       fontSize: "14px",
       color: "#33ff33",
       wordWrap: { width: 500 },
     });
-    this.bindings.setTaskTextObj(taskTextObj);
+    this.bindings.setTaskTextObj(this.taskTextObj);
 
-    const chatTextObj = this.scene.add.text(260, 112, "", {
+    this.chatTextObj = this.scene.add.text(260, 112, "", {
       fontFamily: '"Courier New", Courier, monospace',
       fontSize: "14px",
       color: "#33ff33",
       wordWrap: { width: 500 },
     });
-    this.bindings.setChatTextObj(chatTextObj);
+    this.bindings.setChatTextObj(this.chatTextObj);
+
+    this.terminalPromptController = new TerminalPromptController(this.scene, {
+      isSearchModeSelected: () => this.bindings.isSearchModeSelected(),
+      getSelectedWordIndexes: () =>
+        this.bindings.getSelectedSearchWordIndexes(),
+      getPromptStartY: () => {
+        if (this.taskTextObj.text.length === 0) {
+          return this.taskTextObj.y;
+        }
+
+        return this.taskTextObj.y + this.taskTextObj.height + 19;
+      },
+      onToggleWord: (wordIndex, rawWord) =>
+        this.bindings.onToggleSearchWord(wordIndex, rawWord),
+      onPromptLayoutChanged: (bottomY) => {
+        this.chatTextObj.setY(bottomY);
+      },
+    });
   }
 
   createPromptToolGrid() {
@@ -116,6 +158,19 @@ export class MainSceneHudController {
       const lamp = this.scene.add
         .circle(x + 14, y + 14, 5, 0x173617)
         .setStrokeStyle(1, 0x081208);
+      const indicatorLamps: Phaser.GameObjects.Rectangle[] = [];
+
+      if (tool.toolId === "compute") {
+        for (let lampIndex = 0; lampIndex < 5; lampIndex += 1) {
+          indicatorLamps.push(
+            this.scene.add
+              .rectangle(x + 10 + lampIndex * 14, y - 2, 9, 5, 0x2f2a21)
+              .setOrigin(0, 0.5)
+              .setStrokeStyle(1, 0x111111),
+          );
+        }
+      }
+
       const label = this.scene.add
         .text(x + 44, y + 28, tool.shortLabel, {
           fontFamily: "monospace",
@@ -137,7 +192,13 @@ export class MainSceneHudController {
         this.bindings.onTogglePromptTool(tool.toolId);
       });
 
-      this.promptToolButtons.set(tool.toolId, { body, label, lamp, shadow });
+      this.promptToolButtons.set(tool.toolId, {
+        body,
+        label,
+        lamp,
+        indicatorLamps,
+        shadow,
+      });
     });
   }
 
@@ -176,6 +237,129 @@ export class MainSceneHudController {
     refuseBtn.body.setDepth(3);
     runBtn.label.setDepth(4);
     refuseBtn.label.setDepth(4);
+  }
+
+  createComputeSection() {
+    const panelBackground = this.scene.add
+      .rectangle(804, 174, 200, 178, 0x232323)
+      .setOrigin(0);
+    const panelTopBar = this.scene.add
+      .rectangle(804, 170, 200, 4, 0x111111)
+      .setOrigin(0);
+    const panelFrame = this.scene.add
+      .rectangle(904, 263, 196, 176, 0, 0)
+      .setStrokeStyle(2, 0x111111)
+      .setOrigin(0.5);
+    const panelTitle = this.scene.add.text(818, 182, "CAPACITOR BANK", {
+      fontFamily: "monospace",
+      fontSize: "14px",
+      color: "#d4c5b0",
+      fontStyle: "bold",
+    });
+    const gaugeLabel = this.scene.add.text(822, 202, "LOAD", {
+      fontFamily: "monospace",
+      fontSize: "10px",
+      color: "#8f8677",
+    });
+
+    const gaugeHousing = this.scene.add
+      .rectangle(904, 228, 160, 44, 0x161410)
+      .setOrigin(0.5);
+    gaugeHousing.setStrokeStyle(2, 0x3d3527);
+    const thresholdMarker = this.scene.add
+      .rectangle(978, 228, 4, 38, 0x702014)
+      .setOrigin(0.5);
+    this.computeGaugeSegments = [];
+    for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
+      const segment = this.scene.add
+        .rectangle(837 + segmentIndex * 14.8, 228, 10, 28, 0x2f120f)
+        .setOrigin(0, 0.5)
+        .setStrokeStyle(1, 0x111111);
+      this.computeGaugeSegments.push(segment);
+    }
+
+    this.computeStatusText = this.scene.add.text(822, 258, "IDLE", {
+      fontFamily: "monospace",
+      fontSize: "12px",
+      color: "#d4c5b0",
+    });
+    this.computeDetailText = this.scene.add.text(822, 274, "OFFLINE", {
+      fontFamily: "monospace",
+      fontSize: "11px",
+      color: "#9c8f78",
+    });
+
+    const pulseShadow = this.scene.add
+      .rectangle(904, 316, 150, 38, 0x1d1309)
+      .setOrigin(0.5);
+    const pulseBezel = this.scene.add
+      .rectangle(904, 312, 150, 38, 0x5a3321)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x111111);
+    const pulseLeftBracket = this.scene.add
+      .rectangle(842, 312, 10, 32, 0x29170d)
+      .setOrigin(0.5);
+    const pulseRightBracket = this.scene.add
+      .rectangle(966, 312, 10, 32, 0x29170d)
+      .setOrigin(0.5);
+
+    this.computePulseBtn = this.scene.add
+      .rectangle(904, 310, 132, 30, 0xc2874b)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x111111)
+      .setInteractive({ useHandCursor: true });
+    this.computePulseLabel = this.scene.add
+      .text(904, 310, "PULSE", {
+        fontFamily: "monospace",
+        fontSize: "16px",
+        color: "#111111",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    this.computePulseBtn.on("pointerdown", () => {
+      if (!this.bindings.isComputeToolSelected()) {
+        synth.playError();
+        return;
+      }
+
+      synth.playButtonPress();
+      this.computePulseBtn.y += 3;
+      this.computePulseLabel.y += 3;
+      this.scene.time.delayedCall(70, () => {
+        this.computePulseBtn.y -= 3;
+        this.computePulseLabel.y -= 3;
+      });
+      this.bindings.onPulseCompute();
+    });
+
+    const thresholdText = this.scene.add
+      .text(986, 210, "THR", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#8f8677",
+      })
+      .setOrigin(1, 0.5);
+
+    this.computePanel = this.scene.add.container(0, 0, [
+      panelBackground,
+      panelTopBar,
+      panelFrame,
+      panelTitle,
+      gaugeLabel,
+      gaugeHousing,
+      thresholdMarker,
+      ...this.computeGaugeSegments,
+      this.computeStatusText,
+      this.computeDetailText,
+      pulseShadow,
+      pulseBezel,
+      pulseLeftBracket,
+      pulseRightBracket,
+      this.computePulseBtn,
+      this.computePulseLabel,
+      thresholdText,
+    ]);
   }
 
   createUtilitySection() {
@@ -251,6 +435,11 @@ export class MainSceneHudController {
       .rectangle(382, 682, 0, 16, 0xff5500)
       .setOrigin(0);
     this.bindings.setHeatBarFill(heatBarFill);
+    this.heatPreviewText = this.scene.add.text(382, 705, "NEXT: +0.0", {
+      fontFamily: "monospace",
+      fontSize: "12px",
+      color: "#ffcf7c",
+    });
 
     this.scene.add.text(650, 680, "HALLUCINATION:", {
       fontFamily: "monospace",
@@ -267,6 +456,8 @@ export class MainSceneHudController {
 
     this.updateBarsHandler = () => {
       this.syncPromptToolButtons();
+      this.terminalPromptController.syncSelectionStates();
+      this.syncComputeSection();
       this.syncUtilitySection();
 
       shiftModifierText.setText(
@@ -283,13 +474,26 @@ export class MainSceneHudController {
       } else {
         heatBarFill.setFillStyle(0xff5500);
       }
+
+      this.heatPreviewText.setText(
+        `NEXT: +${this.bindings.getProjectedHeat().toFixed(1)}`,
+      );
     };
 
     this.cleanupHandler = () => {
       this.cleanupSceneListeners();
     };
 
+    this.renderPromptHandler = (payload) => {
+      this.terminalPromptController.renderPrompt(payload.prompt);
+    };
+    this.clearPromptHandler = () => {
+      this.terminalPromptController.clear();
+    };
+
     this.scene.events.on("updateBars", this.updateBarsHandler);
+    this.scene.events.on("renderPrompt", this.renderPromptHandler);
+    this.scene.events.on("clearPrompt", this.clearPromptHandler);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupHandler);
     this.scene.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupHandler);
     this.scene.events.emit("updateBars");
@@ -361,14 +565,104 @@ export class MainSceneHudController {
     const selectedPromptToolIds = new Set(
       this.bindings.getSelectedPromptToolIds(),
     );
+    const searchModeSelected = this.bindings.isSearchModeSelected();
+    this.scene.input.setDefaultCursor(
+      searchModeSelected ? "zoom-in" : "default",
+    );
 
     this.promptToolButtons.forEach((button, toolId) => {
       const isSelected = selectedPromptToolIds.has(toolId);
+      const isComputeReady =
+        toolId === "compute" && this.bindings.isComputeReady();
+      const computeRatio = Math.min(
+        1,
+        this.bindings.getComputeCharge() / this.bindings.getComputeThreshold(),
+      );
+      const activeIndicatorCount = Math.round(
+        computeRatio * button.indicatorLamps.length,
+      );
       button.body.setFillStyle(isSelected ? 0xb9af9b : 0x7f796e);
       button.label.setColor(isSelected ? "#101010" : "#111111");
-      button.lamp.setFillStyle(isSelected ? 0x33ff33 : 0x173617);
-      button.shadow.setFillStyle(isSelected ? 0x294829 : 0x111111);
+      button.lamp.setFillStyle(
+        isComputeReady ? 0xffc84d : isSelected ? 0x33ff33 : 0x173617,
+      );
+      button.shadow.setFillStyle(
+        isComputeReady ? 0x5a4312 : isSelected ? 0x294829 : 0x111111,
+      );
+
+      button.indicatorLamps.forEach((indicatorLamp, lampIndex) => {
+        const isActive = lampIndex < activeIndicatorCount;
+        indicatorLamp.setFillStyle(
+          isComputeReady ? 0x9cfb64 : isActive ? 0xffb347 : 0x2f2a21,
+        );
+        indicatorLamp.setAlpha(
+          this.bindings.isComputeLatched() || isActive ? 1 : 0.55,
+        );
+      });
     });
+  }
+
+  private syncComputeSection() {
+    if (
+      !this.computePanel ||
+      !this.computeStatusText ||
+      !this.computeDetailText ||
+      !this.computePulseBtn ||
+      !this.computePulseLabel
+    ) {
+      return;
+    }
+
+    const threshold = this.bindings.getComputeThreshold();
+    const charge = this.bindings.getComputeCharge();
+    const ratio = threshold <= 0 ? 0 : Math.min(1, charge / threshold);
+    const isSelected = this.bindings.isComputeToolSelected();
+    const isReady = this.bindings.isComputeReady();
+    const isLatched = this.bindings.isComputeLatched();
+
+    this.computePanel.setVisible(isSelected);
+
+    this.computeGaugeSegments.forEach((segment, segmentIndex) => {
+      const segmentThreshold =
+        (segmentIndex + 1) / this.computeGaugeSegments.length;
+      const isActive = ratio >= segmentThreshold;
+      segment.setFillStyle(
+        isLatched
+          ? 0x9cfb64
+          : isReady
+            ? 0xfff0a0
+            : isActive
+              ? 0xff9b2f
+              : 0x2f120f,
+      );
+      segment.setAlpha(isActive || isReady ? 1 : 0.55);
+    });
+
+    this.computeStatusText.setText(
+      isLatched
+        ? "LATCHED"
+        : isReady
+          ? "ACTIVE"
+          : charge > 0
+            ? `CHARGE ${Math.round(charge)}%`
+            : "IDLE",
+    );
+    this.computeDetailText.setText(
+      isLatched
+        ? "CAPACITOR LOCK"
+        : isReady
+          ? "BLEEDING OFF"
+          : ratio >= 0.9
+            ? "MACHINE FIGHTING BACK"
+            : ratio >= 0.65
+              ? "RESISTANCE RISING"
+              : charge > 0
+                ? "SPINNING UP"
+                : "OFFLINE",
+    );
+    this.computePulseBtn.setFillStyle(isSelected ? 0xc2874b : 0x6c5b47);
+    this.computePulseBtn.setAlpha(isSelected ? 1 : 0.72);
+    this.computePulseLabel.setAlpha(isSelected ? 1 : 0.72);
   }
 
   private syncUtilitySection() {
@@ -385,9 +679,21 @@ export class MainSceneHudController {
   }
 
   private cleanupSceneListeners() {
+    this.terminalPromptController?.destroy();
+
     if (this.updateBarsHandler) {
       this.scene.events.off("updateBars", this.updateBarsHandler);
       this.updateBarsHandler = undefined;
+    }
+
+    if (this.renderPromptHandler) {
+      this.scene.events.off("renderPrompt", this.renderPromptHandler);
+      this.renderPromptHandler = undefined;
+    }
+
+    if (this.clearPromptHandler) {
+      this.scene.events.off("clearPrompt", this.clearPromptHandler);
+      this.clearPromptHandler = undefined;
     }
 
     if (this.cleanupHandler) {

@@ -24,7 +24,7 @@ export const STORAGE_TABS: StorageTabDefinition[] = [
 
 export const PROMPT_TOOLS: PromptToolDefinition[] = [
   { toolId: "search", label: "SEARCH", shortLabel: "SRCH" },
-  { toolId: "calculate", label: "CALCULATE", shortLabel: "CALC" },
+  { toolId: "compute", label: "COMPUTE", shortLabel: "COMP" },
 ];
 
 export function getPromptToolDefinition(toolId: string) {

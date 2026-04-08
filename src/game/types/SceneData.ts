@@ -20,6 +20,10 @@ export interface RunEncounterProgress {
   turnIndex: number;
 }
 
+export interface RunToolRuntimeState {
+  computeCharge: number;
+}
+
 export interface RunState {
   runId: string;
   day: number;
@@ -31,6 +35,7 @@ export interface RunState {
   loadout: RunLoadoutState;
   utilityInventory: RunUtilityInventoryState;
   encounterProgress: RunEncounterProgress;
+  toolRuntime: RunToolRuntimeState;
   maintenanceSettledDay: number | null;
   maintenanceOfferIds: string[];
   maintenancePurchasedItemId: string | null;
@@ -56,7 +61,7 @@ export function createInitialRunState(): RunState {
       selectedPromptToolIds: [],
       agentCapacity: RUN_CONFIG.defaultAgentCapacity,
       skillCapacity: RUN_CONFIG.defaultSkillCapacity,
-      unlockedPromptToolIds: ["search", "calculate"],
+      unlockedPromptToolIds: ["search", "compute"],
       passiveUpgradeIds: [],
     },
     utilityInventory: {
@@ -66,6 +71,9 @@ export function createInitialRunState(): RunState {
     encounterProgress: {
       encounterIndex: 0,
       turnIndex: 0,
+    },
+    toolRuntime: {
+      computeCharge: 0,
     },
     maintenanceSettledDay: null,
     maintenanceOfferIds: [],
@@ -94,6 +102,7 @@ export function cloneRunState(runState: RunState): RunState {
       chargesById: { ...runState.utilityInventory.chargesById },
     },
     encounterProgress: { ...runState.encounterProgress },
+    toolRuntime: { ...runState.toolRuntime },
     maintenanceSettledDay: runState.maintenanceSettledDay,
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
@@ -148,11 +157,15 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
         ...(data.loadout?.equippedSkillIds ?? initial.loadout.equippedSkillIds),
       ],
       selectedPromptToolIds: [
-        ...(data.loadout?.selectedPromptToolIds ?? legacySelectedPromptToolIds),
+        ...(
+          data.loadout?.selectedPromptToolIds ?? legacySelectedPromptToolIds
+        ).map((toolId) => (toolId === "calculate" ? "compute" : toolId)),
       ],
       unlockedPromptToolIds: [
-        ...(data.loadout?.unlockedPromptToolIds ??
-          initial.loadout.unlockedPromptToolIds),
+        ...(
+          data.loadout?.unlockedPromptToolIds ??
+          initial.loadout.unlockedPromptToolIds
+        ).map((toolId) => (toolId === "calculate" ? "compute" : toolId)),
       ],
       passiveUpgradeIds: [
         ...(data.loadout?.passiveUpgradeIds ??
@@ -170,6 +183,10 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     encounterProgress: {
       ...initial.encounterProgress,
       ...data.encounterProgress,
+    },
+    toolRuntime: {
+      ...initial.toolRuntime,
+      ...data.toolRuntime,
     },
     maintenanceSettledDay:
       data.maintenanceSettledDay ?? initial.maintenanceSettledDay,

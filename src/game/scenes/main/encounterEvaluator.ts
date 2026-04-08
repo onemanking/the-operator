@@ -1,6 +1,11 @@
 import { EncounterTurnDefinition } from "../../data/SessionData";
 import { RunPassiveModifiers } from "../../data/UpgradeData";
 import { ToolId } from "./types";
+import {
+  getDedupedNormalizedWords,
+  getSearchSelectionHeat,
+  isSearchRequirementSatisfied,
+} from "./toolRuntimeHelpers";
 
 export interface EncounterLoadoutSnapshot {
   activeAgentIds: string[];
@@ -13,6 +18,12 @@ export interface EncounterScoreBreakdown {
   efficiency: number;
   safety: number;
   speed: number;
+}
+
+export interface EncounterToolRuntimeSnapshot {
+  searchSelectedWords: string[];
+  searchWordHeat: number;
+  isComputeReady: boolean;
 }
 
 export interface EncounterEvaluationResult {
@@ -63,6 +74,7 @@ function getOverContextCount(
 function getCoverageScore(
   turn: EncounterTurnDefinition,
   loadout: EncounterLoadoutSnapshot,
+  toolRuntime: EncounterToolRuntimeSnapshot,
 ) {
   const agentMatched = turn.requirements.agentIds.every((agentId) =>
     loadout.activeAgentIds.includes(agentId),
@@ -74,7 +86,12 @@ function getCoverageScore(
     loadout.activeToolIds.includes(toolId),
   );
 
-  return agentMatched && skillsMatched && toolMatched ? 1 : 0;
+  const searchMatched = isSearchRequirementSatisfied(
+    turn.requirements.searchRequiredWords,
+    toolRuntime.searchSelectedWords,
+  );
+
+  return agentMatched && skillsMatched && toolMatched && searchMatched ? 1 : 0;
 }
 
 function getSpeedScore(turn: EncounterTurnDefinition, elapsedMs: number) {
@@ -93,10 +110,11 @@ function getTimeBonus(turn: EncounterTurnDefinition, elapsedMs: number) {
 export function evaluateEncounterInference(
   turn: EncounterTurnDefinition,
   loadout: EncounterLoadoutSnapshot,
+  toolRuntime: EncounterToolRuntimeSnapshot,
   elapsedMs: number,
   modifiers: RunPassiveModifiers,
 ): EncounterEvaluationResult {
-  const coverage = getCoverageScore(turn, loadout);
+  const coverage = getCoverageScore(turn, loadout, toolRuntime);
   const overContextCount = getOverContextCount(turn, loadout);
   const speed = getSpeedScore(turn, elapsedMs);
   const contextItemCount = getContextItemCount(loadout);
@@ -104,7 +122,8 @@ export function evaluateEncounterInference(
     0,
     turn.scoring.inferenceBaseHeat +
       turn.prompt.length * turn.scoring.promptHeatPerCharacter +
-      contextItemCount * turn.scoring.contextHeatPerItem -
+      contextItemCount * turn.scoring.contextHeatPerItem +
+      toolRuntime.searchWordHeat -
       modifiers.inferenceHeatReduction,
   );
 
@@ -184,6 +203,34 @@ export function evaluateEncounterInference(
       speed,
     },
   };
+}
+
+export function getProjectedInferenceHeat(
+  turn: EncounterTurnDefinition,
+  loadout: EncounterLoadoutSnapshot,
+  searchSelectedWords: readonly string[],
+  modifiers: RunPassiveModifiers,
+) {
+  const overContextCount = getOverContextCount(turn, loadout);
+  const contextItemCount = getContextItemCount(loadout);
+  const searchWordHeat = getSearchSelectionHeat(
+    getDedupedNormalizedWords(searchSelectedWords).length,
+  );
+
+  return Math.max(
+    0,
+    turn.scoring.inferenceBaseHeat +
+      turn.prompt.length * turn.scoring.promptHeatPerCharacter +
+      contextItemCount * turn.scoring.contextHeatPerItem +
+      searchWordHeat +
+      overContextCount *
+        Math.max(
+          0,
+          turn.scoring.overContextHeatPenalty -
+            modifiers.overContextHeatPenaltyReduction,
+        ) -
+      modifiers.inferenceHeatReduction,
+  );
 }
 
 export function evaluateEncounterRefusal(

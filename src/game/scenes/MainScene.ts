@@ -16,18 +16,35 @@ import {
   getActiveUtilityCharges,
   getActiveUtilityDefinition,
 } from "../data/UtilityData";
-import { getRunRecoveryProfile } from "../data/RunData";
+import {
+  getPromptToolRuntimeConfig,
+  getRunRecoveryProfile,
+} from "../data/RunData";
 import {
   cloneRunState,
   hydrateRunState,
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
+import { getRunPassiveModifiers } from "../data/UpgradeData";
 import { sortPromptToolIds } from "./main/config";
 import { ChatMessage, isToolId, ToolId } from "./main/types";
 import { MainSceneStorageController } from "./main/storageController";
 import { MainSceneSessionController } from "./main/sessionController";
 import { MainSceneHudController } from "./main/hudController";
+import {
+  EncounterToolRuntimeSnapshot,
+  getProjectedInferenceHeat,
+} from "./main/encounterEvaluator";
+import {
+  clampComputeCharge,
+  getComputeDecayPerSecond,
+  getComputePulseChargeGain,
+  getDedupedNormalizedWords,
+  getSearchSelectionHeat,
+  isComputeReady,
+  normalizeSearchWord,
+} from "./main/toolRuntimeHelpers";
 
 export class MainScene extends Phaser.Scene {
   private runState: RunState = hydrateRunState();
@@ -53,6 +70,10 @@ export class MainScene extends Phaser.Scene {
   private activeAgents: string[] = [];
   private activeSkills: string[] = [];
   private selectedPromptToolIds: ToolId[] = [];
+  private selectedSearchWordsByIndex = new Map<number, string>();
+  private computeCharge: number = 0;
+  private computeDecayResumesAt: number = 0;
+  private projectedHeat: number = 0;
 
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
@@ -81,6 +102,12 @@ export class MainScene extends Phaser.Scene {
     this.selectedPromptToolIds = sortPromptToolIds(
       (this.runState.loadout.selectedPromptToolIds ?? []).filter(isToolId),
     );
+    this.selectedSearchWordsByIndex = new Map();
+    this.computeCharge = clampComputeCharge(
+      this.runState.toolRuntime.computeCharge,
+    );
+    this.computeDecayResumesAt = 0;
+    this.projectedHeat = 0;
     this.currentEncounterIndex = this.runState.encounterProgress.encounterIndex;
     this.currentTurnIndex = this.runState.encounterProgress.turnIndex;
     this.chatHistory = [];
@@ -152,7 +179,11 @@ export class MainScene extends Phaser.Scene {
       getPatienceBarFill: () => this.patienceBarFill,
       getActiveAgents: () => this.activeAgents,
       getActiveSkills: () => this.activeSkills,
-      getSelectedPromptToolIds: () => this.selectedPromptToolIds,
+      getSelectedPromptToolIds: () => this.getActiveToolIdsForEvaluation(),
+      getEncounterToolRuntime: () => this.getEncounterToolRuntimeSnapshot(),
+      clearSearchSelection: () => {
+        this.clearSearchSelection();
+      },
       syncStorageUi: () => this.storageController.syncUi(),
       isCommitLocked: () => this.isCommitLocked,
       setIsCommitLocked: (value) => {
@@ -176,6 +207,9 @@ export class MainScene extends Phaser.Scene {
       onRefuse: () => this.sessionController.handleRefuse(),
       onUseUtility: () => this.handleUtilityUse(),
       onTogglePromptTool: (toolId) => this.togglePromptTool(toolId),
+      onToggleSearchWord: (wordIndex, rawWord) =>
+        this.toggleSearchWord(wordIndex, rawWord),
+      onPulseCompute: () => this.pulseCompute(),
       setTaskTextObj: (value) => {
         this.taskTextObj = value;
       },
@@ -201,6 +235,10 @@ export class MainScene extends Phaser.Scene {
         return this.runState.loadout.unlockedPromptToolIds.filter(isToolId);
       },
       getSelectedPromptToolIds: () => this.selectedPromptToolIds,
+      getSelectedSearchWordIndexes: () =>
+        [...this.selectedSearchWordsByIndex.keys()].sort(
+          (left, right) => left - right,
+        ),
       getUtilityDisplayText: () => {
         const definition = getActiveUtilityDefinition("coolant_purge");
         const charges = getActiveUtilityCharges(this.runState, "coolant_purge");
@@ -208,6 +246,15 @@ export class MainScene extends Phaser.Scene {
           ? `${definition.name}\nX${charges}`
           : `UTILITY\nX${charges}`;
       },
+      getProjectedHeat: () => this.projectedHeat,
+      getComputeCharge: () => this.computeCharge,
+      getComputeThreshold: () =>
+        getPromptToolRuntimeConfig().compute.chargeThreshold,
+      isSearchModeSelected: () => this.selectedPromptToolIds.includes("search"),
+      isComputeReady: () => isComputeReady(this.computeCharge),
+      isComputeLatched: () => this.isComputeLatched(),
+      isComputeToolSelected: () =>
+        this.selectedPromptToolIds.includes("compute"),
       canUseUtility: () => {
         return (
           this.heat > 0 && canUseActiveUtility(this.runState, "coolant_purge")
@@ -222,6 +269,7 @@ export class MainScene extends Phaser.Scene {
 
     this.hudController.createLayout();
     this.hudController.createPromptToolGrid();
+    this.hudController.createComputeSection();
     this.storageController.createContextAssemblyArea();
     this.storageController.createStorageRack();
     this.hudController.createActionButtons();
@@ -239,11 +287,29 @@ export class MainScene extends Phaser.Scene {
       this.runState.shiftModifierIds,
     );
 
+    this.refreshProjectedHeat();
+
     this.sessionController.startNextSession();
   }
 
   update(_time: number, delta: number) {
     this.sessionController.update(delta);
+
+    if (this.computeCharge > 0) {
+      if (this.isComputeLatched()) {
+        return;
+      }
+
+      const nextCharge = clampComputeCharge(
+        this.computeCharge -
+          getComputeDecayPerSecond(this.computeCharge) * (delta / 1000),
+      );
+
+      if (nextCharge !== this.computeCharge) {
+        this.setComputeCharge(nextCharge);
+        this.events.emit("updateBars");
+      }
+    }
   }
 
   private handleUtilityUse() {
@@ -285,12 +351,59 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
+    if (this.selectedPromptToolIds.includes("search") && toolId !== "search") {
+      this.clearSearchSelection();
+    }
+
     const nextPromptToolIds = this.selectedPromptToolIds.includes(toolId)
       ? []
       : sortPromptToolIds([toolId]);
 
+    if (nextPromptToolIds.length === 0 && toolId === "search") {
+      this.clearSearchSelection();
+    }
+
     this.selectedPromptToolIds = nextPromptToolIds;
     this.runState.loadout.selectedPromptToolIds = [...nextPromptToolIds];
+    this.refreshProjectedHeat();
+    this.events.emit("updateBars");
+  }
+
+  private toggleSearchWord(wordIndex: number, rawWord: string) {
+    if (!this.selectedPromptToolIds.includes("search")) {
+      return;
+    }
+
+    const normalizedWord = normalizeSearchWord(rawWord);
+
+    if (normalizedWord.length === 0) {
+      return;
+    }
+
+    if (this.selectedSearchWordsByIndex.has(wordIndex)) {
+      this.selectedSearchWordsByIndex.delete(wordIndex);
+    } else {
+      this.selectedSearchWordsByIndex.set(wordIndex, normalizedWord);
+    }
+
+    this.refreshProjectedHeat();
+    this.events.emit("updateBars");
+  }
+
+  private pulseCompute() {
+    const computeConfig = getPromptToolRuntimeConfig().compute;
+    const nextCharge = clampComputeCharge(
+      this.computeCharge + getComputePulseChargeGain(this.computeCharge),
+    );
+
+    this.setComputeCharge(nextCharge);
+
+    if (nextCharge >= computeConfig.chargeThreshold) {
+      this.computeDecayResumesAt = this.time.now + computeConfig.readyHoldMs;
+    }
+
+    this.setHeat(this.heat + computeConfig.tapHeat);
+    this.refreshProjectedHeat();
     this.events.emit("updateBars");
   }
 
@@ -320,5 +433,91 @@ export class MainScene extends Phaser.Scene {
 
     this.hallucination = nextHallucination;
     this.runState.hallucination = nextHallucination;
+  }
+
+  private setComputeCharge(value: number) {
+    this.computeCharge = clampComputeCharge(value);
+    this.runState.toolRuntime.computeCharge = this.computeCharge;
+
+    if (this.computeCharge <= 0) {
+      this.computeDecayResumesAt = 0;
+    }
+
+    this.refreshProjectedHeat();
+  }
+
+  private clearSearchSelection() {
+    if (this.selectedSearchWordsByIndex.size === 0) {
+      return;
+    }
+
+    this.selectedSearchWordsByIndex.clear();
+    this.refreshProjectedHeat();
+  }
+
+  private getSelectedSearchWords() {
+    return getDedupedNormalizedWords([
+      ...this.selectedSearchWordsByIndex.values(),
+    ]);
+  }
+
+  private getActiveToolIdsForEvaluation() {
+    const activeToolIds: ToolId[] = [];
+
+    if (
+      this.selectedPromptToolIds.includes("search") &&
+      this.getSelectedSearchWords().length > 0
+    ) {
+      activeToolIds.push("search");
+    }
+
+    if (isComputeReady(this.computeCharge)) {
+      activeToolIds.push("compute");
+    }
+
+    return sortPromptToolIds(activeToolIds);
+  }
+
+  private getEncounterToolRuntimeSnapshot(): EncounterToolRuntimeSnapshot {
+    const searchSelectedWords = this.getSelectedSearchWords();
+
+    return {
+      searchSelectedWords,
+      searchWordHeat: getSearchSelectionHeat(searchSelectedWords.length),
+      isComputeReady: isComputeReady(this.computeCharge),
+    };
+  }
+
+  private refreshProjectedHeat() {
+    const turn = this.getCurrentTurn();
+
+    if (!turn) {
+      this.projectedHeat = 0;
+      return;
+    }
+
+    this.projectedHeat = getProjectedInferenceHeat(
+      turn,
+      {
+        activeAgentIds: [...this.activeAgents],
+        activeSkillIds: [...this.activeSkills],
+        activeToolIds: this.getActiveToolIdsForEvaluation(),
+      },
+      this.getSelectedSearchWords(),
+      getRunPassiveModifiers(this.runState),
+    );
+  }
+
+  private getCurrentTurn() {
+    return this.encounters[this.currentEncounterIndex]?.turns[
+      this.currentTurnIndex
+    ];
+  }
+
+  private isComputeLatched() {
+    return (
+      isComputeReady(this.computeCharge) &&
+      this.time.now < this.computeDecayResumesAt
+    );
   }
 }

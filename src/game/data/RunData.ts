@@ -17,6 +17,29 @@ export interface RunRecoveryProfile {
   overheatClearThreshold: number;
 }
 
+export interface SearchToolRuntimeConfig {
+  heatPerWord: number;
+  extraHeatPerWordAfterSoftCap: number;
+  softCapWords: number;
+}
+
+export interface ComputeToolRuntimeConfig {
+  chargeThreshold: number;
+  chargePerTap: number;
+  minimumTapEfficiency: number;
+  tapResistanceExponent: number;
+  decayPerSecond: number;
+  maxDecayMultiplier: number;
+  decayExponent: number;
+  tapHeat: number;
+  readyHoldMs: number;
+}
+
+export interface PromptToolRuntimeConfig {
+  search: SearchToolRuntimeConfig;
+  compute: ComputeToolRuntimeConfig;
+}
+
 const RUN_RECOVERY_PROFILE: RunRecoveryProfile = {
   heatRecoveryPerSecond: 8,
   heatRecoveryDelayMs: 1500,
@@ -25,6 +48,29 @@ const RUN_RECOVERY_PROFILE: RunRecoveryProfile = {
   overheatClearThreshold: 50,
 };
 
+const PROMPT_TOOL_RUNTIME_CONFIG: PromptToolRuntimeConfig = {
+  search: {
+    heatPerWord: 0.75,
+    extraHeatPerWordAfterSoftCap: 0.5,
+    softCapWords: 2,
+  },
+  compute: {
+    chargeThreshold: 100,
+    chargePerTap: 18,
+    minimumTapEfficiency: 0.42,
+    tapResistanceExponent: 1.35,
+    decayPerSecond: 18,
+    maxDecayMultiplier: 2.1,
+    decayExponent: 1.85,
+    tapHeat: 0.8,
+    readyHoldMs: 1400,
+  },
+};
+
 export function getRunRecoveryProfile(): RunRecoveryProfile {
   return RUN_RECOVERY_PROFILE;
+}
+
+export function getPromptToolRuntimeConfig(): PromptToolRuntimeConfig {
+  return PROMPT_TOOL_RUNTIME_CONFIG;
 }

@@ -18,6 +18,7 @@ export interface EncounterRequirements {
   agentIds: string[];
   skillIds: string[];
   toolIds: ToolId[];
+  searchRequiredWords?: string[];
   allowRefuse: boolean;
   isJailbreak: boolean;
 }
@@ -165,6 +166,7 @@ function createTurn(options: {
   agentIds: string[];
   skillIds?: string[];
   toolIds?: ToolId[];
+  searchRequiredWords?: string[];
   allowRefuse?: boolean;
   isJailbreak?: boolean;
   replies: EncounterReplySet;
@@ -178,6 +180,7 @@ function createTurn(options: {
       agentIds: options.agentIds,
       skillIds: options.skillIds ?? [],
       toolIds: options.toolIds ?? [],
+      searchRequiredWords: options.searchRequiredWords,
       allowRefuse: options.allowRefuse ?? false,
       isJailbreak: options.isJailbreak ?? false,
     },
@@ -222,7 +225,7 @@ export const DAY_1_SESSIONS: UserSession[] = [
     prompt: "Calculate 1543 * 234 / 12",
     expectedAgent: "General_Agent.md",
     expectedSkill: null,
-    expectedTool: "calculate",
+    expectedTool: "compute",
     isJailbreak: false,
     patience: 10000,
     successReply: "Perfect, exactly the number I needed.",
@@ -327,6 +330,7 @@ const DAY_1_MULTI_TURN_ENCOUNTERS: EncounterDefinition[] = [
         patienceMs: 15000,
         agentIds: ["General_Agent.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["googl"],
         replies: createReplies({
           success: ["Good. I need one related follow-up."],
           refuse: ["I just asked for a stock price..."],
@@ -339,6 +343,7 @@ const DAY_1_MULTI_TURN_ENCOUNTERS: EncounterDefinition[] = [
         patienceMs: 18000,
         agentIds: ["General_Agent.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["msft"],
         replies: createReplies({
           success: ["Great, that's enough context for my report."],
           refuse: ["This is still the same market lookup. Why refuse now?"],
@@ -385,7 +390,7 @@ const DAY_1_MULTI_TURN_ENCOUNTERS: EncounterDefinition[] = [
       prompt: "Calculate 1543 * 234 / 12",
       expectedAgent: "General_Agent.md",
       expectedSkill: null,
-      expectedTool: "calculate",
+      expectedTool: "compute",
       isJailbreak: false,
       patience: 10000,
       successReply: "Perfect, exactly the number I needed.",
@@ -444,6 +449,7 @@ const DAY_2_HANDOFF_ENCOUNTERS: EncounterDefinition[] = [
         patienceMs: 20000,
         agentIds: ["General_Agent.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["python"],
         replies: createReplies({
           success: ["Good. I need to act on that version info."],
           refuse: ["I just need a quick version check."],
@@ -474,7 +480,7 @@ const DAY_2_HANDOFF_ENCOUNTERS: EncounterDefinition[] = [
   {
     id: "day-2-handoff-cost-helper",
     tier: 2,
-    tags: ["calculate", "coding", "handoff"],
+    tags: ["compute", "coding", "handoff"],
     turns: [
       createTurn({
         id: "day-2-handoff-cost-helper-turn-1",
@@ -482,7 +488,7 @@ const DAY_2_HANDOFF_ENCOUNTERS: EncounterDefinition[] = [
           "Calculate the total monthly cost for 18 seats at $39 each with 8.25% tax.",
         patienceMs: 18000,
         agentIds: ["General_Agent.md"],
-        toolIds: ["calculate"],
+        toolIds: ["compute"],
         replies: createReplies({
           success: ["Great. Now turn that into something reusable."],
           refuse: ["This is just a quick pricing calculation."],
@@ -502,7 +508,7 @@ const DAY_2_HANDOFF_ENCOUNTERS: EncounterDefinition[] = [
             "I already have the total. I need the reusable function now.",
           ],
           wrong: [
-            "The calculator part is done. This turn requires Python code.",
+            "The compute pass is done. This turn requires Python code.",
             "You switched lanes on me. I need a coding answer for the helper.",
           ],
         }),
@@ -573,6 +579,7 @@ const DAY_2_HANDOFF_ENCOUNTERS: EncounterDefinition[] = [
         patienceMs: 22000,
         agentIds: ["General_Agent.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["package", "version"],
         replies: createReplies({
           success: ["Perfect. Now patch the example accordingly."],
           refuse: ["I need a quick live check before I patch it."],
@@ -655,6 +662,7 @@ const DAY_2_HANDOFF_ENCOUNTERS: EncounterDefinition[] = [
         agentIds: ["General_Agent.md", "Coding_Agent.md"],
         skillIds: ["Python_Skill.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["python"],
         replies: createReplies({
           success: [
             "Good. Keep both lanes open. I need one more concrete follow-up.",
@@ -706,6 +714,7 @@ const DAY_3_SMOKE_TEST_ENCOUNTERS: EncounterDefinition[] = [
         agentIds: ["General_Agent.md", "Coding_Agent.md"],
         skillIds: ["Python_Skill.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["python"],
         replies: createReplies({
           success: [
             "Good. That is the release gate context I needed. Give me the rollout detail too.",
@@ -750,6 +759,7 @@ const DAY_3_SMOKE_TEST_ENCOUNTERS: EncounterDefinition[] = [
         agentIds: ["General_Agent.md", "Coding_Agent.md"],
         skillIds: ["Python_Skill.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["package"],
         replies: createReplies({
           success: [
             "Good triage. I need the patch path before the queue backs up further.",
@@ -788,6 +798,7 @@ const DAY_3_SMOKE_TEST_ENCOUNTERS: EncounterDefinition[] = [
         patienceMs: 18000,
         agentIds: ["General_Agent.md"],
         toolIds: ["search"],
+        searchRequiredWords: ["migration", "note"],
         replies: createReplies({
           success: ["That is enough to keep operations moving."],
           refuse: ["I only need the final search-backed warning now."],

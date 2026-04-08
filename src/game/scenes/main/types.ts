@@ -8,7 +8,7 @@ export interface ChatMessage {
 export type DiskType = "agent" | "skill";
 export type DriveId = DiskType;
 export type StorageTab = "all" | DiskType;
-export const PROMPT_TOOL_IDS = ["search", "calculate"] as const;
+export const PROMPT_TOOL_IDS = ["search", "compute"] as const;
 export type ToolId = (typeof PROMPT_TOOL_IDS)[number];
 
 export interface PromptToolDefinition {

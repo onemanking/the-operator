@@ -10,6 +10,7 @@ import { RunState } from "../../types/SceneData";
 import {
   EncounterEvaluationResult,
   EncounterLoadoutSnapshot,
+  EncounterToolRuntimeSnapshot,
   evaluateEncounterInference,
   evaluateEncounterRefusal,
   evaluateEncounterTimeout,
@@ -42,6 +43,8 @@ interface SessionControllerBindings {
   getActiveAgents: () => string[];
   getActiveSkills: () => string[];
   getSelectedPromptToolIds: () => ToolId[];
+  getEncounterToolRuntime: () => EncounterToolRuntimeSnapshot;
+  clearSearchSelection: () => void;
   syncStorageUi: () => void;
   isCommitLocked: () => boolean;
   setIsCommitLocked: (value: boolean) => void;
@@ -69,6 +72,8 @@ export class MainSceneSessionController {
     }
 
     this.bindings.setIsCommitLocked(true);
+    this.bindings.clearSearchSelection();
+    this.scene.events.emit("clearPrompt");
 
     if (this.bindings.getCurrentTurnIndex() === 0) {
       this.bindings.setChatHistory([]);
@@ -80,6 +85,21 @@ export class MainSceneSessionController {
     this.bindings.setSessionStartTime(0);
 
     const headerText = this.createTurnHeader(turn);
+    const retainedHeaderText = this.getRetainedHeaderText();
+    const finalizeIntro = () => {
+      this.bindings.getTaskTextObj().setText(retainedHeaderText);
+      this.scene.events.emit("renderPrompt", { prompt: turn.prompt });
+      this.bindings.setSessionStartTime(this.scene.time.now);
+      this.bindings.setFollowUpCount(0);
+      this.bindings.setIsCommitLocked(false);
+      this.scene.events.emit("updateBars");
+    };
+
+    if (headerText.length === 0) {
+      finalizeIntro();
+      return;
+    }
+
     let index = 0;
     this.bindings.getTaskTextObj().setText("");
 
@@ -104,9 +124,7 @@ export class MainSceneSessionController {
         }
         index++;
         if (index === headerText.length) {
-          this.bindings.setSessionStartTime(this.scene.time.now);
-          this.bindings.setFollowUpCount(0);
-          this.bindings.setIsCommitLocked(false);
+          finalizeIntro();
         }
       },
     });
@@ -129,6 +147,7 @@ export class MainSceneSessionController {
     const result = evaluateEncounterInference(
       turn,
       this.getLoadoutSnapshot(),
+      this.bindings.getEncounterToolRuntime(),
       this.getElapsedTime(),
       getRunPassiveModifiers(this.bindings.getRunState()),
     );
@@ -482,6 +501,14 @@ export class MainSceneSessionController {
     }
 
     return `USER: ${turn.prompt}\n\n-------------------------------------------------------------`;
+  }
+
+  private getRetainedHeaderText() {
+    if (this.bindings.getCurrentTurnIndex() === 0) {
+      return "> Incoming connection established...";
+    }
+
+    return "";
   }
 
   private getCurrentEncounter() {

@@ -151,7 +151,6 @@ export class MaintenanceScene extends Phaser.Scene {
             nextRunState.day = this.day + 1;
             nextRunState.accuracy = this.accuracy;
             nextRunState.heat = 0;
-            nextRunState.hallucination = 0;
             nextRunState.gameOver = false;
             nextRunState.encounterProgress = {
               encounterIndex: 0,

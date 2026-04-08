@@ -21,7 +21,9 @@ interface HudControllerBindings {
   getSelectedPromptToolIds: () => ToolId[];
   getSelectedSearchWordIndexes: () => number[];
   getUtilityDisplayText: () => string;
-  getProjectedHeat: () => number;
+  getProjectedToolHeat: () => number;
+  getProjectedInferenceHeat: () => number;
+  getProjectedRefuseHeat: () => number;
   getComputeCharge: () => number;
   getComputeThreshold: () => number;
   isSearchModeSelected: () => boolean;
@@ -43,12 +45,14 @@ interface PromptToolButtonUi {
 }
 
 export class MainSceneHudController {
+  private hoveredAction: "inference" | "refuse" | null = null;
+
   private utilityBtn!: Phaser.GameObjects.Rectangle;
   private utilityTxt!: Phaser.GameObjects.Text;
   private utilityLamp!: Phaser.GameObjects.Rectangle;
   private taskTextObj!: Phaser.GameObjects.Text;
   private chatTextObj!: Phaser.GameObjects.Text;
-  private heatPreviewText!: Phaser.GameObjects.Text;
+  private heatPreviewFill!: Phaser.GameObjects.Rectangle;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
   private computeStatusText!: Phaser.GameObjects.Text;
@@ -217,6 +221,10 @@ export class MainSceneHudController {
       labelOffsetX: 0,
       labelStyle: { fontSize: "26px", color: "#f5fff1" },
       onPress: this.bindings.onInference,
+      onHoverChange: (isHovered) => {
+        this.hoveredAction = isHovered ? "inference" : null;
+        this.scene.events.emit("updateBars");
+      },
     });
 
     const refuseBtn = this.createWideButton({
@@ -231,6 +239,10 @@ export class MainSceneHudController {
       labelOffsetX: 0,
       labelStyle: { fontSize: "26px", color: "#fff1ec" },
       onPress: this.bindings.onRefuse,
+      onHoverChange: (isHovered) => {
+        this.hoveredAction = isHovered ? "refuse" : null;
+        this.scene.events.emit("updateBars");
+      },
     });
 
     runBtn.body.setDepth(3);
@@ -435,11 +447,10 @@ export class MainSceneHudController {
       .rectangle(382, 682, 0, 16, 0xff5500)
       .setOrigin(0);
     this.bindings.setHeatBarFill(heatBarFill);
-    this.heatPreviewText = this.scene.add.text(382, 705, "NEXT: +0.0", {
-      fontFamily: "monospace",
-      fontSize: "12px",
-      color: "#ffcf7c",
-    });
+    this.heatPreviewFill = this.scene.add
+      .rectangle(382, 682, 0, 16, 0xc9c9c9)
+      .setOrigin(0)
+      .setAlpha(0.42);
 
     this.scene.add.text(650, 680, "HALLUCINATION:", {
       fontFamily: "monospace",
@@ -475,9 +486,32 @@ export class MainSceneHudController {
         heatBarFill.setFillStyle(0xff5500);
       }
 
-      this.heatPreviewText.setText(
-        `NEXT: +${this.bindings.getProjectedHeat().toFixed(1)}`,
+      const projectedToolHeat = Math.max(
+        0,
+        this.bindings.getProjectedToolHeat(),
       );
+      const hoveredActionHeat =
+        this.hoveredAction === "inference"
+          ? Math.max(0, this.bindings.getProjectedInferenceHeat())
+          : this.hoveredAction === "refuse"
+            ? Math.max(0, this.bindings.getProjectedRefuseHeat())
+            : 0;
+      const currentHeatRatio = Math.min(1, this.bindings.getHeat() / 100);
+      const projectedPreviewRatio = Math.min(
+        1,
+        (this.bindings.getHeat() + projectedToolHeat + hoveredActionHeat) / 100,
+      );
+      const currentHeatWidth = 196 * currentHeatRatio;
+      const projectedPreviewWidth = 196 * projectedPreviewRatio;
+      const previewWidth = Math.max(
+        0,
+        projectedPreviewWidth - currentHeatWidth,
+      );
+
+      this.heatPreviewFill.x = 382 + currentHeatWidth;
+      this.heatPreviewFill.width = previewWidth;
+      this.heatPreviewFill.setFillStyle(0xc9c9c9);
+      this.heatPreviewFill.setAlpha(previewWidth > 0 ? 0.42 : 0);
     };
 
     this.cleanupHandler = () => {
@@ -511,6 +545,7 @@ export class MainSceneHudController {
     labelOffsetX: number;
     labelStyle: Phaser.Types.GameObjects.Text.TextStyle;
     onPress: () => void;
+    onHoverChange?: (isHovered: boolean) => void;
   }) {
     this.scene.add
       .rectangle(
@@ -556,6 +591,14 @@ export class MainSceneHudController {
         label.y -= 4;
       });
       options.onPress();
+    });
+
+    body.on("pointerover", () => {
+      options.onHoverChange?.(true);
+    });
+
+    body.on("pointerout", () => {
+      options.onHoverChange?.(false);
     });
 
     return { body, label };

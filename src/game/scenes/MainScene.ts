@@ -34,7 +34,9 @@ import { MainSceneSessionController } from "./main/sessionController";
 import { MainSceneHudController } from "./main/hudController";
 import {
   EncounterToolRuntimeSnapshot,
-  getProjectedInferenceHeat,
+  getProjectedInferenceActionHeat,
+  getProjectedLoadoutHeat,
+  getProjectedRefusalHeat,
 } from "./main/encounterEvaluator";
 import {
   clampComputeCharge,
@@ -73,7 +75,9 @@ export class MainScene extends Phaser.Scene {
   private selectedSearchWordsByIndex = new Map<number, string>();
   private computeCharge: number = 0;
   private computeDecayResumesAt: number = 0;
-  private projectedHeat: number = 0;
+  private projectedToolHeat: number = 0;
+  private projectedInferenceHeat: number = 0;
+  private projectedRefuseHeat: number = 0;
 
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
@@ -107,7 +111,9 @@ export class MainScene extends Phaser.Scene {
       this.runState.toolRuntime.computeCharge,
     );
     this.computeDecayResumesAt = 0;
-    this.projectedHeat = 0;
+    this.projectedToolHeat = 0;
+    this.projectedInferenceHeat = 0;
+    this.projectedRefuseHeat = 0;
     this.currentEncounterIndex = this.runState.encounterProgress.encounterIndex;
     this.currentTurnIndex = this.runState.encounterProgress.turnIndex;
     this.chatHistory = [];
@@ -124,11 +130,15 @@ export class MainScene extends Phaser.Scene {
       setActiveAgents: (value) => {
         this.activeAgents = [...value];
         this.runState.loadout.equippedAgentIds = [...value];
+        this.refreshProjectedHeat();
+        this.events.emit("updateBars");
       },
       getActiveSkills: () => this.activeSkills,
       setActiveSkills: (value) => {
         this.activeSkills = [...value];
         this.runState.loadout.equippedSkillIds = [...value];
+        this.refreshProjectedHeat();
+        this.events.emit("updateBars");
       },
       getAgentCapacity: () => this.runState.loadout.agentCapacity,
       getSkillCapacity: () => this.runState.loadout.skillCapacity,
@@ -246,7 +256,9 @@ export class MainScene extends Phaser.Scene {
           ? `${definition.name}\nX${charges}`
           : `UTILITY\nX${charges}`;
       },
-      getProjectedHeat: () => this.projectedHeat,
+      getProjectedToolHeat: () => this.projectedToolHeat,
+      getProjectedInferenceHeat: () => this.projectedInferenceHeat,
+      getProjectedRefuseHeat: () => this.projectedRefuseHeat,
       getComputeCharge: () => this.computeCharge,
       getComputeThreshold: () =>
         getPromptToolRuntimeConfig().compute.chargeThreshold,
@@ -492,20 +504,31 @@ export class MainScene extends Phaser.Scene {
     const turn = this.getCurrentTurn();
 
     if (!turn) {
-      this.projectedHeat = 0;
+      this.projectedToolHeat = 0;
+      this.projectedInferenceHeat = 0;
+      this.projectedRefuseHeat = 0;
       return;
     }
 
-    this.projectedHeat = getProjectedInferenceHeat(
+    const selectedSearchWords = this.getSelectedSearchWords();
+    const passiveModifiers = getRunPassiveModifiers(this.runState);
+    const loadoutSnapshot = {
+      activeAgentIds: [...this.activeAgents],
+      activeSkillIds: [...this.activeSkills],
+      activeToolIds: this.getActiveToolIdsForEvaluation(),
+    };
+
+    this.projectedToolHeat = getProjectedLoadoutHeat(
       turn,
-      {
-        activeAgentIds: [...this.activeAgents],
-        activeSkillIds: [...this.activeSkills],
-        activeToolIds: this.getActiveToolIdsForEvaluation(),
-      },
-      this.getSelectedSearchWords(),
-      getRunPassiveModifiers(this.runState),
+      loadoutSnapshot,
+      selectedSearchWords,
+      passiveModifiers,
     );
+    this.projectedInferenceHeat = getProjectedInferenceActionHeat(
+      turn,
+      passiveModifiers,
+    );
+    this.projectedRefuseHeat = getProjectedRefusalHeat(turn, passiveModifiers);
   }
 
   private getCurrentTurn() {

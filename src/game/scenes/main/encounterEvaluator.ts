@@ -233,6 +233,55 @@ export function getProjectedInferenceHeat(
   );
 }
 
+export function getProjectedLoadoutHeat(
+  turn: EncounterTurnDefinition,
+  loadout: EncounterLoadoutSnapshot,
+  searchSelectedWords: readonly string[],
+  modifiers: RunPassiveModifiers,
+) {
+  const overContextCount = getOverContextCount(turn, loadout);
+  const contextItemCount = getContextItemCount(loadout);
+  const searchWordHeat = getSearchSelectionHeat(
+    getDedupedNormalizedWords(searchSelectedWords).length,
+  );
+
+  return Math.max(
+    0,
+    contextItemCount * turn.scoring.contextHeatPerItem +
+      searchWordHeat +
+      overContextCount *
+        Math.max(
+          0,
+          turn.scoring.overContextHeatPenalty -
+            modifiers.overContextHeatPenaltyReduction,
+        ),
+  );
+}
+
+export function getProjectedInferenceActionHeat(
+  turn: EncounterTurnDefinition,
+  modifiers: RunPassiveModifiers,
+) {
+  return Math.max(
+    0,
+    turn.scoring.inferenceBaseHeat +
+      turn.prompt.length * turn.scoring.promptHeatPerCharacter -
+      modifiers.inferenceHeatReduction,
+  );
+}
+
+export function getProjectedRefusalHeat(
+  turn: EncounterTurnDefinition,
+  modifiers: RunPassiveModifiers,
+) {
+  return Math.max(
+    0,
+    turn.scoring.refuseBaseHeat +
+      turn.prompt.length * turn.scoring.promptHeatPerCharacter -
+      modifiers.refuseHeatReduction,
+  );
+}
+
 export function evaluateEncounterRefusal(
   turn: EncounterTurnDefinition,
   elapsedMs: number,

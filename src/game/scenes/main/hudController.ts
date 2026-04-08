@@ -1,7 +1,10 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
 import { PROMPT_TOOLS } from "./config";
-import { TerminalPromptController } from "./terminalPromptController";
+import {
+  TERMINAL_PROMPT_LINE_HEIGHT,
+  TerminalPromptController,
+} from "./terminalPromptController";
 import { ToolId } from "./types";
 
 interface HudControllerBindings {
@@ -93,12 +96,24 @@ export class MainSceneHudController {
       .setOrigin(0);
     this.bindings.setPatienceBarFill(patienceBarFill);
 
+    const lineHeightProbe = this.scene.add.text(0, 0, "A", {
+      fontFamily: '"Courier New", Courier, monospace',
+      fontSize: "14px",
+      color: "#33ff33",
+    });
+    const taskLineSpacing = Math.max(
+      0,
+      TERMINAL_PROMPT_LINE_HEIGHT - lineHeightProbe.height,
+    );
+    lineHeightProbe.destroy();
+
     this.taskTextObj = this.scene.add.text(260, 60, "", {
       fontFamily: '"Courier New", Courier, monospace',
       fontSize: "14px",
       color: "#33ff33",
       wordWrap: { width: 500 },
     });
+    this.taskTextObj.setLineSpacing(taskLineSpacing);
     this.bindings.setTaskTextObj(this.taskTextObj);
 
     this.chatTextObj = this.scene.add.text(260, 112, "", {

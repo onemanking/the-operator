@@ -15,6 +15,10 @@ import {
   evaluateEncounterRefusal,
   evaluateEncounterTimeout,
 } from "./encounterEvaluator";
+import {
+  getTerminalPromptLines,
+  TERMINAL_PROMPT_DIVIDER,
+} from "./terminalPromptController";
 import { ChatMessage, ToolId } from "./types";
 
 interface SessionControllerBindings {
@@ -496,11 +500,13 @@ export class MainSceneSessionController {
   }
 
   private createTurnHeader(turn: EncounterTurnDefinition) {
+    const promptLines = getTerminalPromptLines(this.scene, turn.prompt);
+
     if (this.bindings.getCurrentTurnIndex() === 0) {
-      return `> Incoming connection established...\n\nUSER: ${turn.prompt}\n\n-------------------------------------------------------------`;
+      return `> Incoming connection established...\n${promptLines.join("\n")}\n${TERMINAL_PROMPT_DIVIDER}`;
     }
 
-    return `USER: ${turn.prompt}\n\n-------------------------------------------------------------`;
+    return `${promptLines.join("\n")}\n${TERMINAL_PROMPT_DIVIDER}`;
   }
 
   private getRetainedHeaderText() {

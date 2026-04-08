@@ -47,6 +47,7 @@ Review your performance. You earn credits for successful inferences and catching
   - `storageController.ts` owns disk drives, storage rack, and tool-selection interactions.
   - `sessionController.ts` owns session flow, response handling, and progression.
 - **Session Content**: `src/game/data/SessionData.ts` remains the content source for prompt/session definitions.
+- **Tool Mechanics Reference**: [docs/tool-mechanics.md](docs/tool-mechanics.md) captures the current Search/Compute behavior and the shared rules to follow when adding future tools.
 
 ## Development Verification
 - Run `npm run lint` after code changes and `npm run build` after structural or bundling changes.

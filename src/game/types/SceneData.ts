@@ -22,6 +22,7 @@ export interface RunEncounterProgress {
 
 export interface RunToolRuntimeState {
   computeCharge: number;
+  computePrimed: boolean;
 }
 
 export interface RunState {
@@ -74,6 +75,7 @@ export function createInitialRunState(): RunState {
     },
     toolRuntime: {
       computeCharge: 0,
+      computePrimed: false,
     },
     maintenanceSettledDay: null,
     maintenanceOfferIds: [],
@@ -187,6 +189,10 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     toolRuntime: {
       ...initial.toolRuntime,
       ...data.toolRuntime,
+      computePrimed:
+        data.toolRuntime?.computePrimed ??
+        (data.toolRuntime?.computeCharge ??
+          initial.toolRuntime.computeCharge) >= 100,
     },
     maintenanceSettledDay:
       data.maintenanceSettledDay ?? initial.maintenanceSettledDay,

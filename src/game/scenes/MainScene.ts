@@ -74,6 +74,7 @@ export class MainScene extends Phaser.Scene {
   private selectedPromptToolIds: ToolId[] = [];
   private selectedSearchWordsByIndex = new Map<number, string>();
   private computeCharge: number = 0;
+  private computePrimed: boolean = false;
   private computeDecayResumesAt: number = 0;
   private projectedToolHeat: number = 0;
   private projectedInferenceHeat: number = 0;
@@ -110,6 +111,9 @@ export class MainScene extends Phaser.Scene {
     this.computeCharge = clampComputeCharge(
       this.runState.toolRuntime.computeCharge,
     );
+    this.computePrimed =
+      this.runState.toolRuntime.computePrimed ||
+      isComputeReady(this.computeCharge);
     this.computeDecayResumesAt = 0;
     this.projectedToolHeat = 0;
     this.projectedInferenceHeat = 0;
@@ -408,6 +412,11 @@ export class MainScene extends Phaser.Scene {
       this.computeCharge + getComputePulseChargeGain(this.computeCharge),
     );
 
+    if (nextCharge >= computeConfig.chargeThreshold) {
+      this.computePrimed = true;
+      this.runState.toolRuntime.computePrimed = true;
+    }
+
     this.setComputeCharge(nextCharge);
 
     if (nextCharge >= computeConfig.chargeThreshold) {
@@ -452,6 +461,8 @@ export class MainScene extends Phaser.Scene {
     this.runState.toolRuntime.computeCharge = this.computeCharge;
 
     if (this.computeCharge <= 0) {
+      this.computePrimed = false;
+      this.runState.toolRuntime.computePrimed = false;
       this.computeDecayResumesAt = 0;
     }
 
@@ -483,7 +494,7 @@ export class MainScene extends Phaser.Scene {
       activeToolIds.push("search");
     }
 
-    if (isComputeReady(this.computeCharge)) {
+    if (this.computePrimed) {
       activeToolIds.push("compute");
     }
 
@@ -496,7 +507,7 @@ export class MainScene extends Phaser.Scene {
     return {
       searchSelectedWords,
       searchWordHeat: getSearchSelectionHeat(searchSelectedWords.length),
-      isComputeReady: isComputeReady(this.computeCharge),
+      isComputeReady: this.computePrimed,
     };
   }
 

@@ -12,6 +12,7 @@ interface PromptTokenUi {
   index: number;
   rawWord: string;
   background: Phaser.GameObjects.Rectangle;
+  selectionFrame: Phaser.GameObjects.Graphics;
   text: Phaser.GameObjects.Text;
   hitArea: Phaser.GameObjects.Rectangle;
 }
@@ -28,6 +29,54 @@ export const TERMINAL_PROMPT_LINE_HEIGHT = 33;
 export const TERMINAL_PROMPT_WORD_SPACING = 7.85;
 export const TERMINAL_PROMPT_DIVIDER =
   "-------------------------------------------------------------";
+
+function drawDashedFrame(
+  graphics: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: number,
+  alpha: number,
+) {
+  const dashLength = 5;
+  const gapLength = 3;
+
+  graphics.clear();
+  graphics.lineStyle(1, color, alpha);
+
+  const drawDashedLine = (
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+  ) => {
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const stepX = deltaX / distance;
+    const stepY = deltaY / distance;
+
+    let drawn = 0;
+    while (drawn < distance) {
+      const dashStartX = startX + stepX * drawn;
+      const dashStartY = startY + stepY * drawn;
+      const dashEnd = Math.min(drawn + dashLength, distance);
+      const dashEndX = startX + stepX * dashEnd;
+      const dashEndY = startY + stepY * dashEnd;
+      graphics.beginPath();
+      graphics.moveTo(dashStartX, dashStartY);
+      graphics.lineTo(dashEndX, dashEndY);
+      graphics.strokePath();
+      drawn += dashLength + gapLength;
+    }
+  };
+
+  drawDashedLine(x, y, x + width, y);
+  drawDashedLine(x + width, y, x + width, y + height);
+  drawDashedLine(x + width, y + height, x, y + height);
+  drawDashedLine(x, y + height, x, y);
+}
 
 export function getTerminalPromptLines(scene: Phaser.Scene, prompt: string) {
   const probeText = scene.add.text(0, 0, "", TERMINAL_TEXT_STYLE);
@@ -127,6 +176,7 @@ export class TerminalPromptController {
           0,
         )
         .setOrigin(0);
+      const selectionFrame = this.scene.add.graphics();
       const text = this.scene.add.text(
         cursorX,
         cursorY,
@@ -165,7 +215,14 @@ export class TerminalPromptController {
         this.bindings.onToggleWord(index, rawWord);
       });
 
-      this.tokens.push({ index, rawWord, background, text, hitArea });
+      this.tokens.push({
+        index,
+        rawWord,
+        background,
+        selectionFrame,
+        text,
+        hitArea,
+      });
       cursorX += wordWidth + this.wordSpacing;
     });
 
@@ -190,12 +247,30 @@ export class TerminalPromptController {
     this.tokens.forEach((token) => {
       const isSelected = selectedWordIndexes.has(token.index);
       const isHovered = isSearchModeSelected && this.hoverIndex === token.index;
+      const frameX = token.hitArea.x + 1;
+      const frameY = token.hitArea.y + 1;
+      const frameWidth = token.hitArea.width - 2;
+      const frameHeight = token.hitArea.height - 2;
 
       token.background.setVisible(
         isSearchModeSelected && (isSelected || isHovered),
       );
       token.background.setFillStyle(isSelected ? 0x33ff33 : 0x1f5a1f);
       token.background.setAlpha(isSelected ? 0.32 : 0.18);
+      token.selectionFrame.setVisible(isSearchModeSelected);
+      if (isSearchModeSelected) {
+        drawDashedFrame(
+          token.selectionFrame,
+          frameX,
+          frameY,
+          frameWidth,
+          frameHeight,
+          isSelected ? 0x9df79d : isHovered ? 0x77d977 : 0x3f8f3f,
+          isSelected ? 0.95 : isHovered ? 0.75 : 0.45,
+        );
+      } else {
+        token.selectionFrame.clear();
+      }
       token.text.setColor(isSelected ? "#081208" : "#33ff33");
       token.hitArea.setAlpha(isSearchModeSelected ? 0.001 : 0);
     });
@@ -208,6 +283,7 @@ export class TerminalPromptController {
     this.divider = undefined;
     this.tokens.forEach((token) => {
       token.background.destroy();
+      token.selectionFrame.destroy();
       token.text.destroy();
       token.hitArea.destroy();
     });

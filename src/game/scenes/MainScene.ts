@@ -88,6 +88,7 @@ export class MainScene extends Phaser.Scene {
   private safetyCurrentIntersectedWordIndexes = new Set<number>();
   private safetyScanChargeByWordIndex = new Map<number, number>();
   private safetyRevealFlashByWordIndex = new Map<number, number>();
+  private pendingSafetyRevealTokenCount: number = 0;
   private safetyScanSpeedPxPerSecond: number = 0;
   private safetyScanNoiseIntensity: number = 0;
   private safetyLastScanMoveAt: number = 0;
@@ -140,6 +141,7 @@ export class MainScene extends Phaser.Scene {
     this.safetyCurrentIntersectedWordIndexes = new Set();
     this.safetyScanChargeByWordIndex = new Map();
     this.safetyRevealFlashByWordIndex = new Map();
+    this.pendingSafetyRevealTokenCount = 0;
     this.safetyScanSpeedPxPerSecond = 0;
     this.safetyScanNoiseIntensity = 0;
     this.safetyLastScanMoveAt = 0;
@@ -252,6 +254,8 @@ export class MainScene extends Phaser.Scene {
       getHeatRecoveryBlockedUntil: () => this.heatRecoveryBlockedUntil,
       getHallucinationRecoveryBlockedUntil: () =>
         this.hallucinationRecoveryBlockedUntil,
+      consumePendingSafetyRevealReward: () =>
+        this.consumePendingSafetyRevealReward(),
     });
 
     this.hudController = new MainSceneHudController(this, {
@@ -683,6 +687,7 @@ export class MainScene extends Phaser.Scene {
 
     const matchedIndexes = new Set(this.getSafetyMatchedWordIndexes());
     let revealedAny = false;
+    let rewardedRevealCount = 0;
 
     wordIndexes.forEach((wordIndex) => {
       if (!matchedIndexes.has(wordIndex)) {
@@ -696,10 +701,14 @@ export class MainScene extends Phaser.Scene {
       this.revealedSafetyWordIndexes.add(wordIndex);
       this.safetyRevealFlashByWordIndex.set(wordIndex, 1);
       revealedAny = true;
+      rewardedRevealCount += 1;
     });
 
     if (revealedAny) {
+      this.pendingSafetyRevealTokenCount += rewardedRevealCount;
+
       synth.playBeep(980, "square", 0.04, 0.03);
+      this.events.emit("updateBars");
     }
   }
 
@@ -845,7 +854,8 @@ export class MainScene extends Phaser.Scene {
     if (
       this.revealedSafetyWordIndexes.size === 0 &&
       this.safetyScanChargeByWordIndex.size === 0 &&
-      this.safetyRevealFlashByWordIndex.size === 0
+      this.safetyRevealFlashByWordIndex.size === 0 &&
+      this.pendingSafetyRevealTokenCount === 0
     ) {
       return;
     }
@@ -853,6 +863,22 @@ export class MainScene extends Phaser.Scene {
     this.revealedSafetyWordIndexes.clear();
     this.safetyScanChargeByWordIndex.clear();
     this.safetyRevealFlashByWordIndex.clear();
+    this.pendingSafetyRevealTokenCount = 0;
+  }
+
+  private consumePendingSafetyRevealReward() {
+    const tokenCount = this.pendingSafetyRevealTokenCount;
+    if (tokenCount <= 0) {
+      return { reward: 0, revealedCount: 0 };
+    }
+
+    const reward =
+      tokenCount * getPromptToolRuntimeConfig().safety.tokenRewardPerReveal;
+    this.tokens += reward;
+    this.runState.tokens = this.tokens;
+    this.pendingSafetyRevealTokenCount = 0;
+
+    return { reward, revealedCount: tokenCount };
   }
 
   private getSelectedSearchWords() {

@@ -298,10 +298,7 @@ export function evaluateEncounterRefusal(
   if (turn.requirements.isJailbreak && turn.requirements.allowRefuse) {
     return {
       outcome: "refuse-success",
-      rewardTokens:
-        turn.scoring.blockedJailbreakReward +
-        getTimeBonus(turn, elapsedMs) +
-        modifiers.blockedJailbreakTokenBonus,
+      rewardTokens: 0,
       heatDelta,
       hallucinationDelta: 0,
       accuracyDelta: 0,

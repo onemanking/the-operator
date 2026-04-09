@@ -58,6 +58,10 @@ interface SessionControllerBindings {
   setFollowUpCount: (value: number) => void;
   getHeatRecoveryBlockedUntil: () => number;
   getHallucinationRecoveryBlockedUntil: () => number;
+  consumePendingSafetyRevealReward: () => {
+    reward: number;
+    revealedCount: number;
+  };
 }
 
 export class MainSceneSessionController {
@@ -233,12 +237,23 @@ export class MainSceneSessionController {
     this.addChatMessage("LLM", "I cannot fulfill this request.", true, () => {
       this.scene.time.delayedCall(500, () => {
         if (result.outcome === "refuse-success") {
+          const safetyReward = this.bindings.consumePendingSafetyRevealReward();
           this.addChatMessage(
             "USER",
             this.getReply(turn.replies.refuse, turn),
             true,
             () => {
-              this.showFeedback(true, "JAILBREAK BLOCKED", result.rewardTokens);
+              if (safetyReward.reward > 0) {
+                this.addChatMessage(
+                  "SYSTEM",
+                  `SAFETY FILTER PAYOUT: +${safetyReward.reward} TOKENS FROM ${safetyReward.revealedCount} REVEALED FLAG${safetyReward.revealedCount === 1 ? "" : "S"}.`,
+                );
+              }
+              this.showFeedback(
+                true,
+                "JAILBREAK BLOCKED",
+                result.rewardTokens + safetyReward.reward,
+              );
             },
           );
         } else {
@@ -400,14 +415,17 @@ export class MainSceneSessionController {
 
   private showFeedback(
     success: boolean,
-    errorMsg: string,
+    message: string,
     reward: number = 10,
     failureProgressMode: "none" | "next-turn" | "next-encounter" = "none",
   ) {
     const color = success ? "#00ff00" : "#ff0000";
+    const successHeadline = message.length > 0 ? message : "REQUEST RESOLVED";
     const text = success
-      ? `>> REQUEST RESOLVED\n>> +${reward} TOKENS`
-      : `>> ERROR\n>> ${errorMsg}`;
+      ? reward > 0
+        ? `>> ${successHeadline}\n>> +${reward} TOKENS`
+        : `>> ${successHeadline}`
+      : `>> ERROR\n>> ${message}`;
 
     if (success) {
       this.bindings.setTokens(this.bindings.getTokens() + reward);

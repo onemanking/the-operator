@@ -41,7 +41,6 @@ export interface SafetyScannerBindings {
     intersectedWordIndexes: number[],
   ) => void;
   onSafetyScanEnd: (pointerId: number) => void;
-  onVisualChanged: () => void;
 }
 
 function getPointerId(pointer: Phaser.Input.Pointer) {
@@ -96,9 +95,16 @@ export class SafetyScannerController {
     this.syncVisualState();
   }
 
+  clearTokenLayout() {
+    this.promptBounds = undefined;
+    this.tokenBounds = [];
+    this.syncVisualState();
+  }
+
   syncVisualState() {
     const isSafetyModeSelected = this.bindings.isSafetyModeSelected();
     const isSafetyScanning = this.bindings.isSafetyScanning();
+    const isDragging = this.activePointerId !== null;
 
     if (isSafetyModeSelected) {
       this.ensureScannerUi();
@@ -117,7 +123,7 @@ export class SafetyScannerController {
     const bounds = this.getOrCreatePromptBounds();
     const scannerWidth = this.scannerBand.width;
     this.scannerRestX = bounds.right - scannerWidth * 0.5;
-    this.scannerVisualX =
+    const nextScannerVisualX =
       this.scannerVisualX > 0
         ? Phaser.Math.Clamp(
             this.scannerVisualX,
@@ -125,10 +131,14 @@ export class SafetyScannerController {
             bounds.right - scannerWidth * 0.5,
           )
         : this.scannerRestX;
+    if (!isDragging) {
+      this.scannerVisualX = nextScannerVisualX;
+    }
+    const scannerVisualX = isDragging ? this.scannerVisualX : nextScannerVisualX;
     const scannerCenterY = bounds.centerY;
 
     this.scannerBand.setVisible(isSafetyModeSelected);
-    this.scannerBand.setPosition(this.scannerVisualX, scannerCenterY);
+    this.scannerBand.setPosition(scannerVisualX, scannerCenterY);
     this.scannerBand.setSize(this.scannerBand.width, bounds.height);
     this.scannerBand.setDisplaySize(this.scannerBand.width, bounds.height);
     this.scannerBand.setStrokeStyle(
@@ -140,7 +150,7 @@ export class SafetyScannerController {
 
     this.scannerHandle.setVisible(isSafetyModeSelected);
     this.scannerHandle.setPosition(
-      this.scannerVisualX + scannerWidth * 0.5 + 14,
+      scannerVisualX + scannerWidth * 0.5 + 14,
       scannerCenterY,
     );
     this.scannerHandle.setSize(this.scannerHandle.width, bounds.height);
@@ -163,12 +173,12 @@ export class SafetyScannerController {
     );
 
     this.scannerLabel.setVisible(isSafetyModeSelected);
-    this.scannerLabel.setPosition(this.scannerVisualX - 10, scannerCenterY);
+    this.scannerLabel.setPosition(scannerVisualX - 10, scannerCenterY);
 
     const readerOffset = this.bindings.getSafetyScanDirectionX() >= 0 ? 3 : -3;
     this.scannerHead.setVisible(isSafetyModeSelected);
     this.scannerHead.setPosition(
-      this.scannerVisualX + readerOffset,
+      scannerVisualX + readerOffset,
       scannerCenterY,
     );
     this.scannerHead.setSize(4, bounds.height);
@@ -403,7 +413,6 @@ export class SafetyScannerController {
   private setScannerVisualX(nextX: number) {
     this.scannerVisualX = nextX;
     this.syncVisualState();
-    this.bindings.onVisualChanged();
   }
 
   private getOrCreatePromptBounds() {

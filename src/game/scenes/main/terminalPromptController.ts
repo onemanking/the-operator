@@ -212,7 +212,6 @@ export class TerminalPromptController {
           intersectedWordIndexes,
         ),
       onSafetyScanEnd: (pointerId) => this.bindings.onSafetyScanEnd(pointerId),
-      onVisualChanged: () => this.scene.events.emit("updateBars"),
     });
   }
 
@@ -476,7 +475,7 @@ export class TerminalPromptController {
     this.userLabel = undefined;
     this.divider?.destroy();
     this.divider = undefined;
-    this.safetyScannerController.clearLayout();
+    this.safetyScannerController.clearTokenLayout();
     this.tokens.forEach((token) => {
       token.background.destroy();
       this.clearSafetyGlyphFx(token);
@@ -492,7 +491,21 @@ export class TerminalPromptController {
 
   destroy() {
     this.safetyScannerController.destroy();
-    this.clear();
+    this.userLabel?.destroy();
+    this.userLabel = undefined;
+    this.divider?.destroy();
+    this.divider = undefined;
+    this.tokens.forEach((token) => {
+      token.background.destroy();
+      this.clearSafetyGlyphFx(token);
+      token.selectionFrame.destroy();
+      token.text.destroy();
+      token.hitArea.destroy();
+    });
+    this.tokens = [];
+    this.hoverIndex = null;
+    this.scannerLayoutKey = "";
+    this.bindings.onPromptLayoutChanged(112);
   }
 
   private syncSafetyGlyphFx(

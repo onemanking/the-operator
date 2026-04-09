@@ -9,7 +9,10 @@ The game currently uses two richer prompt tools:
 - `Search` turns the terminal prompt into selectable words and uses the selected word set during evaluation.
 - `Compute` acts as a chargeable machine state that can stay armed after reaching full charge until the charge fully drains.
 
+Tools should not read as flat menu toggles. Each one should feel like a distinct machine mode with its own sensory identity.
+
 The design goal is that each tool has its own clear interaction pattern, its own HUD feedback, and its own evaluation rule.
+That now also means each tool should ship with a readable audiovisual language, not only a rules explanation.
 
 ## Current Tool Set
 
@@ -38,6 +41,39 @@ The design goal is that each tool has its own clear interaction pattern, its own
 - Commit-action heat preview should appear only when hovering the relevant action button.
 - All preview heat should use the same visual language unless a future tool intentionally needs a distinct affordance.
 - Tool affordances should be readable at a glance: selected state, hover state, and armed/ready state should all be visually distinct.
+
+## Shared Presentation Rules
+
+- Every tool should communicate its state through motion, sound, and screen treatment, not only through labels or helper text.
+- Prefer showing what the tool is doing through effect layers, animation, shader treatment, color shifts, and mechanical motion.
+- Use text as secondary support only when the state would otherwise be unclear.
+- If a tool has a special mode, the player should understand it from the screen behavior before reading any tooltip-style explanation.
+- Tool feedback should be legible during live play on the terminal itself, not only in side panels or status text.
+- Favor diegetic or machine-like feedback over abstract UI messaging. The tool should feel installed in the workstation.
+
+## Audio And Visual Expectations
+
+- New tools should include a minimum audiovisual pass as part of the first playable implementation, not as optional polish.
+- Audio should communicate at least activation, active loop or movement, successful detection or charge event, and danger or failure state.
+- Visuals should communicate at least idle state, active state, interaction state, and successful result state.
+- Effects should be tied to gameplay meaning. If an effect exists, it should help the player read timing, danger, precision, or payoff.
+- Repeated tool interactions should have small variations in timing, pitch, intensity, or motion so they do not feel static.
+- When possible, use the terminal canvas itself as the feedback surface rather than relying on extra explanatory text.
+
+## Effect-First Guidance
+
+- Prefer effect and animation over explanatory copy.
+- Prefer scanner sweeps, glow, flicker, beam passes, mask reveals, distortion, pulse, charge buildup, recoil, and decay over static text banners.
+- Prefer shader or post-processing treatment when it improves the tool fantasy and keeps the state readable.
+- Prefer motion that implies mechanism: latch, sweep, charge, vent, lock, pulse, reset.
+- Text should confirm or reinforce a state, not carry the full burden of explaining it.
+- If a tool can be understood by watching it for one second, that is better than needing a sentence of instruction.
+
+## Safety Filter Reference
+
+- `Safety Filter` is the current reference for the desired direction.
+- Its presentation works because the tool is explained primarily by behavior: filtered CRT treatment, moving scanner hardware, guarded-word reveal, heat pressure, and scan audio.
+- Future tools should aim for the same principle: teach the player through effect, animation, and response, then use text only as support.
 
 ## Data and Runtime Dependencies
 
@@ -79,8 +115,10 @@ When adding a new tool, define these pieces early:
 2. What is the player-facing interaction pattern?
 3. What is the commit-time evaluation rule?
 4. What heat or cost does it add?
-5. What HUD affordance makes the tool readable at a glance?
-6. How does the tool reset when the turn changes or the player cancels it?
+5. What audio identity communicates activation, interaction, success, and danger?
+6. What visual identity communicates the tool through effect, animation, shader, or screen treatment?
+7. What HUD affordance makes the tool readable at a glance?
+8. How does the tool reset when the turn changes or the player cancels it?
 
 If a tool changes commit behavior, its active/armed state should be persisted and exposed through the same controller binding model used by Search and Compute.
 
@@ -90,3 +128,6 @@ If a tool changes commit behavior, its active/armed state should be persisted an
 - Prefer simple, explicit rules over fuzzy logic for the first prototype.
 - Keep UI feedback visible before commit, not only after the player presses INFERENCE.
 - If a tool needs a special input mode, the HUD should make that mode obvious immediately.
+- Plan the audiovisual hook at the same time as the mechanic. Do not wait until the end to decide how the tool should feel.
+- When choosing between adding explanatory text and adding a clear effect or animation, prefer the effect or animation first.
+- Treat shader, post-processing, reveal masks, and animated terminal treatments as core communication tools when they improve readability.

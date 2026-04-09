@@ -17,6 +17,7 @@
 - Run npm run build when changing structure, bundling, or shared modules.
 - When changing Phaser HUD/UI, run the game in a browser and use browser tools to verify the updated scene visually on the live canvas before finishing.
 - Browser-based HUD/UI verification must check that new or changed elements are visible, not unintentionally overlapping or clipped, and that the primary related interaction still works.
+- When changing gameplay, run the game in a browser and verify the expected behavior manually before finishing. This may include checking that new or changed mechanics work as intended and that existing mechanics are not broken.
 - There is no automated test suite yet; do not claim runtime behavior was tested unless you ran it manually.
 
 ## Conventions

@@ -73,6 +73,34 @@ export class SoundSynth {
     this.playBeep(400, "sine", 0.1, 0.1);
     setTimeout(() => this.playBeep(600, "sine", 0.2, 0.1), 100);
   }
+
+  playThermalStress(intensity: number, isOverheated: boolean) {
+    const clampedIntensity = Math.max(0, Math.min(1, intensity));
+    const baseFrequency = 86 + clampedIntensity * 52;
+    const baseVolume = 0.025 + clampedIntensity * 0.045;
+    const baseDuration = 0.07 + clampedIntensity * 0.06;
+
+    this.playBeep(baseFrequency, "sawtooth", baseDuration, baseVolume);
+    setTimeout(() => {
+      this.playBeep(
+        baseFrequency * (isOverheated ? 1.9 : 1.45),
+        isOverheated ? "square" : "triangle",
+        0.03 + clampedIntensity * 0.04,
+        baseVolume * (isOverheated ? 0.95 : 0.65),
+      );
+    }, 38);
+
+    if (isOverheated) {
+      setTimeout(() => {
+        this.playBeep(
+          baseFrequency * 0.78,
+          "sawtooth",
+          0.08 + clampedIntensity * 0.04,
+          baseVolume * 0.85,
+        );
+      }, 92);
+    }
+  }
 }
 
 export const synth = new SoundSynth();

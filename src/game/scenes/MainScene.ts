@@ -20,6 +20,7 @@ import {
 import {
   getPromptToolRuntimeConfig,
   getRunRecoveryProfile,
+  getThermalFeedbackConfig,
 } from "../data/RunData";
 import {
   cloneRunState,
@@ -107,6 +108,8 @@ export class MainScene extends Phaser.Scene {
   private isCommitLocked: boolean = false;
   private heatRecoveryBlockedUntil: number = 0;
   private hallucinationRecoveryBlockedUntil: number = 0;
+  private lastThermalRumbleAt: number = 0;
+  private lastThermalWarningSoundAt: number = 0;
 
   constructor() {
     super("MainScene");
@@ -159,6 +162,8 @@ export class MainScene extends Phaser.Scene {
     this.followUpCount = 0;
     this.heatRecoveryBlockedUntil = 0;
     this.hallucinationRecoveryBlockedUntil = 0;
+    this.lastThermalRumbleAt = 0;
+    this.lastThermalWarningSoundAt = 0;
   }
 
   create() {
@@ -204,7 +209,7 @@ export class MainScene extends Phaser.Scene {
       },
       isOverheated: () => this.isOverheated,
       setIsOverheated: (value) => {
-        this.isOverheated = value;
+        this.setIsOverheated(value);
       },
       getCurrentEncounterIndex: () => this.currentEncounterIndex,
       setCurrentEncounterIndex: (value) => {
@@ -317,9 +322,7 @@ export class MainScene extends Phaser.Scene {
       isSearchModeSelected: () => this.selectedPromptToolIds.includes("search"),
       isSafetyModeSelected: () => this.selectedPromptToolIds.includes("safety"),
       canStartSafetyScan: () =>
-        this.selectedPromptToolIds.includes("safety") &&
-        !this.isCommitLocked &&
-        !this.isOverheated,
+        this.selectedPromptToolIds.includes("safety") && !this.isOverheated,
       isComputeReady: () => isComputeReady(this.computeCharge),
       isComputeLatched: () => this.isComputeLatched(),
       isComputeToolSelected: () =>
@@ -387,6 +390,7 @@ export class MainScene extends Phaser.Scene {
     this.applySafetyToolHeat(delta / 1000);
     this.applySafetyScanCharge(delta / 1000);
     this.applySafetyRevealDecay(delta / 1000);
+    this.applyThermalStressFeedback();
 
     if (this.computeCharge > 0) {
       if (this.isComputeLatched()) {
@@ -425,7 +429,7 @@ export class MainScene extends Phaser.Scene {
       this.isOverheated &&
       this.heat < recoveryProfile.overheatClearThreshold
     ) {
-      this.isOverheated = false;
+      this.setIsOverheated(false);
       this.sessionController.postSystemMessage(
         `UTILITY: ${definition.name} STABILIZED THERMALS.`,
       );
@@ -513,16 +517,55 @@ export class MainScene extends Phaser.Scene {
     this.events.emit("updateBars");
   }
 
+  private setIsOverheated(value: boolean) {
+    if (this.isOverheated === value) {
+      return;
+    }
+
+    this.isOverheated = value;
+
+    if (!value) {
+      return;
+    }
+
+    this.disengagePromptToolsForOverheat();
+  }
+
+  private disengagePromptToolsForOverheat() {
+    const hadSelectedTool = this.selectedPromptToolIds.length > 0;
+    const hadComputeReadyState =
+      this.computePrimed || this.computeDecayResumesAt > 0;
+
+    if (this.selectedPromptToolIds.includes("search")) {
+      this.clearSearchSelection();
+    }
+
+    if (this.selectedPromptToolIds.includes("safety")) {
+      this.resetSafetyInteractionState(false);
+    }
+
+    this.selectedPromptToolIds = [];
+    this.runState.loadout.selectedPromptToolIds = [];
+    this.computePrimed = false;
+    this.runState.toolRuntime.computePrimed = false;
+    this.computeDecayResumesAt = 0;
+
+    if (hadSelectedTool || hadComputeReadyState) {
+      this.sessionController.postSystemMessage(
+        "FAILSAFE: PROMPT TOOLS DISENGAGED.",
+      );
+    }
+
+    this.refreshProjectedHeat();
+    this.events.emit("updateBars");
+  }
+
   private startSafetyScan(
     pointerId: number,
     scanPointX: number,
     scanPointY: number,
   ) {
-    if (
-      !this.selectedPromptToolIds.includes("safety") ||
-      this.isCommitLocked ||
-      this.isOverheated
-    ) {
+    if (!this.selectedPromptToolIds.includes("safety") || this.isOverheated) {
       return;
     }
 
@@ -943,8 +986,7 @@ export class MainScene extends Phaser.Scene {
     this.setHeat(this.heat + heatRate * deltaSeconds);
 
     if (previousHeat < 100 && this.heat >= 100 && !this.isOverheated) {
-      this.endSafetyScan();
-      this.isOverheated = true;
+      this.setIsOverheated(true);
       this.isCommitLocked = false;
       synth.playError();
       this.cameras.main.shake(350, 0.012);
@@ -957,6 +999,55 @@ export class MainScene extends Phaser.Scene {
 
     if (this.heat !== previousHeat) {
       this.events.emit("updateBars");
+    }
+  }
+
+  private applyThermalStressFeedback() {
+    const thermalConfig = getThermalFeedbackConfig();
+    const thresholdRange = Math.max(
+      1,
+      thermalConfig.fullIntensityThreshold - thermalConfig.onsetThreshold,
+    );
+    const heatIntensity = Phaser.Math.Clamp(
+      (this.heat - thermalConfig.onsetThreshold) / thresholdRange,
+      0,
+      1,
+    );
+
+    if (!this.isOverheated && heatIntensity <= 0) {
+      return;
+    }
+
+    const now = this.time.now;
+    const thermalIntensity = this.isOverheated
+      ? Math.max(heatIntensity, thermalConfig.overheatMinimumIntensity)
+      : heatIntensity;
+    const rumbleInterval = this.isOverheated
+      ? thermalConfig.overheatRumbleIntervalMs
+      : Phaser.Math.Linear(
+          thermalConfig.warningSoundIntervalMs,
+          thermalConfig.rumbleIntervalMs,
+          thermalIntensity,
+        );
+    const warningSoundInterval = this.isOverheated
+      ? thermalConfig.overheatSoundIntervalMs
+      : Phaser.Math.Linear(
+          thermalConfig.warningSoundIntervalMs,
+          thermalConfig.rumbleIntervalMs,
+          thermalIntensity,
+        );
+
+    if (now - this.lastThermalRumbleAt >= rumbleInterval) {
+      const shakeIntensity = this.isOverheated
+        ? thermalConfig.overheatRumbleIntensity
+        : thermalConfig.rumbleIntensity * (0.65 + thermalIntensity * 0.95);
+      this.cameras.main.shake(thermalConfig.rumbleDurationMs, shakeIntensity);
+      this.lastThermalRumbleAt = now;
+    }
+
+    if (now - this.lastThermalWarningSoundAt >= warningSoundInterval) {
+      synth.playThermalStress(thermalIntensity, this.isOverheated);
+      this.lastThermalWarningSoundAt = now;
     }
   }
 

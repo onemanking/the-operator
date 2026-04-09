@@ -49,6 +49,26 @@ export interface SafetyToolRuntimeConfig {
   geigerClickIntervalMs: number;
 }
 
+export interface ThermalFeedbackConfig {
+  onsetThreshold: number;
+  fullIntensityThreshold: number;
+  overheatMinimumIntensity: number;
+  staticBandSpeed: number;
+  staticBandThickness: number;
+  flickerRate: number;
+  fallbackOverlayAlpha: number;
+  lampPulseMinAlpha: number;
+  lampPulseRate: number;
+  overheatLampPulseRate: number;
+  rumbleIntervalMs: number;
+  overheatRumbleIntervalMs: number;
+  rumbleDurationMs: number;
+  rumbleIntensity: number;
+  overheatRumbleIntensity: number;
+  warningSoundIntervalMs: number;
+  overheatSoundIntervalMs: number;
+}
+
 export interface PromptToolRuntimeConfig {
   search: SearchToolRuntimeConfig;
   compute: ComputeToolRuntimeConfig;
@@ -95,10 +115,34 @@ const PROMPT_TOOL_RUNTIME_CONFIG: PromptToolRuntimeConfig = {
   },
 };
 
+const THERMAL_FEEDBACK_CONFIG: ThermalFeedbackConfig = {
+  onsetThreshold: 45,
+  fullIntensityThreshold: 100,
+  overheatMinimumIntensity: 0.8,
+  staticBandSpeed: 0.21,
+  staticBandThickness: 0.16,
+  flickerRate: 6.4,
+  fallbackOverlayAlpha: 0.34,
+  lampPulseMinAlpha: 0.24,
+  lampPulseRate: 5.2,
+  overheatLampPulseRate: 9.5,
+  rumbleIntervalMs: 520,
+  overheatRumbleIntervalMs: 220,
+  rumbleDurationMs: 120,
+  rumbleIntensity: 0.0015,
+  overheatRumbleIntensity: 0.0032,
+  warningSoundIntervalMs: 760,
+  overheatSoundIntervalMs: 320,
+};
+
 export function getRunRecoveryProfile(): RunRecoveryProfile {
   return RUN_RECOVERY_PROFILE;
 }
 
 export function getPromptToolRuntimeConfig(): PromptToolRuntimeConfig {
   return PROMPT_TOOL_RUNTIME_CONFIG;
+}
+
+export function getThermalFeedbackConfig(): ThermalFeedbackConfig {
+  return THERMAL_FEEDBACK_CONFIG;
 }

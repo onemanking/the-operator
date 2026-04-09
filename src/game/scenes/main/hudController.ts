@@ -1,7 +1,9 @@
 import Phaser from "phaser";
+import { getThermalFeedbackConfig } from "../../data/RunData";
 import { synth } from "../../utils/SoundSynth";
 import { PROMPT_TOOLS } from "./config";
 import { createSafetyFilterShader } from "./safetyFilterShader";
+import { createThermalFeedbackShader } from "./thermalFeedbackShader";
 import {
   TERMINAL_PROMPT_LINE_HEIGHT,
   TerminalPromptController,
@@ -82,9 +84,12 @@ export class MainSceneHudController {
   private taskTextObj!: Phaser.GameObjects.Text;
   private chatTextObj!: Phaser.GameObjects.Text;
   private terminalBg!: Phaser.GameObjects.Rectangle;
+  private terminalThermalOverlay!: Phaser.GameObjects.Rectangle;
+  private terminalThermalShader?: Phaser.GameObjects.Shader;
   private terminalSafetyOverlay!: Phaser.GameObjects.Rectangle;
   private terminalSafetyShader?: Phaser.GameObjects.Shader;
-  private terminalSafetyStatusText!: Phaser.GameObjects.Text;
+  private thermalWarningLamp!: Phaser.GameObjects.Arc;
+  private thermalWarningLampHalo!: Phaser.GameObjects.Arc;
   private heatPreviewFill!: Phaser.GameObjects.Rectangle;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
@@ -98,6 +103,7 @@ export class MainSceneHudController {
   private cleanupHandler?: () => void;
   private renderPromptHandler?: (payload: { prompt: string }) => void;
   private clearPromptHandler?: () => void;
+  private thermalPulseTimer?: Phaser.Time.TimerEvent;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -115,6 +121,19 @@ export class MainSceneHudController {
       .setOrigin(0);
     this.terminalBg.setStrokeStyle(2, 0x33ff33);
     if (this.scene.game.renderer.type === Phaser.WEBGL) {
+      this.terminalThermalShader = this.scene.add
+        .shader(createThermalFeedbackShader(), 250, 50, 524, 340)
+        .setOrigin(0)
+        .setVisible(false)
+        .setDepth(0.4);
+    }
+
+    this.terminalThermalOverlay = this.scene.add
+      .rectangle(250, 50, 524, 340, 0x6a1808, 0)
+      .setOrigin(0)
+      .setVisible(!this.terminalThermalShader)
+      .setDepth(0.4);
+    if (this.scene.game.renderer.type === Phaser.WEBGL) {
       this.terminalSafetyShader = this.scene.add
         .shader(createSafetyFilterShader(), 250, 50, 524, 340)
         .setOrigin(0)
@@ -126,11 +145,6 @@ export class MainSceneHudController {
       .rectangle(250, 50, 524, 340, 0x47120d, 0)
       .setOrigin(0)
       .setVisible(!this.terminalSafetyShader);
-    this.terminalSafetyStatusText = this.scene.add.text(262, 362, "", {
-      fontFamily: "monospace",
-      fontSize: "11px",
-      color: "#f0d4aa",
-    });
 
     this.scene.add.text(250, 20, "USER CONNECTION:", {
       fontFamily: "monospace",
@@ -536,6 +550,12 @@ export class MainSceneHudController {
       fontSize: "16px",
       color: "#d4c5b0",
     });
+    this.thermalWarningLampHalo = this.scene.add
+      .circle(610, 690, 11, 0xff8a2b, 0)
+      .setStrokeStyle(1, 0x4e1b08, 0.45);
+    this.thermalWarningLamp = this.scene.add
+      .circle(610, 690, 6, 0x3d1206)
+      .setStrokeStyle(2, 0x111111);
     this.scene.add.rectangle(380, 680, 200, 20, 0x111111).setOrigin(0);
     const heatBarFill = this.scene.add
       .rectangle(382, 682, 0, 16, 0xff5500)
@@ -561,6 +581,7 @@ export class MainSceneHudController {
 
     this.updateBarsHandler = () => {
       this.syncPromptToolButtons();
+      this.syncTerminalEffects();
       this.terminalPromptController.syncSelectionStates();
       this.syncComputeSection();
       this.syncUtilitySection();
@@ -572,12 +593,29 @@ export class MainSceneHudController {
       hallucinationBarFill.width =
         146 * Math.min(1, this.bindings.getHallucination() / 100);
 
+      const thermalConfig = getThermalFeedbackConfig();
+      const thermalIntensity = this.getThermalIntensity();
+      const pulseRate = this.bindings.isOverheated()
+        ? thermalConfig.overheatLampPulseRate
+        : thermalConfig.lampPulseRate;
+      const pulseWave =
+        thermalIntensity > 0
+          ? (Math.sin(this.scene.time.now * 0.001 * pulseRate * Math.PI * 2) +
+              1) /
+            2
+          : 0;
+      const lampAlpha = Phaser.Math.Linear(
+        thermalConfig.lampPulseMinAlpha,
+        1,
+        pulseWave,
+      );
+
       if (this.bindings.isOverheated()) {
         heatBarFill.setFillStyle(0xff0000);
       } else if (this.bindings.getHeat() > 80) {
-        heatBarFill.setFillStyle(0xffaa00);
-      } else {
         heatBarFill.setFillStyle(0xff5500);
+      } else {
+        heatBarFill.setFillStyle(0xffaa00);
       }
 
       const projectedToolHeat = Math.max(
@@ -606,6 +644,26 @@ export class MainSceneHudController {
       this.heatPreviewFill.width = previewWidth;
       this.heatPreviewFill.setFillStyle(0xc9c9c9);
       this.heatPreviewFill.setAlpha(previewWidth > 0 ? 0.42 : 0);
+
+      if (thermalIntensity > 0) {
+        const lampColor = this.mixColor(
+          0xff9c3a,
+          0xff2a1a,
+          this.bindings.isOverheated() ? 1 : thermalIntensity,
+        );
+        this.thermalWarningLamp.setFillStyle(lampColor, lampAlpha);
+        this.thermalWarningLampHalo.setFillStyle(
+          lampColor,
+          (0.12 + thermalIntensity * 0.28) * lampAlpha,
+        );
+        this.thermalWarningLampHalo.setScale(
+          1 + pulseWave * (this.bindings.isOverheated() ? 0.18 : 0.08),
+        );
+      } else {
+        this.thermalWarningLamp.setFillStyle(0x3d1206, 1);
+        this.thermalWarningLampHalo.setFillStyle(0xff8a2b, 0);
+        this.thermalWarningLampHalo.setScale(1);
+      }
     };
 
     this.cleanupHandler = () => {
@@ -624,6 +682,20 @@ export class MainSceneHudController {
     this.scene.events.on("clearPrompt", this.clearPromptHandler);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupHandler);
     this.scene.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupHandler);
+
+    this.thermalPulseTimer?.destroy();
+    this.thermalPulseTimer = this.scene.time.addEvent({
+      delay: 90,
+      loop: true,
+      callback: () => {
+        if (
+          this.bindings.getHeat() >= getThermalFeedbackConfig().onsetThreshold
+        ) {
+          this.scene.events.emit("updateBars");
+        }
+      },
+    });
+
     this.scene.events.emit("updateBars");
   }
 
@@ -702,64 +774,6 @@ export class MainSceneHudController {
     const selectedPromptToolIds = new Set(
       this.bindings.getSelectedPromptToolIds(),
     );
-    const searchModeSelected = this.bindings.isSearchModeSelected();
-    const safetyModeSelected = this.bindings.isSafetyModeSelected();
-    this.scene.input.setDefaultCursor(
-      searchModeSelected ? "zoom-in" : "default",
-    );
-    this.terminalBg.setFillStyle(0x051505);
-    this.terminalBg.setStrokeStyle(2, safetyModeSelected ? 0x8c3429 : 0x33ff33);
-    if (this.terminalSafetyShader) {
-      const scanPointX = Phaser.Math.Clamp(
-        (this.bindings.getSafetyScanPointX() - 250) / 524,
-        0,
-        1,
-      );
-      const scanPointY = Phaser.Math.Clamp(
-        (this.bindings.getSafetyScanPointY() - 50) / 340,
-        0,
-        1,
-      );
-      const scanRadius = Phaser.Math.Clamp(
-        this.bindings.getSafetyScanBandWidth() / 2800,
-        0.02,
-        0.06,
-      );
-
-      this.terminalSafetyShader.setVisible(safetyModeSelected);
-      this.terminalSafetyShader.setUniform(
-        "active.value",
-        safetyModeSelected ? 1 : 0,
-      );
-      this.terminalSafetyShader.setUniform(
-        "scanning.value",
-        this.bindings.isSafetyScanning() ? 1 : 0,
-      );
-      this.terminalSafetyShader.setUniform("scanPoint.value.x", scanPointX);
-      this.terminalSafetyShader.setUniform("scanPoint.value.y", scanPointY);
-      this.terminalSafetyShader.setUniform("scanRadius.value", scanRadius);
-      this.terminalSafetyShader.setUniform(
-        "scanDirection.value",
-        this.bindings.getSafetyScanDirectionX(),
-      );
-      this.terminalSafetyShader.setUniform(
-        "noiseIntensity.value",
-        this.bindings.getSafetyScanNoiseIntensity(),
-      );
-    }
-    this.terminalSafetyOverlay.setFillStyle(
-      this.bindings.isSafetyScanning() ? 0x5a170f : 0x47120d,
-      this.bindings.isSafetyScanning() ? 0.42 : 0.34,
-    );
-    this.terminalSafetyOverlay.setAlpha(
-      this.terminalSafetyShader ? 0 : safetyModeSelected ? 1 : 0,
-    );
-    this.terminalSafetyStatusText.setText("");
-    this.terminalSafetyStatusText.setAlpha(0);
-    this.taskTextObj.setColor(safetyModeSelected ? "#8f4232" : "#33ff33");
-    this.taskTextObj.setAlpha(safetyModeSelected ? 0.78 : 1);
-    this.chatTextObj.setColor(safetyModeSelected ? "#874032" : "#33ff33");
-    this.chatTextObj.setAlpha(safetyModeSelected ? 0.72 : 1);
 
     this.promptToolButtons.forEach((button, toolId) => {
       const isSelected = selectedPromptToolIds.has(toolId);
@@ -791,6 +805,171 @@ export class MainSceneHudController {
         );
       });
     });
+  }
+
+  private syncTerminalEffects() {
+    const thermalConfig = getThermalFeedbackConfig();
+    const searchModeSelected = this.bindings.isSearchModeSelected();
+    const safetyModeSelected = this.bindings.isSafetyModeSelected();
+    const safetyScanning = this.bindings.isSafetyScanning();
+    const heat = this.bindings.getHeat();
+    const thermalIntensity = this.getThermalIntensity();
+    const overheatStrength = this.bindings.isOverheated() ? 1 : 0;
+    const baseStrokeColor = safetyModeSelected ? 0x8c3429 : 0x33ff33;
+    const thermalStrokeColor = this.mixColor(
+      baseStrokeColor,
+      0xff7c36,
+      thermalIntensity * 0.72 + overheatStrength * 0.18,
+    );
+    const taskColor = this.toHexColor(
+      this.mixColor(
+        safetyModeSelected ? 0x8f4232 : 0x33ff33,
+        0xffb36b,
+        thermalIntensity * 0.42 + overheatStrength * 0.18,
+      ),
+    );
+    const chatColor = this.toHexColor(
+      this.mixColor(
+        safetyModeSelected ? 0x874032 : 0x33ff33,
+        0xff9b5c,
+        thermalIntensity * 0.48 + overheatStrength * 0.2,
+      ),
+    );
+    const taskAlpha = Phaser.Math.Clamp(
+      (safetyModeSelected ? 0.78 : 1) - thermalIntensity * 0.08,
+      0.7,
+      1,
+    );
+    const chatAlpha = Phaser.Math.Clamp(
+      (safetyModeSelected ? 0.72 : 1) - thermalIntensity * 0.12,
+      0.62,
+      1,
+    );
+
+    this.scene.input.setDefaultCursor(
+      searchModeSelected ? "zoom-in" : "default",
+    );
+    this.terminalBg.setFillStyle(0x051505);
+    this.terminalBg.setStrokeStyle(2, thermalStrokeColor);
+
+    if (this.terminalThermalShader) {
+      this.terminalThermalShader.setVisible(thermalIntensity > 0.01);
+      this.terminalThermalShader.setUniform(
+        "active.value",
+        thermalIntensity > 0.01 ? 1 : 0,
+      );
+      this.terminalThermalShader.setUniform(
+        "intensity.value",
+        thermalIntensity,
+      );
+      this.terminalThermalShader.setUniform("overheat.value", overheatStrength);
+      this.terminalThermalShader.setUniform(
+        "bandSpeed.value",
+        thermalConfig.staticBandSpeed,
+      );
+      this.terminalThermalShader.setUniform(
+        "bandThickness.value",
+        thermalConfig.staticBandThickness,
+      );
+      this.terminalThermalShader.setUniform(
+        "flickerRate.value",
+        thermalConfig.flickerRate,
+      );
+    }
+
+    this.terminalThermalOverlay.setFillStyle(0x6a1808);
+    this.terminalThermalOverlay.setAlpha(
+      this.terminalThermalShader
+        ? 0
+        : thermalIntensity * thermalConfig.fallbackOverlayAlpha,
+    );
+
+    if (this.terminalSafetyShader) {
+      const scanPointX = Phaser.Math.Clamp(
+        (this.bindings.getSafetyScanPointX() - 250) / 524,
+        0,
+        1,
+      );
+      const scanPointY = Phaser.Math.Clamp(
+        (this.bindings.getSafetyScanPointY() - 50) / 340,
+        0,
+        1,
+      );
+      const scanRadius = Phaser.Math.Clamp(
+        this.bindings.getSafetyScanBandWidth() / 2800,
+        0.02,
+        0.06,
+      );
+
+      this.terminalSafetyShader.setVisible(safetyModeSelected);
+      this.terminalSafetyShader.setUniform(
+        "active.value",
+        safetyModeSelected ? 1 : 0,
+      );
+      this.terminalSafetyShader.setUniform(
+        "scanning.value",
+        safetyScanning ? 1 : 0,
+      );
+      this.terminalSafetyShader.setUniform("scanPoint.value.x", scanPointX);
+      this.terminalSafetyShader.setUniform("scanPoint.value.y", scanPointY);
+      this.terminalSafetyShader.setUniform("scanRadius.value", scanRadius);
+      this.terminalSafetyShader.setUniform(
+        "scanDirection.value",
+        this.bindings.getSafetyScanDirectionX(),
+      );
+      this.terminalSafetyShader.setUniform(
+        "noiseIntensity.value",
+        this.bindings.getSafetyScanNoiseIntensity(),
+      );
+    }
+
+    this.terminalSafetyOverlay.setFillStyle(
+      safetyScanning ? 0x5a170f : 0x47120d,
+      safetyScanning ? 0.42 : 0.34,
+    );
+    this.terminalSafetyOverlay.setAlpha(
+      this.terminalSafetyShader ? 0 : safetyModeSelected ? 1 : 0,
+    );
+
+    this.taskTextObj.setColor(taskColor);
+    this.taskTextObj.setAlpha(taskAlpha);
+    this.chatTextObj.setColor(chatColor);
+    this.chatTextObj.setAlpha(chatAlpha);
+  }
+
+  private getThermalIntensity() {
+    const thermalConfig = getThermalFeedbackConfig();
+    const thresholdRange = Math.max(
+      1,
+      thermalConfig.fullIntensityThreshold - thermalConfig.onsetThreshold,
+    );
+    const baseIntensity = Phaser.Math.Clamp(
+      (this.bindings.getHeat() - thermalConfig.onsetThreshold) / thresholdRange,
+      0,
+      1,
+    );
+
+    if (!this.bindings.isOverheated()) {
+      return baseIntensity;
+    }
+
+    return Math.max(baseIntensity, thermalConfig.overheatMinimumIntensity);
+  }
+
+  private mixColor(leftColor: number, rightColor: number, amount: number) {
+    const clampedAmount = Phaser.Math.Clamp(amount, 0, 1);
+    const left = Phaser.Display.Color.IntegerToColor(leftColor);
+    const right = Phaser.Display.Color.IntegerToColor(rightColor);
+
+    return Phaser.Display.Color.GetColor(
+      Math.round(Phaser.Math.Linear(left.red, right.red, clampedAmount)),
+      Math.round(Phaser.Math.Linear(left.green, right.green, clampedAmount)),
+      Math.round(Phaser.Math.Linear(left.blue, right.blue, clampedAmount)),
+    );
+  }
+
+  private toHexColor(color: number) {
+    return `#${color.toString(16).padStart(6, "0")}`;
   }
 
   private syncComputeSection() {
@@ -891,6 +1070,11 @@ export class MainSceneHudController {
       this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.cleanupHandler);
       this.scene.events.off(Phaser.Scenes.Events.DESTROY, this.cleanupHandler);
       this.cleanupHandler = undefined;
+    }
+
+    if (this.thermalPulseTimer) {
+      this.thermalPulseTimer.destroy();
+      this.thermalPulseTimer = undefined;
     }
   }
 }

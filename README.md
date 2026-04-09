@@ -55,6 +55,13 @@ Review your performance. You earn credits for successful inferences and catching
 - Browser UI smoke check should confirm the updated HUD/UI is visible, aligned, not clipped or overlapping unexpectedly, and that the main related interaction still works.
 - For scene-specific UI, verify the scene state that exposes the changed HUD before considering the work complete.
 
+## Tool Test Scripts
+- Run `npm run dev:test:guard` to boot directly into a guard-word policy scenario on port 3001.
+- Run `npm run dev:test:compute` to boot directly into a compute-focused scenario on port 3002.
+- Run `npm run dev:test:search` to boot directly into a search-focused scenario on port 3003.
+- Each script skips the briefing scene and opens straight into `MainScene` with the correct encounter queued, `General_Agent.md` already mounted, and the matching prompt tool pre-selected.
+- Test scenarios are only available through these scripts and their Vite mode environment variables; opening the game with a URL query no longer changes the scenario.
+
 ## How to Play
 1. Read the daily briefing.
 2. When a prompt appears, read it carefully.

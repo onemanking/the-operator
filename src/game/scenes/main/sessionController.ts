@@ -394,10 +394,7 @@ export class MainSceneSessionController {
     this.bindings.setIsCommitLocked(false);
     synth.playError();
     this.scene.cameras.main.shake(500, 0.02);
-    this.addChatMessage(
-      "SYSTEM",
-      "CRITICAL: THERMAL MELTDOWN. COOLING DOWN...",
-    );
+    this.postSystemMessage("CRITICAL: THERMAL MELTDOWN. COOLING DOWN...");
     this.scene.events.emit("updateBars");
   }
 

@@ -1,3 +1,4 @@
+import { ContentCategoryId } from "../data/ContentPolicyData";
 import { RUN_CONFIG } from "../data/RunData";
 
 export interface RunLoadoutState {
@@ -43,6 +44,7 @@ export interface RunState {
   maintenancePurchasedItemType: "passive" | "utility" | null;
   shiftEncounterIds: string[];
   shiftModifierIds: string[];
+  forbiddenCategoryIds: ContentCategoryId[];
 }
 
 export type ShiftSceneData = Partial<RunState>;
@@ -62,7 +64,7 @@ export function createInitialRunState(): RunState {
       selectedPromptToolIds: [],
       agentCapacity: RUN_CONFIG.defaultAgentCapacity,
       skillCapacity: RUN_CONFIG.defaultSkillCapacity,
-      unlockedPromptToolIds: ["search", "compute"],
+      unlockedPromptToolIds: ["search", "compute", "safety"],
       passiveUpgradeIds: [],
     },
     utilityInventory: {
@@ -83,6 +85,7 @@ export function createInitialRunState(): RunState {
     maintenancePurchasedItemType: null,
     shiftEncounterIds: [],
     shiftModifierIds: [],
+    forbiddenCategoryIds: [],
   };
 }
 
@@ -111,6 +114,7 @@ export function cloneRunState(runState: RunState): RunState {
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
     shiftEncounterIds: [...runState.shiftEncounterIds],
     shiftModifierIds: [...runState.shiftModifierIds],
+    forbiddenCategoryIds: [...runState.forbiddenCategoryIds],
   };
 }
 
@@ -207,5 +211,8 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
       ...(data.shiftEncounterIds ?? initial.shiftEncounterIds),
     ],
     shiftModifierIds: [...(data.shiftModifierIds ?? initial.shiftModifierIds)],
+    forbiddenCategoryIds: [
+      ...(data.forbiddenCategoryIds ?? initial.forbiddenCategoryIds),
+    ],
   };
 }

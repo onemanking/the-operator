@@ -35,9 +35,24 @@ export interface ComputeToolRuntimeConfig {
   readyHoldMs: number;
 }
 
+export interface SafetyToolRuntimeConfig {
+  passiveHeatPerSecond: number;
+  scanningHeatPerSecond: number;
+  scanBandWidth: number;
+  scanRevealSeconds: number;
+  dragFriction: number;
+  maxStableScanSpeed: number;
+  phosphorDecaySeconds: number;
+  returnDurationMs: number;
+  returnShakeDurationMs: number;
+  returnShakeIntensity: number;
+  geigerClickIntervalMs: number;
+}
+
 export interface PromptToolRuntimeConfig {
   search: SearchToolRuntimeConfig;
   compute: ComputeToolRuntimeConfig;
+  safety: SafetyToolRuntimeConfig;
 }
 
 const RUN_RECOVERY_PROFILE: RunRecoveryProfile = {
@@ -64,6 +79,19 @@ const PROMPT_TOOL_RUNTIME_CONFIG: PromptToolRuntimeConfig = {
     decayExponent: 1.85,
     tapHeat: 0.8,
     readyHoldMs: 1400,
+  },
+  safety: {
+    passiveHeatPerSecond: 1.5,
+    scanningHeatPerSecond: 4.5,
+    scanBandWidth: 104,
+    scanRevealSeconds: 0.72,
+    dragFriction: 0.34,
+    maxStableScanSpeed: 520,
+    phosphorDecaySeconds: 1.1,
+    returnDurationMs: 190,
+    returnShakeDurationMs: 110,
+    returnShakeIntensity: 0.0016,
+    geigerClickIntervalMs: 70,
   },
 };
 

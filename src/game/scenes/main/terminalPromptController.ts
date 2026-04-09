@@ -1,10 +1,50 @@
 import Phaser from "phaser";
+import {
+  PromptTokenBounds,
+  SAFETY_FILM_MASK_ALPHA,
+  SAFETY_FILM_MASK_COLOR,
+  SAFETY_FILM_TEXT_ALPHA,
+  SAFETY_FILM_TEXT_COLOR,
+  SAFETY_REVEALED_GLOW_ALPHA,
+  SAFETY_REVEALED_GLOW_COLOR,
+  SAFETY_REVEALED_TEXT_ALPHA,
+  SAFETY_REVEALED_TEXT_COLOR,
+  SAFETY_SCANNER_LANE_HEIGHT,
+  SAFETY_SCANNER_LANE_WIDTH,
+  SAFETY_SCANNER_LANE_X,
+  SAFETY_SCANNER_LANE_Y,
+  SafetyScannerController,
+} from "./safetyScannerController";
 
 interface TerminalPromptControllerBindings {
   isSearchModeSelected: () => boolean;
+  isSafetyModeSelected: () => boolean;
+  canStartSafetyScan: () => boolean;
+  isSafetyScanning: () => boolean;
+  getSafetyScanPointX: () => number;
+  getSafetyScanPointY: () => number;
+  getSafetyScanDirectionX: () => number;
+  getSafetyScanNoiseIntensity: () => number;
+  getSafetyScanBandWidth: () => number;
   getSelectedWordIndexes: () => number[];
+  getSafetyMatchedWordIndexes: () => number[];
+  getSafetyRevealedWordIndexes: () => number[];
+  getSafetyRevealProgress: (wordIndex: number) => number;
+  getSafetyRevealFlash: (wordIndex: number) => number;
   getPromptStartY: () => number;
   onToggleWord: (wordIndex: number, rawWord: string) => void;
+  onSafetyScanStart: (
+    pointerId: number,
+    scanPointX: number,
+    scanPointY: number,
+  ) => void;
+  onSafetyScanMove: (
+    pointerId: number,
+    scanPointX: number,
+    scanPointY: number,
+    intersectedWordIndexes: number[],
+  ) => void;
+  onSafetyScanEnd: (pointerId: number) => void;
   onPromptLayoutChanged: (bottomY: number) => void;
 }
 
@@ -12,6 +52,7 @@ interface PromptTokenUi {
   index: number;
   rawWord: string;
   background: Phaser.GameObjects.Rectangle;
+  safetyMask: Phaser.GameObjects.Rectangle;
   selectionFrame: Phaser.GameObjects.Graphics;
   text: Phaser.GameObjects.Text;
   hitArea: Phaser.GameObjects.Rectangle;
@@ -29,6 +70,21 @@ export const TERMINAL_PROMPT_LINE_HEIGHT = 33;
 export const TERMINAL_PROMPT_WORD_SPACING = 7.85;
 export const TERMINAL_PROMPT_DIVIDER =
   "-------------------------------------------------------------";
+
+function clamp01(value: number) {
+  return Phaser.Math.Clamp(value, 0, 1);
+}
+
+function mixHexColor(fromHex: string, toHex: string, amount: number) {
+  const t = clamp01(amount);
+  const from = Phaser.Display.Color.HexStringToColor(fromHex);
+  const to = Phaser.Display.Color.HexStringToColor(toHex);
+  const red = Math.round(Phaser.Math.Linear(from.red, to.red, t));
+  const green = Math.round(Phaser.Math.Linear(from.green, to.green, t));
+  const blue = Math.round(Phaser.Math.Linear(from.blue, to.blue, t));
+
+  return Phaser.Display.Color.RGBToString(red, green, blue, 0, "#");
+}
 
 function drawDashedFrame(
   graphics: Phaser.GameObjects.Graphics,
@@ -124,11 +180,40 @@ export class TerminalPromptController {
   private divider?: Phaser.GameObjects.Text;
   private tokens: PromptTokenUi[] = [];
   private hoverIndex: number | null = null;
+  private scannerLayoutKey: string = "";
+  private readonly safetyScannerController: SafetyScannerController;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly bindings: TerminalPromptControllerBindings,
-  ) {}
+  ) {
+    this.safetyScannerController = new SafetyScannerController(this.scene, {
+      isSafetyModeSelected: () => this.bindings.isSafetyModeSelected(),
+      canStartSafetyScan: () => this.bindings.canStartSafetyScan(),
+      isSafetyScanning: () => this.bindings.isSafetyScanning(),
+      getSafetyScanDirectionX: () => this.bindings.getSafetyScanDirectionX(),
+      getSafetyScanBandWidth: () => this.bindings.getSafetyScanBandWidth(),
+      getSafetyMatchedWordIndexes: () =>
+        this.bindings.getSafetyMatchedWordIndexes(),
+      getPromptStartY: () => this.bindings.getPromptStartY(),
+      onSafetyScanStart: (pointerId, scanPointX, scanPointY) =>
+        this.bindings.onSafetyScanStart(pointerId, scanPointX, scanPointY),
+      onSafetyScanMove: (
+        pointerId,
+        scanPointX,
+        scanPointY,
+        intersectedWordIndexes,
+      ) =>
+        this.bindings.onSafetyScanMove(
+          pointerId,
+          scanPointX,
+          scanPointY,
+          intersectedWordIndexes,
+        ),
+      onSafetyScanEnd: (pointerId) => this.bindings.onSafetyScanEnd(pointerId),
+      onVisualChanged: () => this.scene.events.emit("updateBars"),
+    });
+  }
 
   renderPrompt(prompt: string) {
     this.clear();
@@ -176,6 +261,16 @@ export class TerminalPromptController {
           0,
         )
         .setOrigin(0);
+      const safetyMask = this.scene.add
+        .rectangle(
+          cursorX - 3,
+          cursorY - 2,
+          wordWidth + 8,
+          wordHeight + 6,
+          SAFETY_FILM_MASK_COLOR,
+          0,
+        )
+        .setOrigin(0);
       const selectionFrame = this.scene.add.graphics();
       const text = this.scene.add.text(
         cursorX,
@@ -208,17 +303,16 @@ export class TerminalPromptController {
       });
 
       hitArea.on("pointerdown", () => {
-        if (!this.bindings.isSearchModeSelected()) {
-          return;
+        if (this.bindings.isSearchModeSelected()) {
+          this.bindings.onToggleWord(index, rawWord);
         }
-
-        this.bindings.onToggleWord(index, rawWord);
       });
 
       this.tokens.push({
         index,
         rawWord,
         background,
+        safetyMask,
         selectionFrame,
         text,
         hitArea,
@@ -237,26 +331,112 @@ export class TerminalPromptController {
       this.divider.y + this.divider.height + 20,
     );
 
+    this.syncScannerLayout(true);
+
     this.syncSelectionStates();
+  }
+
+  private syncScannerLayout(force: boolean = false) {
+    if (!this.userLabel || !this.divider || this.tokens.length === 0) {
+      return;
+    }
+
+    const promptBounds = new Phaser.Geom.Rectangle(
+      SAFETY_SCANNER_LANE_X,
+      SAFETY_SCANNER_LANE_Y,
+      SAFETY_SCANNER_LANE_WIDTH,
+      SAFETY_SCANNER_LANE_HEIGHT,
+    );
+    const layoutKey = [
+      promptBounds.x,
+      promptBounds.y,
+      promptBounds.width,
+      promptBounds.height,
+      this.tokens.length,
+      this.tokens[0]?.hitArea.x ?? 0,
+      this.tokens[this.tokens.length - 1]?.hitArea.x ?? 0,
+    ].join(":");
+    if (!force && layoutKey === this.scannerLayoutKey) {
+      return;
+    }
+
+    this.scannerLayoutKey = layoutKey;
+    const tokenBounds: PromptTokenBounds[] = this.tokens.map((token) => ({
+      index: token.index,
+      left: token.hitArea.x,
+      right: token.hitArea.x + token.hitArea.width,
+    }));
+
+    this.safetyScannerController.setLayout(promptBounds, tokenBounds);
   }
 
   syncSelectionStates() {
     const selectedWordIndexes = new Set(this.bindings.getSelectedWordIndexes());
+    const safetyMatchedWordIndexes = new Set(
+      this.bindings.getSafetyMatchedWordIndexes(),
+    );
+    const safetyRevealedWordIndexes = new Set(
+      this.bindings.getSafetyRevealedWordIndexes(),
+    );
     const isSearchModeSelected = this.bindings.isSearchModeSelected();
+    const isSafetyModeSelected = this.bindings.isSafetyModeSelected();
+    const isSafetyScanning = this.bindings.isSafetyScanning();
+
+    this.syncScannerLayout();
+    this.safetyScannerController.syncVisualState();
+
+    this.userLabel?.setColor(isSafetyModeSelected ? "#995042" : "#33ff33");
+    this.userLabel?.setAlpha(isSafetyModeSelected ? 0.72 : 1);
+    this.divider?.setColor(isSafetyModeSelected ? "#884235" : "#33ff33");
+    this.divider?.setAlpha(isSafetyModeSelected ? 0.66 : 1);
 
     this.tokens.forEach((token) => {
       const isSelected = selectedWordIndexes.has(token.index);
       const isHovered = isSearchModeSelected && this.hoverIndex === token.index;
+      const isSafetyMatched = safetyMatchedWordIndexes.has(token.index);
+      const isSafetyRevealed = safetyRevealedWordIndexes.has(token.index);
+      const safetyRevealProgress = this.bindings.getSafetyRevealProgress(
+        token.index,
+      );
+      const safetyRevealFlash = this.bindings.getSafetyRevealFlash(token.index);
+      const safetyChargeGlow = clamp01(
+        isSafetyRevealed ? 1 : safetyRevealProgress,
+      );
+      const displayGlow = clamp01(safetyChargeGlow + safetyRevealFlash * 0.85);
       const frameX = token.hitArea.x + 1;
       const frameY = token.hitArea.y + 1;
       const frameWidth = token.hitArea.width - 2;
       const frameHeight = token.hitArea.height - 2;
 
       token.background.setVisible(
-        isSearchModeSelected && (isSelected || isHovered),
+        (isSearchModeSelected && (isSelected || isHovered)) ||
+          (isSafetyModeSelected && isSafetyMatched && safetyChargeGlow > 0.03),
       );
-      token.background.setFillStyle(isSelected ? 0x33ff33 : 0x1f5a1f);
-      token.background.setAlpha(isSelected ? 0.32 : 0.18);
+      token.background.setFillStyle(
+        isSafetyModeSelected
+          ? SAFETY_REVEALED_GLOW_COLOR
+          : isSelected
+            ? 0x33ff33
+            : 0x1f5a1f,
+      );
+      token.background.setAlpha(
+        isSafetyModeSelected
+          ? Phaser.Math.Linear(
+              0.04,
+              SAFETY_REVEALED_GLOW_ALPHA + 0.14,
+              displayGlow,
+            )
+          : isSelected
+            ? 0.32
+            : 0.18,
+      );
+      token.safetyMask.setVisible(isSafetyModeSelected && isSafetyMatched);
+      token.safetyMask.setFillStyle(
+        isSafetyRevealed ? SAFETY_REVEALED_GLOW_COLOR : SAFETY_FILM_MASK_COLOR,
+        isSafetyRevealed
+          ? 0.1
+          : Phaser.Math.Linear(SAFETY_FILM_MASK_ALPHA, 0.08, displayGlow),
+      );
       token.selectionFrame.setVisible(isSearchModeSelected);
       if (isSearchModeSelected) {
         drawDashedFrame(
@@ -271,8 +451,51 @@ export class TerminalPromptController {
       } else {
         token.selectionFrame.clear();
       }
-      token.text.setColor(isSelected ? "#081208" : "#33ff33");
-      token.hitArea.setAlpha(isSearchModeSelected ? 0.001 : 0);
+
+      if (isSearchModeSelected) {
+        token.text.setColor(isSelected ? "#081208" : "#33ff33");
+        token.text.setAlpha(1);
+        token.text.setShadow(0, 0, "#000000", 0, false, false);
+      } else if (isSafetyModeSelected) {
+        token.text.setColor(
+          isSafetyMatched
+            ? mixHexColor(
+                SAFETY_FILM_TEXT_COLOR,
+                SAFETY_REVEALED_TEXT_COLOR,
+                Math.pow(displayGlow, isSafetyRevealed ? 0.38 : 0.8),
+              )
+            : SAFETY_FILM_TEXT_COLOR,
+        );
+        token.text.setAlpha(
+          isSafetyMatched
+            ? Phaser.Math.Linear(
+                SAFETY_FILM_TEXT_ALPHA,
+                SAFETY_REVEALED_TEXT_ALPHA,
+                displayGlow,
+              )
+            : SAFETY_FILM_TEXT_ALPHA,
+        );
+        token.text.setShadow(
+          0,
+          0,
+          isSafetyRevealed ? "#ffe8aa" : "#ff8f62",
+          Math.round(3 + displayGlow * 14),
+          false,
+          true,
+        );
+      } else {
+        token.text.setColor("#33ff33");
+        token.text.setAlpha(1);
+        token.text.setShadow(0, 0, "#000000", 0, false, false);
+      }
+
+      if (isSearchModeSelected) {
+        token.hitArea.setInteractive({ useHandCursor: true });
+        token.hitArea.setAlpha(0.001);
+      } else {
+        token.hitArea.disableInteractive();
+        token.hitArea.setAlpha(0);
+      }
     });
   }
 
@@ -281,18 +504,22 @@ export class TerminalPromptController {
     this.userLabel = undefined;
     this.divider?.destroy();
     this.divider = undefined;
+    this.safetyScannerController.clearLayout();
     this.tokens.forEach((token) => {
       token.background.destroy();
+      token.safetyMask.destroy();
       token.selectionFrame.destroy();
       token.text.destroy();
       token.hitArea.destroy();
     });
     this.tokens = [];
     this.hoverIndex = null;
+    this.scannerLayoutKey = "";
     this.bindings.onPromptLayoutChanged(112);
   }
 
   destroy() {
+    this.safetyScannerController.destroy();
     this.clear();
   }
 }

@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import { GENERATED_TEXTURES } from "./boot/generatedTextures";
 import { INITIAL_SHIFT_STATE } from "../types/SceneData";
+import {
+  buildTestScenarioRunState,
+  resolveConfiguredTestScenario,
+} from "../data/TestScenarioData";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -13,6 +17,14 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.generatePixelArt();
+
+    const testScenarioId = resolveConfiguredTestScenario();
+
+    if (testScenarioId) {
+      this.scene.start("MainScene", buildTestScenarioRunState(testScenarioId));
+      return;
+    }
+
     this.scene.start("BriefingScene", INITIAL_SHIFT_STATE);
   }
 

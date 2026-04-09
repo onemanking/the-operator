@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
 import { PROMPT_TOOLS } from "./config";
+import { createSafetyFilterShader } from "./safetyFilterShader";
 import {
   TERMINAL_PROMPT_LINE_HEIGHT,
   TerminalPromptController,
@@ -13,6 +14,18 @@ interface HudControllerBindings {
   onUseUtility: () => void;
   onTogglePromptTool: (toolId: ToolId) => void;
   onToggleSearchWord: (wordIndex: number, rawWord: string) => void;
+  onSafetyScanStart: (
+    pointerId: number,
+    scanPointX: number,
+    scanPointY: number,
+  ) => void;
+  onSafetyScanMove: (
+    pointerId: number,
+    scanPointX: number,
+    scanPointY: number,
+    intersectedWordIndexes: number[],
+  ) => void;
+  onSafetyScanEnd: (pointerId: number) => void;
   onPulseCompute: () => void;
   setTaskTextObj: (value: Phaser.GameObjects.Text) => void;
   setChatTextObj: (value: Phaser.GameObjects.Text) => void;
@@ -30,9 +43,22 @@ interface HudControllerBindings {
   getComputeCharge: () => number;
   getComputeThreshold: () => number;
   isSearchModeSelected: () => boolean;
+  isSafetyModeSelected: () => boolean;
+  canStartSafetyScan: () => boolean;
   isComputeReady: () => boolean;
   isComputeLatched: () => boolean;
   isComputeToolSelected: () => boolean;
+  isSafetyScanning: () => boolean;
+  getSafetyScanPointX: () => number;
+  getSafetyScanPointY: () => number;
+  getSafetyScanDirectionX: () => number;
+  getSafetyScanNoiseIntensity: () => number;
+  getSafetyScanBandWidth: () => number;
+  getSafetyMatchedWordIndexes: () => number[];
+  getSafetyRevealedWordIndexes: () => number[];
+  getSafetyRevealProgress: (wordIndex: number) => number;
+  getSafetyRevealFlash: (wordIndex: number) => number;
+  getSafetyDetectedWordCount: () => number;
   canUseUtility: () => boolean;
   getHeat: () => number;
   getHallucination: () => number;
@@ -55,6 +81,10 @@ export class MainSceneHudController {
   private utilityLamp!: Phaser.GameObjects.Rectangle;
   private taskTextObj!: Phaser.GameObjects.Text;
   private chatTextObj!: Phaser.GameObjects.Text;
+  private terminalBg!: Phaser.GameObjects.Rectangle;
+  private terminalSafetyOverlay!: Phaser.GameObjects.Rectangle;
+  private terminalSafetyShader?: Phaser.GameObjects.Shader;
+  private terminalSafetyStatusText!: Phaser.GameObjects.Text;
   private heatPreviewFill!: Phaser.GameObjects.Rectangle;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
@@ -80,10 +110,27 @@ export class MainSceneHudController {
       .setOrigin(0);
     monitorOuter.setStrokeStyle(4, 0x111111);
 
-    const terminalBg = this.scene.add
+    this.terminalBg = this.scene.add
       .rectangle(250, 50, 524, 340, 0x051505)
       .setOrigin(0);
-    terminalBg.setStrokeStyle(2, 0x33ff33);
+    this.terminalBg.setStrokeStyle(2, 0x33ff33);
+    if (this.scene.game.renderer.type === Phaser.WEBGL) {
+      this.terminalSafetyShader = this.scene.add
+        .shader(createSafetyFilterShader(), 250, 50, 524, 340)
+        .setOrigin(0)
+        .setVisible(false)
+        .setDepth(0.5);
+    }
+
+    this.terminalSafetyOverlay = this.scene.add
+      .rectangle(250, 50, 524, 340, 0x47120d, 0)
+      .setOrigin(0)
+      .setVisible(!this.terminalSafetyShader);
+    this.terminalSafetyStatusText = this.scene.add.text(262, 362, "", {
+      fontFamily: "monospace",
+      fontSize: "11px",
+      color: "#f0d4aa",
+    });
 
     this.scene.add.text(250, 20, "USER CONNECTION:", {
       fontFamily: "monospace",
@@ -126,8 +173,25 @@ export class MainSceneHudController {
 
     this.terminalPromptController = new TerminalPromptController(this.scene, {
       isSearchModeSelected: () => this.bindings.isSearchModeSelected(),
+      isSafetyModeSelected: () => this.bindings.isSafetyModeSelected(),
+      canStartSafetyScan: () => this.bindings.canStartSafetyScan(),
+      isSafetyScanning: () => this.bindings.isSafetyScanning(),
+      getSafetyScanPointX: () => this.bindings.getSafetyScanPointX(),
+      getSafetyScanPointY: () => this.bindings.getSafetyScanPointY(),
+      getSafetyScanDirectionX: () => this.bindings.getSafetyScanDirectionX(),
+      getSafetyScanNoiseIntensity: () =>
+        this.bindings.getSafetyScanNoiseIntensity(),
+      getSafetyScanBandWidth: () => this.bindings.getSafetyScanBandWidth(),
       getSelectedWordIndexes: () =>
         this.bindings.getSelectedSearchWordIndexes(),
+      getSafetyMatchedWordIndexes: () =>
+        this.bindings.getSafetyMatchedWordIndexes(),
+      getSafetyRevealedWordIndexes: () =>
+        this.bindings.getSafetyRevealedWordIndexes(),
+      getSafetyRevealProgress: (wordIndex) =>
+        this.bindings.getSafetyRevealProgress(wordIndex),
+      getSafetyRevealFlash: (wordIndex) =>
+        this.bindings.getSafetyRevealFlash(wordIndex),
       getPromptStartY: () => {
         if (this.taskTextObj.text.length === 0) {
           return this.taskTextObj.y;
@@ -137,6 +201,21 @@ export class MainSceneHudController {
       },
       onToggleWord: (wordIndex, rawWord) =>
         this.bindings.onToggleSearchWord(wordIndex, rawWord),
+      onSafetyScanStart: (pointerId, scanPointX, scanPointY) =>
+        this.bindings.onSafetyScanStart(pointerId, scanPointX, scanPointY),
+      onSafetyScanMove: (
+        pointerId,
+        scanPointX,
+        scanPointY,
+        intersectedWordIndexes,
+      ) =>
+        this.bindings.onSafetyScanMove(
+          pointerId,
+          scanPointX,
+          scanPointY,
+          intersectedWordIndexes,
+        ),
+      onSafetyScanEnd: (pointerId) => this.bindings.onSafetyScanEnd(pointerId),
       onPromptLayoutChanged: (bottomY) => {
         this.chatTextObj.setY(bottomY);
       },
@@ -624,9 +703,63 @@ export class MainSceneHudController {
       this.bindings.getSelectedPromptToolIds(),
     );
     const searchModeSelected = this.bindings.isSearchModeSelected();
+    const safetyModeSelected = this.bindings.isSafetyModeSelected();
     this.scene.input.setDefaultCursor(
       searchModeSelected ? "zoom-in" : "default",
     );
+    this.terminalBg.setFillStyle(0x051505);
+    this.terminalBg.setStrokeStyle(2, safetyModeSelected ? 0x8c3429 : 0x33ff33);
+    if (this.terminalSafetyShader) {
+      const scanPointX = Phaser.Math.Clamp(
+        (this.bindings.getSafetyScanPointX() - 250) / 524,
+        0,
+        1,
+      );
+      const scanPointY = Phaser.Math.Clamp(
+        (this.bindings.getSafetyScanPointY() - 50) / 340,
+        0,
+        1,
+      );
+      const scanRadius = Phaser.Math.Clamp(
+        this.bindings.getSafetyScanBandWidth() / 2800,
+        0.02,
+        0.06,
+      );
+
+      this.terminalSafetyShader.setVisible(safetyModeSelected);
+      this.terminalSafetyShader.setUniform(
+        "active.value",
+        safetyModeSelected ? 1 : 0,
+      );
+      this.terminalSafetyShader.setUniform(
+        "scanning.value",
+        this.bindings.isSafetyScanning() ? 1 : 0,
+      );
+      this.terminalSafetyShader.setUniform("scanPoint.value.x", scanPointX);
+      this.terminalSafetyShader.setUniform("scanPoint.value.y", scanPointY);
+      this.terminalSafetyShader.setUniform("scanRadius.value", scanRadius);
+      this.terminalSafetyShader.setUniform(
+        "scanDirection.value",
+        this.bindings.getSafetyScanDirectionX(),
+      );
+      this.terminalSafetyShader.setUniform(
+        "noiseIntensity.value",
+        this.bindings.getSafetyScanNoiseIntensity(),
+      );
+    }
+    this.terminalSafetyOverlay.setFillStyle(
+      this.bindings.isSafetyScanning() ? 0x5a170f : 0x47120d,
+      this.bindings.isSafetyScanning() ? 0.42 : 0.34,
+    );
+    this.terminalSafetyOverlay.setAlpha(
+      this.terminalSafetyShader ? 0 : safetyModeSelected ? 1 : 0,
+    );
+    this.terminalSafetyStatusText.setText("");
+    this.terminalSafetyStatusText.setAlpha(0);
+    this.taskTextObj.setColor(safetyModeSelected ? "#8f4232" : "#33ff33");
+    this.taskTextObj.setAlpha(safetyModeSelected ? 0.78 : 1);
+    this.chatTextObj.setColor(safetyModeSelected ? "#874032" : "#33ff33");
+    this.chatTextObj.setAlpha(safetyModeSelected ? 0.72 : 1);
 
     this.promptToolButtons.forEach((button, toolId) => {
       const isSelected = selectedPromptToolIds.has(toolId);

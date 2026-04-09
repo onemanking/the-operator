@@ -1,5 +1,9 @@
 import Phaser from "phaser";
 import {
+  drawForbiddenCategoriesForDay,
+  getForbiddenCategoryBriefingText,
+} from "../data/ContentPolicyData";
+import {
   drawShiftModifiersForDay,
   getShiftModifierDefinitions,
 } from "../data/ShiftModifierData";
@@ -35,6 +39,11 @@ export class BriefingScene extends Phaser.Scene {
         this.runState.day,
       );
     }
+    if (this.runState.forbiddenCategoryIds.length === 0) {
+      this.runState.forbiddenCategoryIds = drawForbiddenCategoriesForDay(
+        this.runState.day,
+      );
+    }
     this.day = this.runState.day;
     this.tokens = this.runState.tokens;
     this.accuracy = this.runState.accuracy;
@@ -59,6 +68,9 @@ export class BriefingScene extends Phaser.Scene {
     const shiftModifiers = getShiftModifierDefinitions(
       this.runState.shiftModifierIds,
     );
+    const contentPolicyText = getForbiddenCategoryBriefingText(
+      this.runState.forbiddenCategoryIds,
+    );
     const modifierText =
       shiftModifiers.length > 0
         ? shiftModifiers
@@ -66,37 +78,61 @@ export class BriefingScene extends Phaser.Scene {
             .join("\n\n")
         : "NO SPECIAL SHIFT CONDITIONS.";
 
-    this.add
-      .text(width / 2, 250, "POLICY OF THE DAY:", {
+    let cursorY = 200;
+
+    const policyLabel = this.add
+      .text(width / 2, cursorY, "POLICY OF THE DAY:", {
         ...textStyle,
         color: RETRO_COLORS.mutedText,
       })
-      .setOrigin(0.5);
-    this.add
-      .text(width / 2, 350, policyText, {
+      .setOrigin(0.5, 0);
+    cursorY = policyLabel.y + policyLabel.height + 20;
+
+    const policyBody = this.add
+      .text(width / 2, cursorY, policyText, {
         ...textStyle,
         wordWrap: { width: 800 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0);
+    cursorY = policyBody.y + policyBody.height + 26;
 
-    this.add
-      .text(width / 2, 470, "SHIFT MODIFIER:", {
+    const directiveLabel = this.add
+      .text(width / 2, cursorY, "CONTENT DIRECTIVE:", {
         ...textStyle,
         color: RETRO_COLORS.mutedText,
       })
-      .setOrigin(0.5);
-    this.add
-      .text(width / 2, 540, modifierText, {
+      .setOrigin(0.5, 0);
+    cursorY = directiveLabel.y + directiveLabel.height + 18;
+
+    const directiveBody = this.add
+      .text(width / 2, cursorY, contentPolicyText, {
         ...textStyle,
         fontSize: "20px",
         wordWrap: { width: 760 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0);
+    cursorY = directiveBody.y + directiveBody.height + 26;
+
+    const modifierLabel = this.add
+      .text(width / 2, cursorY, "SHIFT MODIFIER:", {
+        ...textStyle,
+        color: RETRO_COLORS.mutedText,
+      })
+      .setOrigin(0.5, 0);
+    cursorY = modifierLabel.y + modifierLabel.height + 18;
+
+    this.add
+      .text(width / 2, cursorY, modifierText, {
+        ...textStyle,
+        fontSize: "20px",
+        wordWrap: { width: 760 },
+      })
+      .setOrigin(0.5, 0);
 
     createRetroButton({
       scene: this,
       x: width / 2,
-      y: 660,
+      y: 692,
       width: 200,
       height: 50,
       label: "START SHIFT",

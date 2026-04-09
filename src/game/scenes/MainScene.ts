@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { ContentCategoryId } from "../data/ContentPolicyData";
 import { addScanlines } from "./shared/retroUi";
 import { synth } from "../utils/SoundSynth";
 import {
@@ -43,9 +44,11 @@ import {
   getComputeDecayPerSecond,
   getComputePulseChargeGain,
   getDedupedNormalizedWords,
+  PromptForbiddenScanResult,
   getSearchSelectionHeat,
   isComputeReady,
   normalizeSearchWord,
+  scanPromptForForbiddenContent,
 } from "./main/toolRuntimeHelpers";
 
 export class MainScene extends Phaser.Scene {
@@ -73,6 +76,21 @@ export class MainScene extends Phaser.Scene {
   private activeSkills: string[] = [];
   private selectedPromptToolIds: ToolId[] = [];
   private selectedSearchWordsByIndex = new Map<number, string>();
+  private safetyScanResult: PromptForbiddenScanResult | null = null;
+  private safetyScanPrompt: string = "";
+  private revealedSafetyWordIndexes = new Set<number>();
+  private isSafetyScanning: boolean = false;
+  private safetyScanPointerId: number | null = null;
+  private safetyScanPointX: number = 0;
+  private safetyScanPointY: number = 0;
+  private safetyScanDirectionX: number = 1;
+  private safetyCurrentIntersectedWordIndexes = new Set<number>();
+  private safetyScanChargeByWordIndex = new Map<number, number>();
+  private safetyRevealFlashByWordIndex = new Map<number, number>();
+  private safetyScanSpeedPxPerSecond: number = 0;
+  private safetyScanNoiseIntensity: number = 0;
+  private safetyLastScanMoveAt: number = 0;
+  private safetyLastGeigerAt: number = 0;
   private computeCharge: number = 0;
   private computePrimed: boolean = false;
   private computeDecayResumesAt: number = 0;
@@ -108,6 +126,21 @@ export class MainScene extends Phaser.Scene {
       (this.runState.loadout.selectedPromptToolIds ?? []).filter(isToolId),
     );
     this.selectedSearchWordsByIndex = new Map();
+    this.safetyScanResult = null;
+    this.safetyScanPrompt = "";
+    this.revealedSafetyWordIndexes = new Set();
+    this.isSafetyScanning = false;
+    this.safetyScanPointerId = null;
+    this.safetyScanPointX = 0;
+    this.safetyScanPointY = 0;
+    this.safetyScanDirectionX = 1;
+    this.safetyCurrentIntersectedWordIndexes = new Set();
+    this.safetyScanChargeByWordIndex = new Map();
+    this.safetyRevealFlashByWordIndex = new Map();
+    this.safetyScanSpeedPxPerSecond = 0;
+    this.safetyScanNoiseIntensity = 0;
+    this.safetyLastScanMoveAt = 0;
+    this.safetyLastGeigerAt = 0;
     this.computeCharge = clampComputeCharge(
       this.runState.toolRuntime.computeCharge,
     );
@@ -223,6 +256,21 @@ export class MainScene extends Phaser.Scene {
       onTogglePromptTool: (toolId) => this.togglePromptTool(toolId),
       onToggleSearchWord: (wordIndex, rawWord) =>
         this.toggleSearchWord(wordIndex, rawWord),
+      onSafetyScanStart: (pointerId, scanPointX, scanPointY) =>
+        this.startSafetyScan(pointerId, scanPointX, scanPointY),
+      onSafetyScanMove: (
+        pointerId,
+        scanPointX,
+        scanPointY,
+        intersectedWordIndexes,
+      ) =>
+        this.updateSafetyScan(
+          pointerId,
+          scanPointX,
+          scanPointY,
+          intersectedWordIndexes,
+        ),
+      onSafetyScanEnd: (pointerId) => this.endSafetyScan(pointerId),
       onPulseCompute: () => this.pulseCompute(),
       setTaskTextObj: (value) => {
         this.taskTextObj = value;
@@ -267,10 +315,28 @@ export class MainScene extends Phaser.Scene {
       getComputeThreshold: () =>
         getPromptToolRuntimeConfig().compute.chargeThreshold,
       isSearchModeSelected: () => this.selectedPromptToolIds.includes("search"),
+      isSafetyModeSelected: () => this.selectedPromptToolIds.includes("safety"),
+      canStartSafetyScan: () =>
+        this.selectedPromptToolIds.includes("safety") &&
+        !this.isCommitLocked &&
+        !this.isOverheated,
       isComputeReady: () => isComputeReady(this.computeCharge),
       isComputeLatched: () => this.isComputeLatched(),
       isComputeToolSelected: () =>
         this.selectedPromptToolIds.includes("compute"),
+      isSafetyScanning: () => this.isSafetyScanning,
+      getSafetyScanPointX: () => this.safetyScanPointX,
+      getSafetyScanPointY: () => this.safetyScanPointY,
+      getSafetyScanDirectionX: () => this.safetyScanDirectionX,
+      getSafetyScanNoiseIntensity: () => this.safetyScanNoiseIntensity,
+      getSafetyScanBandWidth: () =>
+        getPromptToolRuntimeConfig().safety.scanBandWidth,
+      getSafetyMatchedWordIndexes: () => this.getSafetyMatchedWordIndexes(),
+      getSafetyRevealedWordIndexes: () => this.getSafetyRevealedWordIndexes(),
+      getSafetyRevealProgress: (wordIndex) =>
+        this.getSafetyRevealProgress(wordIndex),
+      getSafetyRevealFlash: (wordIndex) => this.getSafetyRevealFlash(wordIndex),
+      getSafetyDetectedWordCount: () => this.getSafetyDetectedWordCount(),
       canUseUtility: () => {
         return (
           this.heat > 0 && canUseActiveUtility(this.runState, "coolant_purge")
@@ -310,6 +376,17 @@ export class MainScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     this.sessionController.update(delta);
+
+    if (
+      this.isSafetyScanning &&
+      (!this.selectedPromptToolIds.includes("safety") || this.isOverheated)
+    ) {
+      this.endSafetyScan();
+    }
+
+    this.applySafetyToolHeat(delta / 1000);
+    this.applySafetyScanCharge(delta / 1000);
+    this.applySafetyRevealDecay(delta / 1000);
 
     if (this.computeCharge > 0) {
       if (this.isComputeLatched()) {
@@ -379,6 +456,14 @@ export class MainScene extends Phaser.Scene {
       this.clearSearchSelection();
     }
 
+    if (this.selectedPromptToolIds.includes("safety") && toolId !== "safety") {
+      this.resetSafetyInteractionState(true);
+    }
+
+    if (this.selectedPromptToolIds.includes(toolId) && toolId === "safety") {
+      this.resetSafetyInteractionState(true);
+    }
+
     this.selectedPromptToolIds = nextPromptToolIds;
     this.runState.loadout.selectedPromptToolIds = [...nextPromptToolIds];
     this.refreshProjectedHeat();
@@ -426,6 +511,233 @@ export class MainScene extends Phaser.Scene {
     this.setHeat(this.heat + computeConfig.tapHeat);
     this.refreshProjectedHeat();
     this.events.emit("updateBars");
+  }
+
+  private startSafetyScan(
+    pointerId: number,
+    scanPointX: number,
+    scanPointY: number,
+  ) {
+    if (
+      !this.selectedPromptToolIds.includes("safety") ||
+      this.isCommitLocked ||
+      this.isOverheated
+    ) {
+      return;
+    }
+
+    this.isSafetyScanning = true;
+    this.safetyScanPointerId = pointerId;
+    this.safetyScanPointX = scanPointX;
+    this.safetyScanPointY = scanPointY;
+    this.safetyCurrentIntersectedWordIndexes.clear();
+    this.safetyScanSpeedPxPerSecond = 0;
+    this.safetyScanNoiseIntensity = 0;
+    this.safetyLastScanMoveAt = this.time.now;
+    synth.playBeep(420, "triangle", 0.06, 0.04);
+    this.events.emit("updateBars");
+  }
+
+  private updateSafetyScan(
+    pointerId: number,
+    scanPointX: number,
+    scanPointY: number,
+    intersectedWordIndexes: number[],
+  ) {
+    if (!this.isSafetyScanning || this.safetyScanPointerId !== pointerId) {
+      return;
+    }
+
+    const previousScanPointX = this.safetyScanPointX;
+    const now = this.time.now;
+    this.safetyScanPointX = scanPointX;
+    this.safetyScanPointY = scanPointY;
+
+    const elapsedMs = Math.max(1, now - this.safetyLastScanMoveAt);
+    const speedPxPerSecond =
+      (Math.abs(scanPointX - previousScanPointX) / elapsedMs) * 1000;
+    const maxStableScanSpeed =
+      getPromptToolRuntimeConfig().safety.maxStableScanSpeed;
+    this.safetyScanSpeedPxPerSecond = speedPxPerSecond;
+    this.safetyScanNoiseIntensity = Phaser.Math.Clamp(
+      (speedPxPerSecond - maxStableScanSpeed) / maxStableScanSpeed,
+      0,
+      1,
+    );
+    this.safetyLastScanMoveAt = now;
+
+    if (Math.abs(scanPointX - previousScanPointX) >= 1) {
+      this.safetyScanDirectionX = scanPointX >= previousScanPointX ? 1 : -1;
+    }
+
+    this.safetyCurrentIntersectedWordIndexes = new Set(intersectedWordIndexes);
+
+    if (
+      intersectedWordIndexes.length > 0 &&
+      this.safetyScanNoiseIntensity < 0.15 &&
+      now - this.safetyLastGeigerAt >=
+        getPromptToolRuntimeConfig().safety.geigerClickIntervalMs
+    ) {
+      synth.playBeep(
+        780 + intersectedWordIndexes.length * 44,
+        "square",
+        0.025,
+        0.025,
+      );
+      this.safetyLastGeigerAt = now;
+    }
+
+    this.events.emit("updateBars");
+  }
+
+  private endSafetyScan(pointerId?: number) {
+    if (!this.isSafetyScanning) {
+      return;
+    }
+
+    if (pointerId !== undefined && this.safetyScanPointerId !== pointerId) {
+      return;
+    }
+
+    this.isSafetyScanning = false;
+    this.safetyScanPointerId = null;
+    this.safetyCurrentIntersectedWordIndexes.clear();
+    this.safetyScanSpeedPxPerSecond = 0;
+    this.safetyScanNoiseIntensity = 0;
+    this.events.emit("updateBars");
+  }
+
+  private resetSafetyInteractionState(clearReveals: boolean) {
+    this.isSafetyScanning = false;
+    this.safetyScanPointerId = null;
+    this.safetyScanPointX = 0;
+    this.safetyScanPointY = 0;
+    this.safetyScanDirectionX = 1;
+    this.safetyCurrentIntersectedWordIndexes.clear();
+    this.safetyScanSpeedPxPerSecond = 0;
+    this.safetyScanNoiseIntensity = 0;
+    this.safetyLastScanMoveAt = 0;
+
+    if (!clearReveals) {
+      return;
+    }
+
+    this.clearSafetyRevealState();
+  }
+
+  private applyRevealedSafetyWordIndexes(wordIndexes: readonly number[]) {
+    if (!this.selectedPromptToolIds.includes("safety")) {
+      return;
+    }
+
+    const matchedIndexes = new Set(this.getSafetyMatchedWordIndexes());
+    let revealedAny = false;
+
+    wordIndexes.forEach((wordIndex) => {
+      if (!matchedIndexes.has(wordIndex)) {
+        return;
+      }
+
+      if (this.revealedSafetyWordIndexes.has(wordIndex)) {
+        return;
+      }
+
+      this.revealedSafetyWordIndexes.add(wordIndex);
+      this.safetyRevealFlashByWordIndex.set(wordIndex, 1);
+      revealedAny = true;
+    });
+
+    if (revealedAny) {
+      synth.playBeep(980, "square", 0.04, 0.03);
+    }
+  }
+
+  private applySafetyScanCharge(elapsedSeconds: number) {
+    if (
+      !this.isSafetyScanning ||
+      !this.selectedPromptToolIds.includes("safety") ||
+      this.safetyCurrentIntersectedWordIndexes.size === 0 ||
+      this.safetyScanSpeedPxPerSecond >
+        getPromptToolRuntimeConfig().safety.maxStableScanSpeed
+    ) {
+      return;
+    }
+
+    const matchedIndexes = new Set(this.getSafetyMatchedWordIndexes());
+    const revealStep =
+      elapsedSeconds / getPromptToolRuntimeConfig().safety.scanRevealSeconds;
+    const newlyRevealedWordIndexes: number[] = [];
+    let changed = false;
+
+    this.safetyCurrentIntersectedWordIndexes.forEach((wordIndex) => {
+      if (
+        !matchedIndexes.has(wordIndex) ||
+        this.revealedSafetyWordIndexes.has(wordIndex)
+      ) {
+        return;
+      }
+
+      const previousProgress =
+        this.safetyScanChargeByWordIndex.get(wordIndex) ?? 0;
+      const nextProgress = Phaser.Math.Clamp(
+        previousProgress + revealStep,
+        0,
+        1,
+      );
+
+      if (nextProgress !== previousProgress) {
+        this.safetyScanChargeByWordIndex.set(wordIndex, nextProgress);
+        changed = true;
+      }
+
+      if (nextProgress >= 1) {
+        newlyRevealedWordIndexes.push(wordIndex);
+      }
+    });
+
+    if (newlyRevealedWordIndexes.length > 0) {
+      this.applyRevealedSafetyWordIndexes(newlyRevealedWordIndexes);
+      changed = true;
+    }
+
+    if (changed) {
+      this.events.emit("updateBars");
+    }
+  }
+
+  private applySafetyRevealDecay(elapsedSeconds: number) {
+    if (this.safetyRevealFlashByWordIndex.size === 0) {
+      return;
+    }
+
+    const nextNoiseIntensity = Phaser.Math.Clamp(
+      this.safetyScanNoiseIntensity - elapsedSeconds * 3.4,
+      0,
+      1,
+    );
+    let changed = nextNoiseIntensity !== this.safetyScanNoiseIntensity;
+    this.safetyScanNoiseIntensity = nextNoiseIntensity;
+
+    const decayStep =
+      elapsedSeconds / getPromptToolRuntimeConfig().safety.phosphorDecaySeconds;
+    this.safetyRevealFlashByWordIndex.forEach((flashValue, wordIndex) => {
+      const nextFlash = Math.max(0, flashValue - decayStep);
+
+      if (nextFlash <= 0) {
+        this.safetyRevealFlashByWordIndex.delete(wordIndex);
+        changed = true;
+        return;
+      }
+
+      if (nextFlash !== flashValue) {
+        this.safetyRevealFlashByWordIndex.set(wordIndex, nextFlash);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      this.events.emit("updateBars");
+    }
   }
 
   addCRTEffects() {
@@ -478,10 +790,54 @@ export class MainScene extends Phaser.Scene {
     this.refreshProjectedHeat();
   }
 
+  private clearSafetyRevealState() {
+    if (
+      this.revealedSafetyWordIndexes.size === 0 &&
+      this.safetyScanChargeByWordIndex.size === 0 &&
+      this.safetyRevealFlashByWordIndex.size === 0
+    ) {
+      return;
+    }
+
+    this.revealedSafetyWordIndexes.clear();
+    this.safetyScanChargeByWordIndex.clear();
+    this.safetyRevealFlashByWordIndex.clear();
+  }
+
   private getSelectedSearchWords() {
     return getDedupedNormalizedWords([
       ...this.selectedSearchWordsByIndex.values(),
     ]);
+  }
+
+  private getSafetyMatchedWordIndexes() {
+    this.ensureSafetyScanResultCurrent();
+    return this.safetyScanResult?.matchedWordIndexes ?? [];
+  }
+
+  private getSafetyRevealedWordIndexes() {
+    this.ensureSafetyScanResultCurrent();
+    return [...this.revealedSafetyWordIndexes].sort(
+      (left, right) => left - right,
+    );
+  }
+
+  private getSafetyRevealProgress(wordIndex: number) {
+    this.ensureSafetyScanResultCurrent();
+
+    if (this.revealedSafetyWordIndexes.has(wordIndex)) {
+      return 1;
+    }
+
+    return this.safetyScanChargeByWordIndex.get(wordIndex) ?? 0;
+  }
+
+  private getSafetyRevealFlash(wordIndex: number) {
+    return this.safetyRevealFlashByWordIndex.get(wordIndex) ?? 0;
+  }
+
+  private getSafetyDetectedWordCount() {
+    return this.getSafetyMatchedWordIndexes().length;
   }
 
   private getActiveToolIdsForEvaluation() {
@@ -546,6 +902,54 @@ export class MainScene extends Phaser.Scene {
     return this.encounters[this.currentEncounterIndex]?.turns[
       this.currentTurnIndex
     ];
+  }
+
+  private ensureSafetyScanResultCurrent() {
+    const prompt = this.getCurrentTurn()?.prompt ?? "";
+
+    if (prompt === this.safetyScanPrompt) {
+      return;
+    }
+
+    this.resetSafetyInteractionState(true);
+    this.safetyScanPrompt = prompt;
+    this.safetyScanResult =
+      prompt.length > 0
+        ? scanPromptForForbiddenContent(
+            prompt,
+            this.runState.forbiddenCategoryIds as ContentCategoryId[],
+          )
+        : null;
+  }
+
+  private applySafetyToolHeat(deltaSeconds: number) {
+    if (!this.selectedPromptToolIds.includes("safety")) {
+      return;
+    }
+
+    const safetyConfig = getPromptToolRuntimeConfig().safety;
+    const previousHeat = this.heat;
+    const heatRate =
+      safetyConfig.passiveHeatPerSecond +
+      (this.isSafetyScanning ? safetyConfig.scanningHeatPerSecond : 0);
+    this.setHeat(this.heat + heatRate * deltaSeconds);
+
+    if (previousHeat < 100 && this.heat >= 100 && !this.isOverheated) {
+      this.endSafetyScan();
+      this.isOverheated = true;
+      this.isCommitLocked = false;
+      synth.playError();
+      this.cameras.main.shake(350, 0.012);
+      this.sessionController.postSystemMessage(
+        "CRITICAL: SAFETY FILTER OVERDREW THE THERMAL BUDGET.",
+      );
+      this.events.emit("updateBars");
+      return;
+    }
+
+    if (this.heat !== previousHeat) {
+      this.events.emit("updateBars");
+    }
   }
 
   private isComputeLatched() {

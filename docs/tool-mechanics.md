@@ -1,13 +1,16 @@
 # Tool Mechanics Reference
 
-This document captures the current tool behavior in the game and the shared rules to follow when adding future tools.
+This document captures the current prompt-tool behavior in the game and the
+shared rules to follow when adding future tools. For the full current system
+map, see [current-systems.md](current-systems.md).
 
 ## Overview
 
-The game currently uses two richer prompt tools:
+The game currently uses three prompt tools:
 
 - `Search` turns the terminal prompt into selectable words and uses the selected word set during evaluation.
 - `Compute` acts as a chargeable machine state that can stay armed after reaching full charge until the charge fully drains.
+- `Safety Filter` scans the prompt for forbidden content and reveals the matched words through the scanner lane.
 
 Tools should not read as flat menu toggles. Each one should feel like a distinct machine mode with its own sensory identity.
 
@@ -15,6 +18,8 @@ The design goal is that each tool has its own clear interaction pattern, its own
 That now also means each tool should ship with a readable audiovisual language, not only a rules explanation.
 
 ## Current Tool Set
+
+The game currently uses three prompt tools:
 
 ### Search
 
@@ -34,6 +39,16 @@ That now also means each tool should ship with a readable audiovisual language, 
 - Armed Compute stays valid even if charge drops below the threshold, until charge reaches 0.
 - When charge reaches 0, Compute is no longer considered active for commit evaluation.
 - The HUD shows a compact indicator on the tool button and a dedicated compute panel when the tool is selected.
+
+### Safety Filter
+
+- The prompt is scanned against the active forbidden content categories.
+- Matched words are revealed through the scanner lane, which is physically
+  dragged across the prompt area.
+- The scan has its own thermal cost and can reward tokens when the player blocks
+  a jailbreak with visible filtered words.
+- The HUD uses a distinct red-brown scanner treatment so the player can read
+  the mode without opening a tooltip.
 
 ## Shared HUD Rules
 
@@ -83,8 +98,10 @@ The current tool behavior is split across these systems:
 - `src/game/types/SceneData.ts` persists runtime state such as Compute charge and armed state.
 - `src/game/scenes/MainScene.ts` owns the runtime truth for selected tools, selected words, Compute charge, and projected heat.
 - `src/game/scenes/main/terminalPromptController.ts` handles prompt word layout and Search selection visuals.
+- `src/game/scenes/main/safetyScannerController.ts` handles the scanner lane motion and Safety Filter reveal presentation.
 - `src/game/scenes/main/encounterEvaluator.ts` checks whether the active loadout satisfies the encounter requirements and calculates heat.
 - `src/game/scenes/main/hudController.ts` renders tool buttons, previews, and the compute panel.
+- `src/game/data/ContentPolicyData.ts` defines the forbidden-topic categories that Safety Filter scans against.
 
 Any new tool should follow the same pattern: data config, runtime state, HUD presentation, and evaluator hook.
 

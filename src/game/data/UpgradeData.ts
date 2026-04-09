@@ -17,6 +17,24 @@ export interface PassiveUpgradeDefinition {
   maxStacks: number;
 }
 
+export interface PassiveUpgradeHudItem {
+  id: PassiveUpgradeId;
+  label: string;
+  shortLabel: string;
+  count: number;
+  maxStacks: number;
+}
+
+const PASSIVE_UPGRADE_SHORT_LABELS: Record<PassiveUpgradeId, string> = {
+  agent_bay: "AGNT",
+  skill_buffer: "SKL",
+  cooling_fins: "COOL",
+  cache_coalescer: "CACH",
+  noise_filter: "NOIS",
+  ecc_memory: "ECC",
+  watchdog_timer: "WDOG",
+};
+
 export interface RunPassiveModifiers {
   inferenceHeatReduction: number;
   refuseHeatReduction: number;
@@ -94,6 +112,22 @@ export function getPassiveUpgradeCount(
   return runState.loadout.passiveUpgradeIds.filter(
     (ownedId) => ownedId === upgradeId,
   ).length;
+}
+
+export function getOwnedPassiveUpgradeHudItems(
+  runState: RunState,
+): PassiveUpgradeHudItem[] {
+  return PASSIVE_UPGRADES.map((upgrade) => {
+    const count = getPassiveUpgradeCount(runState, upgrade.id);
+
+    return {
+      id: upgrade.id,
+      label: upgrade.name,
+      shortLabel: PASSIVE_UPGRADE_SHORT_LABELS[upgrade.id],
+      count,
+      maxStacks: upgrade.maxStacks,
+    };
+  }).filter((upgrade) => upgrade.count > 0);
 }
 
 export function getAvailablePassiveUpgrades(runState: RunState) {

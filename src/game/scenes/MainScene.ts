@@ -32,7 +32,10 @@ import {
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
-import { getRunPassiveModifiers } from "../data/UpgradeData";
+import {
+  getOwnedPassiveUpgradeHudItems,
+  getRunPassiveModifiers,
+} from "../data/UpgradeData";
 import { sortPromptToolIds } from "./main/config";
 import { ChatMessage, isToolId, ToolId } from "./main/types";
 import { MainSceneStorageController } from "./main/storageController";
@@ -204,6 +207,7 @@ export class MainScene extends Phaser.Scene {
       setTokens: (value) => {
         this.tokens = value;
         this.runState.tokens = value;
+        this.events.emit("updateBars");
       },
       getAccuracy: () => this.accuracy,
       setAccuracy: (value) => {
@@ -321,6 +325,8 @@ export class MainScene extends Phaser.Scene {
         [...this.selectedSearchWordsByIndex.keys()].sort(
           (left, right) => left - right,
         ),
+      getTokens: () => this.tokens,
+      getPassiveHudItems: () => getOwnedPassiveUpgradeHudItems(this.runState),
       getUtilityDisplayText: () => {
         const definition = this.selectedUtilityId
           ? getActiveUtilityDefinition(this.selectedUtilityId)
@@ -374,6 +380,8 @@ export class MainScene extends Phaser.Scene {
     this.hudController.createLayout();
     this.hudController.createPromptToolGrid();
     this.hudController.createComputeSection();
+    this.hudController.createEconomySection();
+    this.hudController.createPassiveSection();
     this.storageController.createContextAssemblyArea();
     this.storageController.createStorageRack();
     this.hudController.createActionButtons();

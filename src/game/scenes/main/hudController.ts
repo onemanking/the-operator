@@ -1,5 +1,9 @@
 import Phaser from "phaser";
 import {
+  PassiveUpgradeHudItem,
+  PassiveUpgradeId,
+} from "../../data/UpgradeData";
+import {
   getHallucinationFeedbackConfig,
   getThermalFeedbackConfig,
 } from "../../data/RunData";
@@ -44,6 +48,8 @@ interface HudControllerBindings {
   getUnlockedPromptToolIds: () => ToolId[];
   getSelectedPromptToolIds: () => ToolId[];
   getSelectedSearchWordIndexes: () => number[];
+  getTokens: () => number;
+  getPassiveHudItems: () => PassiveUpgradeHudItem[];
   getUtilityDisplayText: () => string;
   canCycleUtilities: () => boolean;
   getProjectedToolHeat: () => number;
@@ -82,8 +88,23 @@ interface PromptToolButtonUi {
   shadow: Phaser.GameObjects.Rectangle;
 }
 
+interface PassiveHudChipUi {
+  body: Phaser.GameObjects.Rectangle;
+  label: Phaser.GameObjects.Text;
+}
+
 export class MainSceneHudController {
   private hoveredAction: "inference" | "refuse" | null = null;
+  private tokenDeltaBaseY: number = 0;
+  private tokenValueText!: Phaser.GameObjects.Text;
+  private tokenDeltaText!: Phaser.GameObjects.Text;
+  private tokenHousing!: Phaser.GameObjects.Rectangle;
+  private tokenLamps: Phaser.GameObjects.Rectangle[] = [];
+  private passiveChips: PassiveHudChipUi[] = [];
+  private passiveEmptyText!: Phaser.GameObjects.Text;
+  private lastTokenValue: number | null = null;
+  private lastTokenDelta: number = 0;
+  private tokenPulseUntil: number = 0;
 
   private utilityBtn!: Phaser.GameObjects.Rectangle;
   private utilityTxt!: Phaser.GameObjects.Text;
@@ -262,6 +283,14 @@ export class MainSceneHudController {
         this.chatTextObj.setY(bottomY);
       },
     });
+  }
+
+  createEconomySection() {
+    this.tokenLamps = [];
+  }
+
+  createPassiveSection() {
+    this.passiveChips = [];
   }
 
   createPromptToolGrid() {
@@ -601,53 +630,140 @@ export class MainSceneHudController {
 
     const shiftModifierText = this.scene.add.text(
       20,
-      692,
+      676,
       `SHIFT MOD: ${this.bindings.getShiftModifierLabel() ?? "NORMAL"}`,
       {
         fontFamily: "monospace",
-        fontSize: "14px",
+        fontSize: "12px",
         color: "#ffb000",
-        wordWrap: { width: 210 },
+        wordWrap: { width: 984 },
       },
     );
 
-    this.scene.add.text(250, 680, "THERMAL LOAD:", {
-      fontFamily: "monospace",
-      fontSize: "16px",
-      color: "#d4c5b0",
-    });
-    this.thermalWarningLampHalo = this.scene.add
-      .circle(610, 690, 11, 0xff8a2b, 0)
-      .setStrokeStyle(1, 0x4e1b08, 0.45);
-    this.thermalWarningLamp = this.scene.add
-      .circle(610, 690, 6, 0x3d1206)
-      .setStrokeStyle(2, 0x111111);
-    this.scene.add.rectangle(380, 680, 200, 20, 0x111111).setOrigin(0);
-    const heatBarFill = this.scene.add
-      .rectangle(382, 682, 0, 16, 0xff5500)
-      .setOrigin(0);
-    this.bindings.setHeatBarFill(heatBarFill);
-    this.heatPreviewFill = this.scene.add
-      .rectangle(382, 682, 0, 16, 0xc9c9c9)
-      .setOrigin(0)
-      .setAlpha(0.42);
+    const leftColumnX = 20;
+    const rightColumnX = 530;
+    const rowOneY = 694;
+    const rowTwoY = 726;
 
-    this.scene.add.text(650, 680, "HALLUCINATION:", {
+    this.scene.add.text(leftColumnX, rowOneY, "HALL:", {
       fontFamily: "monospace",
-      fontSize: "16px",
+      fontSize: "14px",
       color: "#d4c5b0",
     });
     this.hallucinationWarningLampHalo = this.scene.add
-      .circle(956, 690, 10, 0x8f6dff, 0)
+      .circle(leftColumnX + 68, rowOneY + 8, 10, 0x8f6dff, 0)
       .setStrokeStyle(1, 0x29194f, 0.45);
     this.hallucinationWarningLamp = this.scene.add
-      .circle(956, 690, 6, 0x22143c)
+      .circle(leftColumnX + 68, rowOneY + 8, 6, 0x22143c)
       .setStrokeStyle(2, 0x111111);
-    this.scene.add.rectangle(790, 680, 150, 20, 0x111111).setOrigin(0);
+    this.scene.add
+      .rectangle(leftColumnX + 86, rowOneY, 250, 20, 0x111111)
+      .setOrigin(0);
     const hallucinationBarFill = this.scene.add
-      .rectangle(792, 682, 0, 16, 0x8f6dff)
+      .rectangle(leftColumnX + 88, rowOneY + 2, 0, 16, 0x8f6dff)
       .setOrigin(0);
     this.bindings.setHallucinationBarFill(hallucinationBarFill);
+
+    this.scene.add.text(leftColumnX, rowTwoY, "THRM:", {
+      fontFamily: "monospace",
+      fontSize: "14px",
+      color: "#d4c5b0",
+    });
+    this.thermalWarningLampHalo = this.scene.add
+      .circle(leftColumnX + 68, rowTwoY + 8, 11, 0xff8a2b, 0)
+      .setStrokeStyle(1, 0x4e1b08, 0.45);
+    this.thermalWarningLamp = this.scene.add
+      .circle(leftColumnX + 68, rowTwoY + 8, 6, 0x3d1206)
+      .setStrokeStyle(2, 0x111111);
+    this.scene.add
+      .rectangle(leftColumnX + 86, rowTwoY, 250, 20, 0x111111)
+      .setOrigin(0);
+    const heatBarFill = this.scene.add
+      .rectangle(leftColumnX + 88, rowTwoY + 2, 0, 16, 0xff5500)
+      .setOrigin(0);
+    this.bindings.setHeatBarFill(heatBarFill);
+    this.heatPreviewFill = this.scene.add
+      .rectangle(leftColumnX + 88, rowTwoY + 2, 0, 16, 0xc9c9c9)
+      .setOrigin(0)
+      .setAlpha(0.42);
+
+    this.scene.add.text(rightColumnX, rowOneY, "TOK:", {
+      fontFamily: "monospace",
+      fontSize: "14px",
+      color: "#d4c5b0",
+    });
+    this.tokenHousing = this.scene.add
+      .rectangle(rightColumnX + 125, rowOneY + 8, 172, 22, 0x15120e)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x3d3527);
+    this.tokenLamps = [];
+    for (let lampIndex = 0; lampIndex < 3; lampIndex += 1) {
+      this.tokenLamps.push(
+        this.scene.add
+          .rectangle(
+            rightColumnX + 42 + lampIndex * 14,
+            rowOneY + 8,
+            9,
+            9,
+            0x2f2a21,
+          )
+          .setOrigin(0.5)
+          .setStrokeStyle(1, 0x111111),
+      );
+    }
+    this.tokenValueText = this.scene.add
+      .text(rightColumnX + 125, rowOneY + 6, "0 TOK", {
+        fontFamily: "monospace",
+        fontSize: "17px",
+        color: "#ffb000",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+    this.tokenDeltaText = this.scene.add
+      .text(rightColumnX + 212, rowOneY + 6, "", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#9cfb64",
+        fontStyle: "bold",
+      })
+      .setOrigin(1, 0.5)
+      .setAlpha(0);
+    this.tokenDeltaBaseY = rowOneY + 6;
+
+    this.scene.add.text(rightColumnX, rowTwoY, "PASS:", {
+      fontFamily: "monospace",
+      fontSize: "14px",
+      color: "#d4c5b0",
+    });
+    this.scene.add
+      .rectangle(rightColumnX + 125, rowTwoY + 8, 250, 22, 0x15120e)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x3d3527);
+    this.passiveEmptyText = this.scene.add
+      .text(rightColumnX + 125, rowTwoY + 8, "NO PASSIVES", {
+        fontFamily: "monospace",
+        fontSize: "11px",
+        color: "#8f8677",
+        align: "center",
+      })
+      .setOrigin(0.5);
+    this.passiveChips = [];
+    for (let chipIndex = 0; chipIndex < 4; chipIndex += 1) {
+      const chipX = rightColumnX + 65 + chipIndex * 58;
+      const body = this.scene.add
+        .rectangle(chipX, rowTwoY + 8, 52, 16, 0x1a1713)
+        .setOrigin(0.5)
+        .setStrokeStyle(1, 0x111111);
+      const label = this.scene.add
+        .text(chipX, rowTwoY + 8, "", {
+          fontFamily: "monospace",
+          fontSize: "9px",
+          color: "#d4c5b0",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
+      this.passiveChips.push({ body, label });
+    }
 
     this.cleanupSceneListeners();
 
@@ -656,14 +772,16 @@ export class MainSceneHudController {
       this.syncTerminalEffects();
       this.terminalPromptController.syncSelectionStates();
       this.syncComputeSection();
+      this.syncEconomySection();
+      this.syncPassiveSection();
       this.syncUtilitySection();
 
       shiftModifierText.setText(
         `SHIFT MOD: ${this.bindings.getShiftModifierLabel() ?? "NORMAL"}`,
       );
-      heatBarFill.width = 196 * Math.min(1, this.bindings.getHeat() / 100);
+      heatBarFill.width = 246 * Math.min(1, this.bindings.getHeat() / 100);
       hallucinationBarFill.width =
-        146 * Math.min(1, this.bindings.getHallucination() / 100);
+        246 * Math.min(1, this.bindings.getHallucination() / 100);
 
       const thermalConfig = getThermalFeedbackConfig();
       const thermalIntensity = this.getThermalIntensity();
@@ -724,14 +842,14 @@ export class MainSceneHudController {
         1,
         (this.bindings.getHeat() + projectedToolHeat + hoveredActionHeat) / 100,
       );
-      const currentHeatWidth = 196 * currentHeatRatio;
-      const projectedPreviewWidth = 196 * projectedPreviewRatio;
+      const currentHeatWidth = 246 * currentHeatRatio;
+      const projectedPreviewWidth = 246 * projectedPreviewRatio;
       const previewWidth = Math.max(
         0,
         projectedPreviewWidth - currentHeatWidth,
       );
 
-      this.heatPreviewFill.x = 382 + currentHeatWidth;
+      this.heatPreviewFill.x = leftColumnX + 88 + currentHeatWidth;
       this.heatPreviewFill.width = previewWidth;
       this.heatPreviewFill.setFillStyle(0xc9c9c9);
       this.heatPreviewFill.setAlpha(previewWidth > 0 ? 0.42 : 0);
@@ -810,7 +928,8 @@ export class MainSceneHudController {
           this.bindings.getHeat() >=
             getThermalFeedbackConfig().onsetThreshold ||
           this.bindings.getHallucination() >=
-            getHallucinationFeedbackConfig().onsetThreshold
+            getHallucinationFeedbackConfig().onsetThreshold ||
+          this.scene.time.now < this.tokenPulseUntil
         ) {
           this.scene.events.emit("updateBars");
         }
@@ -1212,6 +1331,178 @@ export class MainSceneHudController {
     this.computePulseBtn.setFillStyle(isSelected ? 0xc2874b : 0x6c5b47);
     this.computePulseBtn.setAlpha(isSelected ? 1 : 0.72);
     this.computePulseLabel.setAlpha(isSelected ? 1 : 0.72);
+  }
+
+  private syncEconomySection() {
+    if (
+      !this.tokenValueText ||
+      !this.tokenDeltaText ||
+      !this.tokenHousing ||
+      this.tokenLamps.length === 0
+    ) {
+      return;
+    }
+
+    const tokens = this.bindings.getTokens();
+    const now = this.scene.time.now;
+
+    if (this.lastTokenValue === null) {
+      this.lastTokenValue = tokens;
+    } else if (tokens !== this.lastTokenValue) {
+      this.lastTokenDelta = tokens - this.lastTokenValue;
+      this.lastTokenValue = tokens;
+      this.tokenPulseUntil = now + 900;
+      this.tokenDeltaText.setText(
+        `${this.lastTokenDelta > 0 ? "+" : ""}${this.lastTokenDelta}`,
+      );
+    }
+
+    const pulseRatio = Phaser.Math.Clamp(
+      (this.tokenPulseUntil - now) / 900,
+      0,
+      1,
+    );
+    const pulseWave =
+      pulseRatio > 0 ? (Math.sin((1 - pulseRatio) * Math.PI * 3) + 1) / 2 : 0;
+    const tokenColor =
+      this.lastTokenDelta < 0 && pulseRatio > 0
+        ? this.mixColor(0xffb000, 0xff6f61, 0.9 - pulseRatio * 0.4)
+        : this.lastTokenDelta > 0 && pulseRatio > 0
+          ? this.mixColor(0xffb000, 0x9cfb64, 0.9 - pulseRatio * 0.4)
+          : 0xffb000;
+    const housingColor =
+      this.lastTokenDelta < 0 && pulseRatio > 0
+        ? this.mixColor(0x15120e, 0x4a1712, pulseWave * 0.65)
+        : this.lastTokenDelta > 0 && pulseRatio > 0
+          ? this.mixColor(0x15120e, 0x15331a, pulseWave * 0.65)
+          : 0x15120e;
+
+    this.tokenValueText.setText(`${tokens} TOK`);
+    this.tokenValueText.setColor(this.toHexColor(tokenColor));
+    this.tokenValueText.setScale(1 + pulseWave * 0.08);
+    this.tokenHousing.setFillStyle(housingColor);
+    this.tokenHousing.setStrokeStyle(
+      2,
+      this.lastTokenDelta < 0 && pulseRatio > 0
+        ? this.mixColor(0x3d3527, 0x8b2420, pulseWave * 0.8)
+        : this.lastTokenDelta > 0 && pulseRatio > 0
+          ? this.mixColor(0x3d3527, 0x3d6d2f, pulseWave * 0.8)
+          : 0x3d3527,
+    );
+    this.tokenDeltaText.setAlpha(pulseRatio > 0 ? pulseRatio : 0);
+    this.tokenDeltaText.setY(this.tokenDeltaBaseY - (1 - pulseRatio) * 6);
+    this.tokenDeltaText.setColor(
+      this.toHexColor(this.lastTokenDelta < 0 ? 0xff6f61 : 0x9cfb64),
+    );
+
+    this.tokenLamps.forEach((lamp, lampIndex) => {
+      const threshold = [1, 50, 100][lampIndex];
+      const isLit = tokens >= threshold;
+      lamp.setFillStyle(
+        !isLit
+          ? 0x2f2a21
+          : this.lastTokenDelta < 0 && pulseRatio > 0
+            ? this.mixColor(0xffb347, 0xff6f61, pulseWave * 0.85)
+            : this.lastTokenDelta > 0 && pulseRatio > 0
+              ? this.mixColor(0xffb347, 0x9cfb64, pulseWave * 0.85)
+              : 0xffb347,
+      );
+      lamp.setAlpha(isLit ? 1 : 0.45);
+    });
+  }
+
+  private syncPassiveSection() {
+    if (!this.passiveEmptyText || this.passiveChips.length === 0) {
+      return;
+    }
+
+    const passiveItems = this.bindings.getPassiveHudItems();
+    const projectedHeat = Math.max(
+      0,
+      this.bindings.getProjectedToolHeat() +
+        this.bindings.getProjectedInferenceHeat() +
+        this.bindings.getProjectedRefuseHeat(),
+    );
+    const now = this.scene.time.now;
+    const passivePulseWave = (Math.sin(now * 0.009) + 1) / 2;
+
+    this.passiveEmptyText.setVisible(passiveItems.length === 0);
+
+    this.passiveChips.forEach((chip, chipIndex) => {
+      const passiveItem = passiveItems[chipIndex];
+
+      if (!passiveItem) {
+        chip.body.setVisible(false);
+        chip.label.setVisible(false);
+        return;
+      }
+
+      const highlightAmount = this.getPassiveHighlightAmount(
+        passiveItem.id,
+        projectedHeat,
+      );
+      const pulseAmount = highlightAmount * (0.55 + passivePulseWave * 0.45);
+      const stackSuffix = passiveItem.count > 1 ? `x${passiveItem.count}` : "";
+
+      chip.body.setVisible(true);
+      chip.label.setVisible(true);
+      chip.body.setFillStyle(
+        this.mixColor(0x1a1713, 0x4f3b1c, pulseAmount * 0.7),
+        1,
+      );
+      chip.body.setStrokeStyle(
+        1,
+        this.mixColor(0x111111, 0xffb347, pulseAmount * 0.85),
+      );
+      chip.label.setText(`${passiveItem.shortLabel}${stackSuffix}`);
+      chip.label.setColor(
+        this.toHexColor(this.mixColor(0xd4c5b0, 0xfff0a0, pulseAmount * 0.75)),
+      );
+      chip.label.setAlpha(0.9 + pulseAmount * 0.1);
+    });
+
+    const overflowCount = passiveItems.length - this.passiveChips.length;
+    if (overflowCount > 0) {
+      const lastChip = this.passiveChips[this.passiveChips.length - 1];
+      lastChip.body.setVisible(true);
+      lastChip.label.setVisible(true);
+      lastChip.label.setText(`+${overflowCount}`);
+      lastChip.body.setFillStyle(0x2a2417, 1);
+      lastChip.body.setStrokeStyle(1, 0x7b6638);
+      lastChip.label.setColor("#ffcf70");
+      lastChip.label.setAlpha(1);
+    }
+  }
+
+  private getPassiveHighlightAmount(
+    passiveId: PassiveUpgradeId,
+    projectedHeat: number,
+  ) {
+    if (passiveId === "cache_coalescer" && this.lastTokenDelta > 0) {
+      return Phaser.Math.Clamp(
+        (this.tokenPulseUntil - this.scene.time.now) / 900,
+        0,
+        1,
+      );
+    }
+
+    if (passiveId === "cooling_fins") {
+      return Phaser.Math.Clamp(projectedHeat / 40, 0.18, 1);
+    }
+
+    if (passiveId === "ecc_memory") {
+      return Phaser.Math.Clamp(this.bindings.getHallucination() / 100, 0.16, 1);
+    }
+
+    if (passiveId === "watchdog_timer") {
+      return 0.32;
+    }
+
+    if (passiveId === "noise_filter") {
+      return this.bindings.getSelectedPromptToolIds().length > 1 ? 0.55 : 0.24;
+    }
+
+    return 0.2;
   }
 
   private syncUtilitySection() {

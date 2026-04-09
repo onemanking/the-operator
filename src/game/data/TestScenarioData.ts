@@ -1,4 +1,5 @@
 import { ContentCategoryId } from "./ContentPolicyData";
+import { PassiveUpgradeId } from "./UpgradeData";
 import { ActiveUtilityId } from "./UtilityData";
 import { ToolId } from "../scenes/main/types";
 import { createInitialRunState, RunState } from "../types/SceneData";
@@ -13,6 +14,7 @@ interface TestScenarioDefinition {
   selectedPromptToolIds: ToolId[];
   heat?: number;
   hallucination?: number;
+  passiveUpgradeIds?: PassiveUpgradeId[];
   utilityChargesById?: Partial<Record<ActiveUtilityId, number>>;
 }
 
@@ -46,6 +48,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     selectedPromptToolIds: [],
     heat: 60,
     hallucination: 35,
+    passiveUpgradeIds: ["cooling_fins", "cache_coalescer", "ecc_memory"],
     utilityChargesById: {
       coolant_purge: 1,
       reality_patch: 1,
@@ -83,6 +86,7 @@ export function buildTestScenarioRunState(
   const initialRunState = createInitialRunState();
   const scenario = TEST_SCENARIOS[testScenarioId];
   const utilityChargesById = scenario.utilityChargesById ?? {};
+  const passiveUpgradeIds = scenario.passiveUpgradeIds ?? [];
   const unlockedUtilityIds = Object.entries(utilityChargesById)
     .filter(([, charges]) => (charges ?? 0) > 0)
     .map(([utilityId]) => utilityId);
@@ -98,6 +102,7 @@ export function buildTestScenarioRunState(
       equippedAgentIds: [...scenario.equippedAgentIds],
       equippedSkillIds: [...scenario.equippedSkillIds],
       selectedPromptToolIds: [...scenario.selectedPromptToolIds],
+      passiveUpgradeIds: [...passiveUpgradeIds],
     },
     utilityInventory: {
       unlockedIds: unlockedUtilityIds,

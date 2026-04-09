@@ -12,10 +12,13 @@ import {
   getShiftModifierDefinitions,
 } from "../data/ShiftModifierData";
 import {
+  ACTIVE_UTILITIES,
   canUseActiveUtility,
   consumeActiveUtilityCharge,
   getActiveUtilityCharges,
   getActiveUtilityDefinition,
+  getUnlockedActiveUtilityIds,
+  ActiveUtilityId,
 } from "../data/UtilityData";
 import {
   getHallucinationFeedbackConfig,
@@ -100,6 +103,7 @@ export class MainScene extends Phaser.Scene {
   private projectedToolHeat: number = 0;
   private projectedInferenceHeat: number = 0;
   private projectedRefuseHeat: number = 0;
+  private selectedUtilityId: ActiveUtilityId | null = null;
 
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
@@ -158,6 +162,7 @@ export class MainScene extends Phaser.Scene {
     this.projectedToolHeat = 0;
     this.projectedInferenceHeat = 0;
     this.projectedRefuseHeat = 0;
+    this.selectedUtilityId = null;
     this.currentEncounterIndex = this.runState.encounterProgress.encounterIndex;
     this.currentTurnIndex = this.runState.encounterProgress.turnIndex;
     this.chatHistory = [];
@@ -169,6 +174,7 @@ export class MainScene extends Phaser.Scene {
     this.lastThermalRumbleAt = 0;
     this.lastThermalWarningSoundAt = 0;
     this.lastHallucinationWarningSoundAt = 0;
+    this.syncSelectedUtilityId();
   }
 
   create() {
@@ -265,6 +271,8 @@ export class MainScene extends Phaser.Scene {
       onInference: () => this.sessionController.handleInference(),
       onRefuse: () => this.sessionController.handleRefuse(),
       onUseUtility: () => this.handleUtilityUse(),
+      onSelectPreviousUtility: () => this.cycleSelectedUtility(-1),
+      onSelectNextUtility: () => this.cycleSelectedUtility(1),
       onTogglePromptTool: (toolId) => this.togglePromptTool(toolId),
       onToggleSearchWord: (wordIndex, rawWord) =>
         this.toggleSearchWord(wordIndex, rawWord),
@@ -314,12 +322,18 @@ export class MainScene extends Phaser.Scene {
           (left, right) => left - right,
         ),
       getUtilityDisplayText: () => {
-        const definition = getActiveUtilityDefinition("coolant_purge");
-        const charges = getActiveUtilityCharges(this.runState, "coolant_purge");
+        const definition = this.selectedUtilityId
+          ? getActiveUtilityDefinition(this.selectedUtilityId)
+          : null;
+        const charges = this.selectedUtilityId
+          ? getActiveUtilityCharges(this.runState, this.selectedUtilityId)
+          : 0;
+
         return definition
-          ? `${definition.name}\nX${charges}`
-          : `UTILITY\nX${charges}`;
+          ? `${definition.shortLabel}\n${definition.effectText}\nX${charges}`
+          : "NO UTILITY\nSTOCK";
       },
+      canCycleUtilities: () => this.getSelectableUtilityIds().length > 1,
       getProjectedToolHeat: () => this.projectedToolHeat,
       getProjectedInferenceHeat: () => this.projectedInferenceHeat,
       getProjectedRefuseHeat: () => this.projectedRefuseHeat,
@@ -348,9 +362,7 @@ export class MainScene extends Phaser.Scene {
       getSafetyRevealFlash: (wordIndex) => this.getSafetyRevealFlash(wordIndex),
       getSafetyDetectedWordCount: () => this.getSafetyDetectedWordCount(),
       canUseUtility: () => {
-        return (
-          this.heat > 0 && canUseActiveUtility(this.runState, "coolant_purge")
-        );
+        return this.canUseSelectedUtility();
       },
       getHeat: () => this.heat,
       getHallucination: () => this.hallucination,
@@ -379,6 +391,7 @@ export class MainScene extends Phaser.Scene {
       this.runState.shiftModifierIds,
     );
 
+    this.syncSelectedUtilityId();
     this.refreshProjectedHeat();
 
     this.sessionController.startNextSession();
@@ -418,35 +431,76 @@ export class MainScene extends Phaser.Scene {
   }
 
   private handleUtilityUse() {
-    const definition = getActiveUtilityDefinition("coolant_purge");
+    const utilityId = this.selectedUtilityId;
+    const definition = utilityId
+      ? getActiveUtilityDefinition(utilityId)
+      : undefined;
     const recoveryProfile = getRunRecoveryProfile();
 
-    if (!definition || this.heat <= 0) {
+    if (!utilityId || !definition || !this.canUseUtilityId(utilityId)) {
       synth.playError();
       return;
     }
 
-    if (!consumeActiveUtilityCharge(this.runState, definition.id)) {
+    if (!consumeActiveUtilityCharge(this.runState, utilityId)) {
       synth.playError();
       return;
     }
 
-    this.setHeat(this.heat - definition.heatReduction);
+    if (definition.heatReduction) {
+      this.setHeat(this.heat - definition.heatReduction);
 
-    if (
-      this.isOverheated &&
-      this.heat < recoveryProfile.overheatClearThreshold
-    ) {
-      this.setIsOverheated(false);
-      this.sessionController.postSystemMessage(
-        `UTILITY: ${definition.name} STABILIZED THERMALS.`,
+      if (
+        this.isOverheated &&
+        this.heat < recoveryProfile.overheatClearThreshold
+      ) {
+        this.setIsOverheated(false);
+        this.sessionController.postSystemMessage(
+          `UTILITY: ${definition.name} STABILIZED THERMALS.`,
+        );
+      } else {
+        this.sessionController.postSystemMessage(
+          `UTILITY: ${definition.name} VENTED ${definition.heatReduction} HEAT.`,
+        );
+      }
+    } else if (definition.hallucinationReduction) {
+      this.setHallucination(
+        this.hallucination - definition.hallucinationReduction,
       );
-    } else {
       this.sessionController.postSystemMessage(
-        `UTILITY: ${definition.name} VENTED ${definition.heatReduction} HEAT.`,
+        `UTILITY: ${definition.name} SCRUBBED ${definition.hallucinationReduction} HALLUCINATION.`,
+      );
+    } else if (definition.connectionRestoreMs) {
+      const restoredMs = this.restoreUserConnection(
+        definition.connectionRestoreMs,
+      );
+      this.sessionController.postSystemMessage(
+        `UTILITY: ${definition.name} RESTORED ${(restoredMs / 1000).toFixed(1)}S OF USER CONNECTION.`,
       );
     }
 
+    this.syncSelectedUtilityId(utilityId);
+    this.events.emit("updateBars");
+  }
+
+  private cycleSelectedUtility(direction: 1 | -1) {
+    const utilityIds = this.getSelectableUtilityIds();
+
+    if (utilityIds.length <= 1) {
+      synth.playError();
+      return;
+    }
+
+    const currentIndex = this.selectedUtilityId
+      ? utilityIds.indexOf(this.selectedUtilityId)
+      : -1;
+    const nextIndex =
+      currentIndex === -1
+        ? 0
+        : (currentIndex + direction + utilityIds.length) % utilityIds.length;
+
+    this.selectedUtilityId = utilityIds[nextIndex];
+    synth.playButtonPress();
     this.events.emit("updateBars");
   }
 
@@ -1108,6 +1162,109 @@ export class MainScene extends Phaser.Scene {
       synth.playHallucinationDrift(hallucinationIntensity);
       this.lastHallucinationWarningSoundAt = now;
     }
+  }
+
+  private getSelectableUtilityIds() {
+    return getUnlockedActiveUtilityIds(this.runState);
+  }
+
+  private syncSelectedUtilityId(preferredId: ActiveUtilityId | null = null) {
+    const utilityIds = this.getSelectableUtilityIds();
+
+    if (utilityIds.length === 0) {
+      this.selectedUtilityId = null;
+      return;
+    }
+
+    if (
+      preferredId &&
+      utilityIds.includes(preferredId) &&
+      getActiveUtilityCharges(this.runState, preferredId) > 0
+    ) {
+      this.selectedUtilityId = preferredId;
+      return;
+    }
+
+    const usableUtilityId = utilityIds.find((utilityId) =>
+      this.canUseUtilityId(utilityId),
+    );
+
+    if (usableUtilityId) {
+      this.selectedUtilityId = usableUtilityId;
+      return;
+    }
+
+    if (preferredId && utilityIds.includes(preferredId)) {
+      this.selectedUtilityId = preferredId;
+      return;
+    }
+
+    this.selectedUtilityId = utilityIds[0];
+  }
+
+  private canUseSelectedUtility() {
+    if (!this.selectedUtilityId) {
+      return false;
+    }
+
+    return this.canUseUtilityId(this.selectedUtilityId);
+  }
+
+  private canUseUtilityId(utilityId: ActiveUtilityId) {
+    const definition = getActiveUtilityDefinition(utilityId);
+
+    if (!definition || !canUseActiveUtility(this.runState, utilityId)) {
+      return false;
+    }
+
+    if (definition.heatReduction) {
+      return this.heat > 0;
+    }
+
+    if (definition.hallucinationReduction) {
+      return this.hallucination > 0;
+    }
+
+    if (definition.connectionRestoreMs) {
+      return (
+        this.getElapsedSessionTime() > 0 &&
+        Boolean(this.getCurrentTurnDefinition())
+      );
+    }
+
+    return false;
+  }
+
+  private getCurrentTurnDefinition() {
+    return this.encounters[this.currentEncounterIndex]?.turns[
+      this.currentTurnIndex
+    ];
+  }
+
+  private getElapsedSessionTime() {
+    if (this.sessionStartTime <= 0) {
+      return 0;
+    }
+
+    return this.time.now - this.sessionStartTime;
+  }
+
+  private restoreUserConnection(connectionRestoreMs: number) {
+    const restoredMs = Math.min(
+      this.getElapsedSessionTime(),
+      connectionRestoreMs,
+    );
+
+    if (restoredMs <= 0) {
+      return 0;
+    }
+
+    this.sessionStartTime = Math.min(
+      this.time.now,
+      this.sessionStartTime + restoredMs,
+    );
+
+    return restoredMs;
   }
 
   private isComputeLatched() {

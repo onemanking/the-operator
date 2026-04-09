@@ -18,6 +18,8 @@ interface HudControllerBindings {
   onInference: () => void;
   onRefuse: () => void;
   onUseUtility: () => void;
+  onSelectPreviousUtility: () => void;
+  onSelectNextUtility: () => void;
   onTogglePromptTool: (toolId: ToolId) => void;
   onToggleSearchWord: (wordIndex: number, rawWord: string) => void;
   onSafetyScanStart: (
@@ -43,6 +45,7 @@ interface HudControllerBindings {
   getSelectedPromptToolIds: () => ToolId[];
   getSelectedSearchWordIndexes: () => number[];
   getUtilityDisplayText: () => string;
+  canCycleUtilities: () => boolean;
   getProjectedToolHeat: () => number;
   getProjectedInferenceHeat: () => number;
   getProjectedRefuseHeat: () => number;
@@ -85,6 +88,10 @@ export class MainSceneHudController {
   private utilityBtn!: Phaser.GameObjects.Rectangle;
   private utilityTxt!: Phaser.GameObjects.Text;
   private utilityLamp!: Phaser.GameObjects.Rectangle;
+  private utilityPrevBtn!: Phaser.GameObjects.Rectangle;
+  private utilityPrevLabel!: Phaser.GameObjects.Text;
+  private utilityNextBtn!: Phaser.GameObjects.Rectangle;
+  private utilityNextLabel!: Phaser.GameObjects.Text;
   private taskTextObj!: Phaser.GameObjects.Text;
   private chatTextObj!: Phaser.GameObjects.Text;
   private terminalBg!: Phaser.GameObjects.Rectangle;
@@ -514,29 +521,62 @@ export class MainSceneHudController {
     });
 
     this.scene.add.rectangle(822, 592, 164, 48, 0x4f4331).setOrigin(0);
+    this.utilityPrevBtn = this.scene.add
+      .rectangle(822, 588, 24, 48, 0x9f8a61)
+      .setOrigin(0)
+      .setStrokeStyle(2, 0x111111)
+      .setInteractive({ useHandCursor: true });
     this.utilityBtn = this.scene.add
-      .rectangle(822, 588, 164, 48, 0xc6b084)
+      .rectangle(850, 588, 108, 48, 0xc6b084)
+      .setOrigin(0)
+      .setStrokeStyle(2, 0x111111)
+      .setInteractive({ useHandCursor: true });
+    this.utilityNextBtn = this.scene.add
+      .rectangle(962, 588, 24, 48, 0x9f8a61)
       .setOrigin(0)
       .setStrokeStyle(2, 0x111111)
       .setInteractive({ useHandCursor: true });
 
     this.utilityLamp = this.scene.add
-      .rectangle(834, 598, 18, 6, 0x4d3a10)
+      .rectangle(862, 598, 18, 6, 0x4d3a10)
       .setOrigin(0)
       .setStrokeStyle(1, 0x211706);
-    this.scene.add.rectangle(856, 598, 18, 6, 0x4d3a10).setOrigin(0);
-    this.scene.add.rectangle(878, 598, 18, 6, 0x4d3a10).setOrigin(0);
+    this.scene.add.rectangle(884, 598, 18, 6, 0x4d3a10).setOrigin(0);
+    this.scene.add.rectangle(906, 598, 18, 6, 0x4d3a10).setOrigin(0);
+
+    this.utilityPrevLabel = this.scene.add
+      .text(834, 612, "<", {
+        fontFamily: "monospace",
+        fontSize: "18px",
+        color: "#111111",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    this.utilityNextLabel = this.scene.add
+      .text(974, 612, ">", {
+        fontFamily: "monospace",
+        fontSize: "18px",
+        color: "#111111",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
 
     this.utilityTxt = this.scene.add
       .text(904, 612, "", {
         fontFamily: "monospace",
-        fontSize: "13px",
+        fontSize: "11px",
         color: "#111111",
         fontStyle: "bold",
         align: "center",
-        wordWrap: { width: 110 },
+        wordWrap: { width: 88 },
       })
       .setOrigin(0.5);
+
+    this.utilityPrevBtn.on("pointerdown", () => {
+      synth.playButtonPress();
+      this.bindings.onSelectPreviousUtility();
+    });
 
     this.utilityBtn.on("pointerdown", () => {
       synth.playButtonPress();
@@ -547,6 +587,11 @@ export class MainSceneHudController {
         this.utilityTxt.y -= 4;
       });
       this.bindings.onUseUtility();
+    });
+
+    this.utilityNextBtn.on("pointerdown", () => {
+      synth.playButtonPress();
+      this.bindings.onSelectNextUtility();
     });
   }
 
@@ -1170,16 +1215,29 @@ export class MainSceneHudController {
   }
 
   private syncUtilitySection() {
-    if (!this.utilityBtn || !this.utilityTxt || !this.utilityLamp) {
+    if (
+      !this.utilityBtn ||
+      !this.utilityTxt ||
+      !this.utilityLamp ||
+      !this.utilityPrevBtn ||
+      !this.utilityPrevLabel ||
+      !this.utilityNextBtn ||
+      !this.utilityNextLabel
+    ) {
       return;
     }
 
     const utilityEnabled = this.bindings.canUseUtility();
+    const canCycleUtilities = this.bindings.canCycleUtilities();
     this.utilityTxt.setText(this.bindings.getUtilityDisplayText());
     this.utilityBtn.setFillStyle(utilityEnabled ? 0xc6b084 : 0x7f776a);
     this.utilityBtn.setAlpha(utilityEnabled ? 1 : 0.78);
     this.utilityTxt.setAlpha(utilityEnabled ? 1 : 0.78);
     this.utilityLamp.setFillStyle(utilityEnabled ? 0xffb000 : 0x4d3a10);
+    this.utilityPrevBtn.setAlpha(canCycleUtilities ? 1 : 0.45);
+    this.utilityPrevLabel.setAlpha(canCycleUtilities ? 1 : 0.45);
+    this.utilityNextBtn.setAlpha(canCycleUtilities ? 1 : 0.45);
+    this.utilityNextLabel.setAlpha(canCycleUtilities ? 1 : 0.45);
   }
 
   private cleanupSceneListeners() {

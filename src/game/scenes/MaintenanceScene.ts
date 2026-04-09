@@ -13,6 +13,7 @@ import {
   ACTIVE_UTILITIES,
   ActiveUtilityDefinition,
   ActiveUtilityId,
+  getActiveUtilityInventorySummary,
   applyActiveUtilityPurchase,
   canPurchaseActiveUtility,
   getActiveUtilityCharges,
@@ -334,7 +335,7 @@ export class MaintenanceScene extends Phaser.Scene {
 
   private refreshMaintenanceSummary() {
     this.summaryText.setText(
-      `TOKENS AFTER UPKEEP: ${this.tokens}    |    UPKEEP: ${RUN_CONFIG.serverCostPerShift}\nACCURACY: ${this.accuracy}%    |    AGENT SLOTS: ${this.runState.loadout.agentCapacity}    |    SKILL SLOTS: ${this.runState.loadout.skillCapacity}    |    COOLANT: ${getActiveUtilityCharges(this.runState, "coolant_purge")}`,
+      `TOKENS AFTER UPKEEP: ${this.tokens}    |    UPKEEP: ${RUN_CONFIG.serverCostPerShift}\nACCURACY: ${this.accuracy}%    |    AGENT SLOTS: ${this.runState.loadout.agentCapacity}    |    SKILL SLOTS: ${this.runState.loadout.skillCapacity}    |    UTILITIES: ${getActiveUtilityInventorySummary(this.runState)}`,
     );
 
     if (this.runState.maintenancePurchasedItemId) {
@@ -361,14 +362,27 @@ export class MaintenanceScene extends Phaser.Scene {
   private drawShopOffers() {
     const passiveOffers = this.getPassiveOfferCards();
     const utilityOffers = this.getUtilityOfferCards();
-    const availableOffers = [...passiveOffers, ...utilityOffers];
 
-    for (let index = availableOffers.length - 1; index > 0; index -= 1) {
-      const randomIndex = Math.floor(Math.random() * (index + 1));
-      const current = availableOffers[index];
-      availableOffers[index] = availableOffers[randomIndex];
-      availableOffers[randomIndex] = current;
-    }
+    const shuffle = <T>(items: T[]) => {
+      for (let index = items.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        const current = items[index];
+        items[index] = items[randomIndex];
+        items[randomIndex] = current;
+      }
+    };
+
+    shuffle(passiveOffers);
+    shuffle(utilityOffers);
+
+    const guaranteedUtilityOffer = utilityOffers.shift();
+    const availableOffers = [
+      ...(guaranteedUtilityOffer ? [guaranteedUtilityOffer] : []),
+      ...passiveOffers,
+      ...utilityOffers,
+    ];
+
+    shuffle(availableOffers);
 
     return availableOffers.slice(0, Math.min(3, availableOffers.length));
   }

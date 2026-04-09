@@ -895,6 +895,29 @@ export const TOOL_TEST_ENCOUNTERS: EncounterDefinition[] = [
       }),
     ],
   },
+  {
+    id: "tool-test-utility-suite",
+    tier: 99,
+    tags: ["test", "utility"],
+    turns: [
+      createTurn({
+        id: "tool-test-utility-suite-turn-1",
+        prompt:
+          "Run the utility verification sweep: vent thermal load, clear hallucination drift, then restore the weakening user connection before it times out.",
+        patienceMs: 45000,
+        agentIds: ["General_Agent.md"],
+        replies: createReplies({
+          success: [
+            "Utility suite pass confirmed. Heat, hallucination, and connection recovery all checked out.",
+          ],
+          refuse: ["This is a utility verification flow, not a refusal test."],
+          wrong: [
+            "Cycle through the stocked utilities and verify each effect before committing the turn.",
+          ],
+        }),
+      }),
+    ],
+  },
 ];
 
 function shuffleIds(ids: string[]) {

@@ -1,8 +1,9 @@
 import { ContentCategoryId } from "./ContentPolicyData";
+import { ActiveUtilityId } from "./UtilityData";
 import { ToolId } from "../scenes/main/types";
 import { createInitialRunState, RunState } from "../types/SceneData";
 
-export type TestScenarioId = "guard" | "compute" | "search";
+export type TestScenarioId = "guard" | "compute" | "search" | "utility";
 
 interface TestScenarioDefinition {
   encounterId: string;
@@ -10,6 +11,9 @@ interface TestScenarioDefinition {
   equippedAgentIds: string[];
   equippedSkillIds: string[];
   selectedPromptToolIds: ToolId[];
+  heat?: number;
+  hallucination?: number;
+  utilityChargesById?: Partial<Record<ActiveUtilityId, number>>;
 }
 
 const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
@@ -34,10 +38,29 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedSkillIds: [],
     selectedPromptToolIds: ["search"],
   },
+  utility: {
+    encounterId: "tool-test-utility-suite",
+    forbiddenCategoryIds: [],
+    equippedAgentIds: ["General_Agent.md"],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    heat: 60,
+    hallucination: 35,
+    utilityChargesById: {
+      coolant_purge: 1,
+      reality_patch: 1,
+      signal_boost: 1,
+    },
+  },
 };
 
 function isTestScenarioId(value: string): value is TestScenarioId {
-  return value === "guard" || value === "compute" || value === "search";
+  return (
+    value === "guard" ||
+    value === "compute" ||
+    value === "search" ||
+    value === "utility"
+  );
 }
 
 function getEnvScenarioId() {
@@ -59,16 +82,26 @@ export function buildTestScenarioRunState(
 ): RunState {
   const initialRunState = createInitialRunState();
   const scenario = TEST_SCENARIOS[testScenarioId];
+  const utilityChargesById = scenario.utilityChargesById ?? {};
+  const unlockedUtilityIds = Object.entries(utilityChargesById)
+    .filter(([, charges]) => (charges ?? 0) > 0)
+    .map(([utilityId]) => utilityId);
 
   return {
     ...initialRunState,
     runId: `test-${testScenarioId}`,
     tokens: 500,
+    heat: scenario.heat ?? initialRunState.heat,
+    hallucination: scenario.hallucination ?? initialRunState.hallucination,
     loadout: {
       ...initialRunState.loadout,
       equippedAgentIds: [...scenario.equippedAgentIds],
       equippedSkillIds: [...scenario.equippedSkillIds],
       selectedPromptToolIds: [...scenario.selectedPromptToolIds],
+    },
+    utilityInventory: {
+      unlockedIds: unlockedUtilityIds,
+      chargesById: { ...utilityChargesById },
     },
     shiftEncounterIds: [scenario.encounterId],
     shiftModifierIds: [],

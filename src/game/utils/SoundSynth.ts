@@ -101,6 +101,28 @@ export class SoundSynth {
       }, 92);
     }
   }
+
+  playHallucinationDrift(intensity: number) {
+    const clampedIntensity = Math.max(0, Math.min(1, intensity));
+    const baseFrequency = 320 + clampedIntensity * 120;
+    const detunedFrequency = baseFrequency * (1.012 + clampedIntensity * 0.016);
+    const baseVolume = 0.018 + clampedIntensity * 0.03;
+
+    this.playBeep(
+      baseFrequency,
+      "sine",
+      0.08 + clampedIntensity * 0.04,
+      baseVolume,
+    );
+    setTimeout(() => {
+      this.playBeep(
+        detunedFrequency,
+        "triangle",
+        0.06 + clampedIntensity * 0.03,
+        baseVolume * 0.7,
+      );
+    }, 28);
+  }
 }
 
 export const synth = new SoundSynth();

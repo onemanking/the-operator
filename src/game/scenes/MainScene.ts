@@ -18,6 +18,7 @@ import {
   getActiveUtilityDefinition,
 } from "../data/UtilityData";
 import {
+  getHallucinationFeedbackConfig,
   getPromptToolRuntimeConfig,
   getRunRecoveryProfile,
   getThermalFeedbackConfig,
@@ -111,6 +112,7 @@ export class MainScene extends Phaser.Scene {
   private hallucinationRecoveryBlockedUntil: number = 0;
   private lastThermalRumbleAt: number = 0;
   private lastThermalWarningSoundAt: number = 0;
+  private lastHallucinationWarningSoundAt: number = 0;
 
   constructor() {
     super("MainScene");
@@ -166,6 +168,7 @@ export class MainScene extends Phaser.Scene {
     this.hallucinationRecoveryBlockedUntil = 0;
     this.lastThermalRumbleAt = 0;
     this.lastThermalWarningSoundAt = 0;
+    this.lastHallucinationWarningSoundAt = 0;
   }
 
   create() {
@@ -395,6 +398,7 @@ export class MainScene extends Phaser.Scene {
     this.applySafetyScanCharge(delta / 1000);
     this.applySafetyRevealDecay(delta / 1000);
     this.applyThermalStressFeedback();
+    this.applyHallucinationFeedback();
 
     if (this.computeCharge > 0) {
       if (this.isComputeLatched()) {
@@ -1074,6 +1078,35 @@ export class MainScene extends Phaser.Scene {
     if (now - this.lastThermalWarningSoundAt >= warningSoundInterval) {
       synth.playThermalStress(thermalIntensity, this.isOverheated);
       this.lastThermalWarningSoundAt = now;
+    }
+  }
+
+  private applyHallucinationFeedback() {
+    const hallucinationConfig = getHallucinationFeedbackConfig();
+    const thresholdRange = Math.max(
+      1,
+      hallucinationConfig.fullIntensityThreshold -
+        hallucinationConfig.onsetThreshold,
+    );
+    const hallucinationIntensity = Phaser.Math.Clamp(
+      (this.hallucination - hallucinationConfig.onsetThreshold) /
+        thresholdRange,
+      0,
+      1,
+    );
+
+    if (hallucinationIntensity <= 0) {
+      return;
+    }
+
+    const now = this.time.now;
+
+    if (
+      now - this.lastHallucinationWarningSoundAt >=
+      hallucinationConfig.warningSoundIntervalMs
+    ) {
+      synth.playHallucinationDrift(hallucinationIntensity);
+      this.lastHallucinationWarningSoundAt = now;
     }
   }
 

@@ -70,6 +70,17 @@ export interface ThermalFeedbackConfig {
   overheatSoundIntervalMs: number;
 }
 
+export interface HallucinationFeedbackConfig {
+  onsetThreshold: number;
+  fullIntensityThreshold: number;
+  fallbackOverlayAlpha: number;
+  ghostOffsetPx: number;
+  shimmerRate: number;
+  lampPulseMinAlpha: number;
+  lampPulseRate: number;
+  warningSoundIntervalMs: number;
+}
+
 export interface PromptToolRuntimeConfig {
   search: SearchToolRuntimeConfig;
   compute: ComputeToolRuntimeConfig;
@@ -137,6 +148,17 @@ const THERMAL_FEEDBACK_CONFIG: ThermalFeedbackConfig = {
   overheatSoundIntervalMs: 320,
 };
 
+const HALLUCINATION_FEEDBACK_CONFIG: HallucinationFeedbackConfig = {
+  onsetThreshold: 60,
+  fullIntensityThreshold: 100,
+  fallbackOverlayAlpha: 0.18,
+  ghostOffsetPx: 2.2,
+  shimmerRate: 2.8,
+  lampPulseMinAlpha: 0.3,
+  lampPulseRate: 3.4,
+  warningSoundIntervalMs: 1080,
+};
+
 export function getRunRecoveryProfile(): RunRecoveryProfile {
   return RUN_RECOVERY_PROFILE;
 }
@@ -147,4 +169,8 @@ export function getPromptToolRuntimeConfig(): PromptToolRuntimeConfig {
 
 export function getThermalFeedbackConfig(): ThermalFeedbackConfig {
   return THERMAL_FEEDBACK_CONFIG;
+}
+
+export function getHallucinationFeedbackConfig(): HallucinationFeedbackConfig {
+  return HALLUCINATION_FEEDBACK_CONFIG;
 }

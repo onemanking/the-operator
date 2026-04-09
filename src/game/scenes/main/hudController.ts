@@ -1,6 +1,10 @@
 import Phaser from "phaser";
-import { getThermalFeedbackConfig } from "../../data/RunData";
+import {
+  getHallucinationFeedbackConfig,
+  getThermalFeedbackConfig,
+} from "../../data/RunData";
 import { synth } from "../../utils/SoundSynth";
+import { createHallucinationFeedbackShader } from "./hallucinationFeedbackShader";
 import { PROMPT_TOOLS } from "./config";
 import { createSafetyFilterShader } from "./safetyFilterShader";
 import { createThermalFeedbackShader } from "./thermalFeedbackShader";
@@ -84,12 +88,16 @@ export class MainSceneHudController {
   private taskTextObj!: Phaser.GameObjects.Text;
   private chatTextObj!: Phaser.GameObjects.Text;
   private terminalBg!: Phaser.GameObjects.Rectangle;
+  private terminalHallucinationOverlay!: Phaser.GameObjects.Rectangle;
+  private terminalHallucinationShader?: Phaser.GameObjects.Shader;
   private terminalThermalOverlay!: Phaser.GameObjects.Rectangle;
   private terminalThermalShader?: Phaser.GameObjects.Shader;
   private terminalSafetyOverlay!: Phaser.GameObjects.Rectangle;
   private terminalSafetyShader?: Phaser.GameObjects.Shader;
   private thermalWarningLamp!: Phaser.GameObjects.Arc;
   private thermalWarningLampHalo!: Phaser.GameObjects.Arc;
+  private hallucinationWarningLamp!: Phaser.GameObjects.Arc;
+  private hallucinationWarningLampHalo!: Phaser.GameObjects.Arc;
   private heatPreviewFill!: Phaser.GameObjects.Rectangle;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
@@ -120,6 +128,19 @@ export class MainSceneHudController {
       .rectangle(250, 50, 524, 340, 0x051505)
       .setOrigin(0);
     this.terminalBg.setStrokeStyle(2, 0x33ff33);
+    if (this.scene.game.renderer.type === Phaser.WEBGL) {
+      this.terminalHallucinationShader = this.scene.add
+        .shader(createHallucinationFeedbackShader(), 250, 50, 524, 340)
+        .setOrigin(0)
+        .setVisible(false)
+        .setDepth(0.35);
+    }
+
+    this.terminalHallucinationOverlay = this.scene.add
+      .rectangle(250, 50, 524, 340, 0x221336, 0)
+      .setOrigin(0)
+      .setVisible(!this.terminalHallucinationShader)
+      .setDepth(0.35);
     if (this.scene.game.renderer.type === Phaser.WEBGL) {
       this.terminalThermalShader = this.scene.add
         .shader(createThermalFeedbackShader(), 250, 50, 524, 340)
@@ -571,9 +592,15 @@ export class MainSceneHudController {
       fontSize: "16px",
       color: "#d4c5b0",
     });
+    this.hallucinationWarningLampHalo = this.scene.add
+      .circle(956, 690, 10, 0x8f6dff, 0)
+      .setStrokeStyle(1, 0x29194f, 0.45);
+    this.hallucinationWarningLamp = this.scene.add
+      .circle(956, 690, 6, 0x22143c)
+      .setStrokeStyle(2, 0x111111);
     this.scene.add.rectangle(790, 680, 150, 20, 0x111111).setOrigin(0);
     const hallucinationBarFill = this.scene.add
-      .rectangle(792, 682, 0, 16, 0xff0000)
+      .rectangle(792, 682, 0, 16, 0x8f6dff)
       .setOrigin(0);
     this.bindings.setHallucinationBarFill(hallucinationBarFill);
 
@@ -595,6 +622,8 @@ export class MainSceneHudController {
 
       const thermalConfig = getThermalFeedbackConfig();
       const thermalIntensity = this.getThermalIntensity();
+      const hallucinationConfig = getHallucinationFeedbackConfig();
+      const hallucinationIntensity = this.getHallucinationIntensity();
       const pulseRate = this.bindings.isOverheated()
         ? thermalConfig.overheatLampPulseRate
         : thermalConfig.lampPulseRate;
@@ -608,6 +637,23 @@ export class MainSceneHudController {
         thermalConfig.lampPulseMinAlpha,
         1,
         pulseWave,
+      );
+      const hallucinationPulseWave =
+        hallucinationIntensity > 0
+          ? (Math.sin(
+              this.scene.time.now *
+                0.001 *
+                hallucinationConfig.lampPulseRate *
+                Math.PI *
+                2,
+            ) +
+              1) /
+            2
+          : 0;
+      const hallucinationLampAlpha = Phaser.Math.Linear(
+        hallucinationConfig.lampPulseMinAlpha,
+        1,
+        hallucinationPulseWave,
       );
 
       if (this.bindings.isOverheated()) {
@@ -664,6 +710,33 @@ export class MainSceneHudController {
         this.thermalWarningLampHalo.setFillStyle(0xff8a2b, 0);
         this.thermalWarningLampHalo.setScale(1);
       }
+
+      if (hallucinationIntensity > 0) {
+        const lampColor = this.mixColor(
+          0x8f6dff,
+          0xd7cbff,
+          hallucinationIntensity * 0.78,
+        );
+        hallucinationBarFill.setFillStyle(
+          this.mixColor(0x8f6dff, 0xc9b8ff, hallucinationIntensity * 0.9),
+        );
+        this.hallucinationWarningLamp.setFillStyle(
+          lampColor,
+          hallucinationLampAlpha,
+        );
+        this.hallucinationWarningLampHalo.setFillStyle(
+          lampColor,
+          (0.08 + hallucinationIntensity * 0.22) * hallucinationLampAlpha,
+        );
+        this.hallucinationWarningLampHalo.setScale(
+          1 + hallucinationPulseWave * 0.12,
+        );
+      } else {
+        hallucinationBarFill.setFillStyle(0x8f6dff);
+        this.hallucinationWarningLamp.setFillStyle(0x22143c, 1);
+        this.hallucinationWarningLampHalo.setFillStyle(0x8f6dff, 0);
+        this.hallucinationWarningLampHalo.setScale(1);
+      }
     };
 
     this.cleanupHandler = () => {
@@ -689,7 +762,10 @@ export class MainSceneHudController {
       loop: true,
       callback: () => {
         if (
-          this.bindings.getHeat() >= getThermalFeedbackConfig().onsetThreshold
+          this.bindings.getHeat() >=
+            getThermalFeedbackConfig().onsetThreshold ||
+          this.bindings.getHallucination() >=
+            getHallucinationFeedbackConfig().onsetThreshold
         ) {
           this.scene.events.emit("updateBars");
         }
@@ -809,39 +885,52 @@ export class MainSceneHudController {
 
   private syncTerminalEffects() {
     const thermalConfig = getThermalFeedbackConfig();
+    const hallucinationConfig = getHallucinationFeedbackConfig();
     const searchModeSelected = this.bindings.isSearchModeSelected();
     const safetyModeSelected = this.bindings.isSafetyModeSelected();
     const safetyScanning = this.bindings.isSafetyScanning();
-    const heat = this.bindings.getHeat();
     const thermalIntensity = this.getThermalIntensity();
+    const hallucinationIntensity = this.getHallucinationIntensity();
     const overheatStrength = this.bindings.isOverheated() ? 1 : 0;
     const baseStrokeColor = safetyModeSelected ? 0x8c3429 : 0x33ff33;
-    const thermalStrokeColor = this.mixColor(
-      baseStrokeColor,
+    const perceptionStrokeColor = this.mixColor(
+      this.mixColor(baseStrokeColor, 0x8f6dff, hallucinationIntensity * 0.46),
       0xff7c36,
       thermalIntensity * 0.72 + overheatStrength * 0.18,
     );
     const taskColor = this.toHexColor(
       this.mixColor(
-        safetyModeSelected ? 0x8f4232 : 0x33ff33,
+        this.mixColor(
+          safetyModeSelected ? 0x8f4232 : 0x33ff33,
+          0xb89fff,
+          hallucinationIntensity * 0.34,
+        ),
         0xffb36b,
         thermalIntensity * 0.42 + overheatStrength * 0.18,
       ),
     );
     const chatColor = this.toHexColor(
       this.mixColor(
-        safetyModeSelected ? 0x874032 : 0x33ff33,
+        this.mixColor(
+          safetyModeSelected ? 0x874032 : 0x33ff33,
+          0xa78fff,
+          hallucinationIntensity * 0.38,
+        ),
         0xff9b5c,
         thermalIntensity * 0.48 + overheatStrength * 0.2,
       ),
     );
     const taskAlpha = Phaser.Math.Clamp(
-      (safetyModeSelected ? 0.78 : 1) - thermalIntensity * 0.08,
+      (safetyModeSelected ? 0.78 : 1) -
+        thermalIntensity * 0.08 -
+        hallucinationIntensity * 0.06,
       0.7,
       1,
     );
     const chatAlpha = Phaser.Math.Clamp(
-      (safetyModeSelected ? 0.72 : 1) - thermalIntensity * 0.12,
+      (safetyModeSelected ? 0.72 : 1) -
+        thermalIntensity * 0.12 -
+        hallucinationIntensity * 0.09,
       0.62,
       1,
     );
@@ -850,7 +939,36 @@ export class MainSceneHudController {
       searchModeSelected ? "zoom-in" : "default",
     );
     this.terminalBg.setFillStyle(0x051505);
-    this.terminalBg.setStrokeStyle(2, thermalStrokeColor);
+    this.terminalBg.setStrokeStyle(2, perceptionStrokeColor);
+
+    if (this.terminalHallucinationShader) {
+      this.terminalHallucinationShader.setVisible(
+        hallucinationIntensity > 0.01,
+      );
+      this.terminalHallucinationShader.setUniform(
+        "active.value",
+        hallucinationIntensity > 0.01 ? 1 : 0,
+      );
+      this.terminalHallucinationShader.setUniform(
+        "intensity.value",
+        hallucinationIntensity,
+      );
+      this.terminalHallucinationShader.setUniform(
+        "ghostOffsetPx.value",
+        hallucinationConfig.ghostOffsetPx,
+      );
+      this.terminalHallucinationShader.setUniform(
+        "shimmerRate.value",
+        hallucinationConfig.shimmerRate,
+      );
+    }
+
+    this.terminalHallucinationOverlay.setFillStyle(0x221336);
+    this.terminalHallucinationOverlay.setAlpha(
+      this.terminalHallucinationShader
+        ? 0
+        : hallucinationIntensity * hallucinationConfig.fallbackOverlayAlpha,
+    );
 
     if (this.terminalThermalShader) {
       this.terminalThermalShader.setVisible(thermalIntensity > 0.01);
@@ -954,6 +1072,22 @@ export class MainSceneHudController {
     }
 
     return Math.max(baseIntensity, thermalConfig.overheatMinimumIntensity);
+  }
+
+  private getHallucinationIntensity() {
+    const hallucinationConfig = getHallucinationFeedbackConfig();
+    const thresholdRange = Math.max(
+      1,
+      hallucinationConfig.fullIntensityThreshold -
+        hallucinationConfig.onsetThreshold,
+    );
+
+    return Phaser.Math.Clamp(
+      (this.bindings.getHallucination() - hallucinationConfig.onsetThreshold) /
+        thresholdRange,
+      0,
+      1,
+    );
   }
 
   private mixColor(leftColor: number, rightColor: number, amount: number) {

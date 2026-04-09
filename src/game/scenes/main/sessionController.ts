@@ -419,7 +419,6 @@ export class MainSceneSessionController {
     reward: number = 10,
     failureProgressMode: "none" | "next-turn" | "next-encounter" = "none",
   ) {
-    const color = success ? "#00ff00" : "#ff0000";
     const successHeadline = message.length > 0 ? message : "REQUEST RESOLVED";
     const text = success
       ? reward > 0
@@ -435,18 +434,7 @@ export class MainSceneSessionController {
       this.scene.cameras.main.shake(200, 0.01);
     }
 
-    const feedback = this.scene.add
-      .text(512, 384, text, {
-        fontFamily: "monospace",
-        fontSize: "32px",
-        color,
-        backgroundColor: "#000000",
-        padding: { x: 20, y: 20 },
-        align: "center",
-      })
-      .setOrigin(0.5)
-      .setDepth(100);
-    feedback.setStroke("#111111", 4);
+    this.postSystemMessage(text);
 
     if (this.bindings.getHallucination() >= 100) {
       this.scene.time.delayedCall(1500, () =>
@@ -455,9 +443,7 @@ export class MainSceneSessionController {
       return;
     }
 
-    this.scene.time.delayedCall(2000, () => {
-      feedback.destroy();
-
+    this.scene.time.delayedCall(3500, () => {
       if (success) {
         this.advanceEncounterProgress();
         return;

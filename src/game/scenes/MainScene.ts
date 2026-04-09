@@ -457,11 +457,11 @@ export class MainScene extends Phaser.Scene {
     }
 
     if (this.selectedPromptToolIds.includes("safety") && toolId !== "safety") {
-      this.resetSafetyInteractionState(true);
+      this.resetSafetyInteractionState(false);
     }
 
     if (this.selectedPromptToolIds.includes(toolId) && toolId === "safety") {
-      this.resetSafetyInteractionState(true);
+      this.resetSafetyInteractionState(false);
     }
 
     this.selectedPromptToolIds = nextPromptToolIds;
@@ -578,12 +578,20 @@ export class MainScene extends Phaser.Scene {
       now - this.safetyLastGeigerAt >=
         getPromptToolRuntimeConfig().safety.geigerClickIntervalMs
     ) {
-      synth.playBeep(
-        780 + intersectedWordIndexes.length * 44,
-        "square",
-        0.025,
-        0.025,
-      );
+      if (
+        !this.getSafetyRevealedWordIndexes().some((index) =>
+          intersectedWordIndexes.includes(index),
+        )
+      ) {
+        synth.playBeep(
+          780 + intersectedWordIndexes.length * 44,
+          "square",
+          0.025,
+          0.025,
+        );
+      } else {
+        synth.playBeep(620, "sawtooth", 0.12, 0.06);
+      }
       this.safetyLastGeigerAt = now;
     }
 

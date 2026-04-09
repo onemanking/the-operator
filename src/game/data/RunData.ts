@@ -84,7 +84,7 @@ const PROMPT_TOOL_RUNTIME_CONFIG: PromptToolRuntimeConfig = {
     passiveHeatPerSecond: 1.5,
     scanningHeatPerSecond: 4.5,
     scanBandWidth: 104,
-    scanRevealSeconds: 0.72,
+    scanRevealSeconds: 0.51,
     dragFriction: 0.34,
     maxStableScanSpeed: 520,
     phosphorDecaySeconds: 1.1,

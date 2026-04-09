@@ -1,12 +1,8 @@
 import Phaser from "phaser";
 import {
   PromptTokenBounds,
-  SAFETY_FILM_MASK_ALPHA,
-  SAFETY_FILM_MASK_COLOR,
   SAFETY_FILM_TEXT_ALPHA,
   SAFETY_FILM_TEXT_COLOR,
-  SAFETY_REVEALED_GLOW_ALPHA,
-  SAFETY_REVEALED_GLOW_COLOR,
   SAFETY_REVEALED_TEXT_ALPHA,
   SAFETY_REVEALED_TEXT_COLOR,
   SAFETY_SCANNER_LANE_HEIGHT,
@@ -52,10 +48,11 @@ interface PromptTokenUi {
   index: number;
   rawWord: string;
   background: Phaser.GameObjects.Rectangle;
-  safetyMask: Phaser.GameObjects.Rectangle;
   selectionFrame: Phaser.GameObjects.Graphics;
   text: Phaser.GameObjects.Text;
   hitArea: Phaser.GameObjects.Rectangle;
+  safetyGlowFx?: Phaser.FX.Glow;
+  safetyBloomFx?: Phaser.FX.Bloom;
 }
 
 export const TERMINAL_TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -84,6 +81,10 @@ function mixHexColor(fromHex: string, toHex: string, amount: number) {
   const blue = Math.round(Phaser.Math.Linear(from.blue, to.blue, t));
 
   return Phaser.Display.Color.RGBToString(red, green, blue, 0, "#");
+}
+
+function toHexNumber(hexColor: string) {
+  return Phaser.Display.Color.HexStringToColor(hexColor).color;
 }
 
 function drawDashedFrame(
@@ -261,16 +262,6 @@ export class TerminalPromptController {
           0,
         )
         .setOrigin(0);
-      const safetyMask = this.scene.add
-        .rectangle(
-          cursorX - 3,
-          cursorY - 2,
-          wordWidth + 8,
-          wordHeight + 6,
-          SAFETY_FILM_MASK_COLOR,
-          0,
-        )
-        .setOrigin(0);
       const selectionFrame = this.scene.add.graphics();
       const text = this.scene.add.text(
         cursorX,
@@ -312,7 +303,6 @@ export class TerminalPromptController {
         index,
         rawWord,
         background,
-        safetyMask,
         selectionFrame,
         text,
         hitArea,
@@ -380,7 +370,7 @@ export class TerminalPromptController {
     );
     const isSearchModeSelected = this.bindings.isSearchModeSelected();
     const isSafetyModeSelected = this.bindings.isSafetyModeSelected();
-    const isSafetyScanning = this.bindings.isSafetyScanning();
+    const safetyNoiseIntensity = this.bindings.getSafetyScanNoiseIntensity();
 
     this.syncScannerLayout();
     this.safetyScannerController.syncVisualState();
@@ -409,34 +399,10 @@ export class TerminalPromptController {
       const frameHeight = token.hitArea.height - 2;
 
       token.background.setVisible(
-        (isSearchModeSelected && (isSelected || isHovered)) ||
-          (isSafetyModeSelected && isSafetyMatched && safetyChargeGlow > 0.03),
+        isSearchModeSelected && (isSelected || isHovered),
       );
-      token.background.setFillStyle(
-        isSafetyModeSelected
-          ? SAFETY_REVEALED_GLOW_COLOR
-          : isSelected
-            ? 0x33ff33
-            : 0x1f5a1f,
-      );
-      token.background.setAlpha(
-        isSafetyModeSelected
-          ? Phaser.Math.Linear(
-              0.04,
-              SAFETY_REVEALED_GLOW_ALPHA + 0.14,
-              displayGlow,
-            )
-          : isSelected
-            ? 0.32
-            : 0.18,
-      );
-      token.safetyMask.setVisible(isSafetyModeSelected && isSafetyMatched);
-      token.safetyMask.setFillStyle(
-        isSafetyRevealed ? SAFETY_REVEALED_GLOW_COLOR : SAFETY_FILM_MASK_COLOR,
-        isSafetyRevealed
-          ? 0.1
-          : Phaser.Math.Linear(SAFETY_FILM_MASK_ALPHA, 0.08, displayGlow),
-      );
+      token.background.setFillStyle(isSelected ? 0x33ff33 : 0x1f5a1f);
+      token.background.setAlpha(isSelected ? 0.32 : 0.18);
       token.selectionFrame.setVisible(isSearchModeSelected);
       if (isSearchModeSelected) {
         drawDashedFrame(
@@ -456,7 +422,13 @@ export class TerminalPromptController {
         token.text.setColor(isSelected ? "#081208" : "#33ff33");
         token.text.setAlpha(1);
         token.text.setShadow(0, 0, "#000000", 0, false, false);
+        this.clearSafetyGlyphFx(token);
       } else if (isSafetyModeSelected) {
+        const safetyGlowColor = mixHexColor(
+          "#ff6c42",
+          "#fff5ce",
+          Math.pow(displayGlow, isSafetyRevealed ? 0.42 : 0.72),
+        );
         token.text.setColor(
           isSafetyMatched
             ? mixHexColor(
@@ -475,18 +447,18 @@ export class TerminalPromptController {
               )
             : SAFETY_FILM_TEXT_ALPHA,
         );
-        token.text.setShadow(
-          0,
-          0,
-          isSafetyRevealed ? "#ffe8aa" : "#ff8f62",
-          Math.round(3 + displayGlow * 14),
-          false,
-          true,
+        token.text.setShadow(0, 0, "#000000", 0, false, false);
+        this.syncSafetyGlyphFx(
+          token,
+          isSafetyMatched ? displayGlow : 0,
+          safetyGlowColor,
+          safetyNoiseIntensity,
         );
       } else {
         token.text.setColor("#33ff33");
         token.text.setAlpha(1);
         token.text.setShadow(0, 0, "#000000", 0, false, false);
+        this.clearSafetyGlyphFx(token);
       }
 
       if (isSearchModeSelected) {
@@ -507,7 +479,7 @@ export class TerminalPromptController {
     this.safetyScannerController.clearLayout();
     this.tokens.forEach((token) => {
       token.background.destroy();
-      token.safetyMask.destroy();
+      this.clearSafetyGlyphFx(token);
       token.selectionFrame.destroy();
       token.text.destroy();
       token.hitArea.destroy();
@@ -521,5 +493,65 @@ export class TerminalPromptController {
   destroy() {
     this.safetyScannerController.destroy();
     this.clear();
+  }
+
+  private syncSafetyGlyphFx(
+    token: PromptTokenUi,
+    displayGlow: number,
+    glowColorHex: string,
+    noiseIntensity: number,
+  ) {
+    const textObject = token.text;
+    const fx = textObject.postFX;
+
+    if (!fx || displayGlow <= 0.02) {
+      this.clearSafetyGlyphFx(token);
+      return;
+    }
+
+    token.safetyGlowFx ??= fx.addGlow(0xffe9b5, 1.2, 0.35, false, 0.08, 7);
+    token.safetyBloomFx ??= fx.addBloom(0xfff1c2, 1, 1, 1.1, 1.2, 4);
+
+    const glowColor = toHexNumber(glowColorHex);
+    const bloomColor = toHexNumber(
+      mixHexColor(glowColorHex, "#fffdf3", Math.min(1, displayGlow * 0.7)),
+    );
+    const jitterCompensation = 1 - noiseIntensity * 0.35;
+
+    token.safetyGlowFx.color = glowColor;
+    token.safetyGlowFx.outerStrength =
+      Phaser.Math.Linear(0.5, 6.6, displayGlow) * jitterCompensation;
+    token.safetyGlowFx.innerStrength = Phaser.Math.Linear(
+      0.15,
+      1.35,
+      displayGlow,
+    );
+
+    token.safetyBloomFx.color = bloomColor;
+    token.safetyBloomFx.offsetX = Phaser.Math.Linear(0.5, 1.4, displayGlow);
+    token.safetyBloomFx.offsetY = Phaser.Math.Linear(0.5, 1.4, displayGlow);
+    token.safetyBloomFx.blurStrength =
+      Phaser.Math.Linear(0.4, 2.4, displayGlow) * jitterCompensation;
+    token.safetyBloomFx.strength = Phaser.Math.Linear(0.25, 2.1, displayGlow);
+  }
+
+  private clearSafetyGlyphFx(token: PromptTokenUi) {
+    const fx = token.text.postFX;
+
+    if (!fx) {
+      token.safetyGlowFx = undefined;
+      token.safetyBloomFx = undefined;
+      return;
+    }
+
+    if (token.safetyGlowFx) {
+      fx.remove(token.safetyGlowFx);
+      token.safetyGlowFx = undefined;
+    }
+
+    if (token.safetyBloomFx) {
+      fx.remove(token.safetyBloomFx);
+      token.safetyBloomFx = undefined;
+    }
   }
 }

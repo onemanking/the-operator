@@ -901,7 +901,7 @@ export const TOOL_TEST_ENCOUNTERS: EncounterDefinition[] = [
         id: "tool-test-utility-suite-turn-1",
         prompt:
           "Run the utility verification sweep: vent thermal load, clear hallucination drift, then restore the weakening user connection before it times out.",
-        patienceMs: 45000,
+        patienceMs: 3600000,
         agentIds: [AgentId.General],
         replies: createReplies({
           success: [

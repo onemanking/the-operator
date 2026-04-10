@@ -46,7 +46,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
-    heat: 60,
+    heat: 100,
     hallucination: 35,
     passiveUpgradeIds: ["cooling_fins", "cache_coalescer", "ecc_memory"],
     utilityChargesById: {

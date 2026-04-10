@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ContentCategoryId } from "../data/ContentPolicyData";
+import { getForbiddenCategoryBriefingText } from "../data/ContentPolicyData";
 import { addScanlines } from "./shared/retroUi";
 import { synth } from "../utils/SoundSynth";
 import {
@@ -32,15 +33,18 @@ import {
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
+import { getPolicyForDay } from "../data/ShiftPolicyData";
 import {
   getOwnedPassiveUpgradeHudItems,
   getRunPassiveModifiers,
 } from "../data/UpgradeData";
+import { GAME_CANVAS_HEIGHT, GAME_CANVAS_WIDTH } from "../layout";
 import { sortPromptToolIds } from "./main/config";
 import { AgentId, ChatMessage, SkillId, ToolId, isToolId } from "./main/types";
 import { MainSceneStorageController } from "./main/storageController";
 import { MainSceneSessionController } from "./main/sessionController";
 import { MainSceneHudController } from "./main/hudController";
+import { MainSceneStickyNotesController } from "./main/stickyNotesController";
 import {
   EncounterToolRuntimeSnapshot,
   getProjectedInferenceActionHeat,
@@ -111,6 +115,7 @@ export class MainScene extends Phaser.Scene {
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
   private hudController!: MainSceneHudController;
+  private stickyNotesController!: MainSceneStickyNotesController;
 
   private sessionStartTime: number = 0;
   private followUpCount: number = 0;
@@ -378,13 +383,33 @@ export class MainScene extends Phaser.Scene {
       isOverheated: () => this.isOverheated,
     });
 
-    this.add.rectangle(0, 0, 1024, 768, 0x1a1813).setOrigin(0);
+    this.stickyNotesController = new MainSceneStickyNotesController(this, {
+      getPolicyText: () => getPolicyForDay(this.day),
+      getDirectiveText: () =>
+        getForbiddenCategoryBriefingText(this.runState.forbiddenCategoryIds),
+      getShiftEventText: () => {
+        const modifiers = getShiftModifierDefinitions(
+          this.runState.shiftModifierIds,
+        );
+
+        return modifiers.length > 0
+          ? modifiers
+              .map((modifier) => `${modifier.name}\n${modifier.briefingText}`)
+              .join("\n\n")
+          : "NO SPECIAL SHIFT CONDITIONS.";
+      },
+    });
+
+    this.add
+      .rectangle(0, 0, GAME_CANVAS_WIDTH, GAME_CANVAS_HEIGHT, 0x1a1813)
+      .setOrigin(0);
 
     this.hudController.createLayout();
     this.hudController.createPromptToolGrid();
     this.hudController.createComputeSection();
     this.hudController.createEconomySection();
     this.hudController.createPassiveSection();
+    this.stickyNotesController.createLayout();
     this.storageController.createContextAssemblyArea();
     this.storageController.createStorageRack();
     this.hudController.createActionButtons();

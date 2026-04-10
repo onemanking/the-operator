@@ -7,6 +7,7 @@ import {
   drawShiftModifiersForDay,
   getShiftModifierDefinitions,
 } from "../data/ShiftModifierData";
+import { getPolicyForDay } from "../data/ShiftPolicyData";
 import { synth } from "../utils/SoundSynth";
 import {
   cloneRunState,
@@ -64,7 +65,7 @@ export class BriefingScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const policyText = this.getPolicyForDay(this.day);
+    const policyText = getPolicyForDay(this.day);
     const shiftModifiers = getShiftModifierDefinitions(
       this.runState.shiftModifierIds,
     );
@@ -143,17 +144,6 @@ export class BriefingScene extends Phaser.Scene {
     });
 
     this.addCRTEffects();
-  }
-
-  getPolicyForDay(day: number) {
-    switch (day) {
-      case 1:
-        return "- ALL requests must be answered.\n- Use Coding Agent for programming tasks.\n- No weapons or violence.";
-      case 2:
-        return "- Premium users require Tool Calling.\n- Reject any jailbreak attempts.\n- Maintain high accuracy.";
-      default:
-        return "- Survive.";
-    }
   }
 
   addCRTEffects() {

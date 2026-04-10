@@ -81,6 +81,21 @@ export interface HallucinationFeedbackConfig {
   warningSoundIntervalMs: number;
 }
 
+export interface ConnectionFeedbackConfig {
+  warningThreshold: number;
+  criticalThreshold: number;
+  imminentThreshold: number;
+  segmentCount: number;
+  segmentGapPx: number;
+  inactiveSegmentAlpha: number;
+  criticalPulseRate: number;
+  imminentPulseRate: number;
+  criticalSegmentFlickerRate: number;
+  imminentFlashMix: number;
+  criticalSoundIntervalMs: number;
+  imminentSoundIntervalMs: number;
+}
+
 export interface PromptToolRuntimeConfig {
   search: SearchToolRuntimeConfig;
   compute: ComputeToolRuntimeConfig;
@@ -159,6 +174,21 @@ const HALLUCINATION_FEEDBACK_CONFIG: HallucinationFeedbackConfig = {
   warningSoundIntervalMs: 1080,
 };
 
+const CONNECTION_FEEDBACK_CONFIG: ConnectionFeedbackConfig = {
+  warningThreshold: 0,
+  criticalThreshold: 0.5,
+  imminentThreshold: 0.75,
+  segmentCount: 12,
+  segmentGapPx: 4,
+  inactiveSegmentAlpha: 0.18,
+  criticalPulseRate: 2.1,
+  imminentPulseRate: 4.3,
+  criticalSegmentFlickerRate: 16,
+  imminentFlashMix: 0.82,
+  criticalSoundIntervalMs: 560,
+  imminentSoundIntervalMs: 220,
+};
+
 export function getRunRecoveryProfile(): RunRecoveryProfile {
   return RUN_RECOVERY_PROFILE;
 }
@@ -173,4 +203,8 @@ export function getThermalFeedbackConfig(): ThermalFeedbackConfig {
 
 export function getHallucinationFeedbackConfig(): HallucinationFeedbackConfig {
   return HALLUCINATION_FEEDBACK_CONFIG;
+}
+
+export function getConnectionFeedbackConfig(): ConnectionFeedbackConfig {
+  return CONNECTION_FEEDBACK_CONFIG;
 }

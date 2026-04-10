@@ -123,6 +123,34 @@ export class SoundSynth {
       );
     }, 28);
   }
+
+  playConnectionWarning(
+    intensity: number,
+    stage: "warning" | "critical" | "imminent",
+  ) {
+    const clampedIntensity = Math.max(0, Math.min(1, intensity));
+    const baseFrequency =
+      (stage === "warning" ? 920 : stage === "critical" ? 1140 : 1440) +
+      clampedIntensity * 140;
+    const baseDuration =
+      (stage === "imminent" ? 0.022 : 0.03) + clampedIntensity * 0.018;
+    const baseVolume =
+      (stage === "warning" ? 0.018 : stage === "critical" ? 0.028 : 0.04) +
+      clampedIntensity * 0.02;
+
+    this.playBeep(baseFrequency, "square", baseDuration, baseVolume);
+    setTimeout(
+      () => {
+        this.playBeep(
+          baseFrequency * (stage === "imminent" ? 1.21 : 1.11),
+          stage === "warning" ? "triangle" : "sine",
+          Math.max(0.015, baseDuration * 0.72),
+          baseVolume * 0.65,
+        );
+      },
+      stage === "imminent" ? 18 : 24,
+    );
+  }
 }
 
 export const synth = new SoundSynth();

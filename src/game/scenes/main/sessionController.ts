@@ -1,7 +1,10 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
 import { getRunPassiveModifiers } from "../../data/UpgradeData";
-import { getRunRecoveryProfile } from "../../data/RunData";
+import {
+  getConnectionFeedbackConfig,
+  getRunRecoveryProfile,
+} from "../../data/RunData";
 import {
   EncounterDefinition,
   EncounterTurnDefinition,
@@ -93,6 +96,8 @@ export class MainSceneSessionController {
     this.bindings.getTaskTextObj().setText("");
 
     this.bindings.setSessionStartTime(0);
+    this.bindings.setFollowUpCount(0);
+    this.scene.events.emit("updateBars");
 
     const headerText = this.createTurnHeader(turn);
     const retainedHeaderText = this.getRetainedHeaderText();
@@ -100,7 +105,6 @@ export class MainSceneSessionController {
       this.bindings.getTaskTextObj().setText(retainedHeaderText);
       this.scene.events.emit("renderPrompt", { prompt: turn.prompt });
       this.bindings.setSessionStartTime(this.scene.time.now);
-      this.bindings.setFollowUpCount(0);
       this.bindings.setIsCommitLocked(false);
       this.scene.events.emit("updateBars");
     };
@@ -363,9 +367,7 @@ export class MainSceneSessionController {
 
       const progress = Math.min(1, elapsed / turn.patienceMs);
       this.bindings.getPatienceBarFill().width = 370 * (1 - progress);
-      if (progress > 0.7)
-        this.bindings.getPatienceBarFill().fillColor = 0xff0000;
-      else this.bindings.getPatienceBarFill().fillColor = 0xffaa00;
+      this.bindings.getPatienceBarFill().fillColor = 0xffaa00;
 
       const firstFollowUpThreshold = turn.patienceMs / 3;
       const secondFollowUpThreshold = (turn.patienceMs * 2) / 3;
@@ -420,8 +422,7 @@ export class MainSceneSessionController {
     failureProgressMode: "none" | "next-turn" | "next-encounter" = "none",
   ) {
     if (success) {
-      const successHeadline =
-        message.length > 0 ? message : "REQUEST RESOLVED";
+      const successHeadline = message.length > 0 ? message : "REQUEST RESOLVED";
       const text =
         reward > 0
           ? `>> ${successHeadline}\n>> +${reward} TOKENS`
@@ -435,7 +436,13 @@ export class MainSceneSessionController {
       this.scene.cameras.main.shake(200, 0.01);
       this.postSystemMessage(">> ERROR", "#ff6f61");
       if (message.length > 0) {
-        this.addChatMessage("SYSTEM", `>> ${message}`, false, undefined, "#ff6f61");
+        this.addChatMessage(
+          "SYSTEM",
+          `>> ${message}`,
+          false,
+          undefined,
+          "#ff6f61",
+        );
       }
     }
 

@@ -22,6 +22,7 @@ import {
   ActiveUtilityId,
 } from "../data/UtilityData";
 import {
+  getConnectionFeedbackConfig,
   getHallucinationFeedbackConfig,
   getPromptToolRuntimeConfig,
   getRunRecoveryProfile,
@@ -124,6 +125,9 @@ export class MainScene extends Phaser.Scene {
   private lastThermalRumbleAt: number = 0;
   private lastThermalWarningSoundAt: number = 0;
   private lastHallucinationWarningSoundAt: number = 0;
+  private lastConnectionWarningSoundAt: number = 0;
+  private lastConnectionSegmentCount: number =
+    getConnectionFeedbackConfig().segmentCount;
 
   constructor() {
     super("MainScene");
@@ -181,6 +185,9 @@ export class MainScene extends Phaser.Scene {
     this.lastThermalRumbleAt = 0;
     this.lastThermalWarningSoundAt = 0;
     this.lastHallucinationWarningSoundAt = 0;
+    this.lastConnectionWarningSoundAt = 0;
+    this.lastConnectionSegmentCount =
+      getConnectionFeedbackConfig().segmentCount;
     this.syncSelectedUtilityId();
   }
 
@@ -376,6 +383,7 @@ export class MainScene extends Phaser.Scene {
       getHeat: () => this.heat,
       getHallucination: () => this.hallucination,
       isOverheated: () => this.isOverheated,
+      getConnectionElapsedRatio: () => this.getConnectionElapsedRatio(),
     });
 
     this.stickyNotesController = new MainSceneStickyNotesController(this, {
@@ -443,6 +451,7 @@ export class MainScene extends Phaser.Scene {
     this.applySafetyRevealDecay(delta / 1000);
     this.applyThermalStressFeedback();
     this.applyHallucinationFeedback();
+    this.applyConnectionFeedback();
 
     if (this.computeCharge > 0) {
       if (this.isComputeLatched()) {
@@ -1205,6 +1214,84 @@ export class MainScene extends Phaser.Scene {
       synth.playHallucinationDrift(hallucinationIntensity);
       this.lastHallucinationWarningSoundAt = now;
     }
+  }
+
+  private applyConnectionFeedback() {
+    const progress = this.getConnectionElapsedRatio();
+    const connectionConfig = getConnectionFeedbackConfig();
+    const activeSegmentCount = this.getConnectionActiveSegmentCount(progress);
+
+    if (progress >= 1) {
+      this.lastConnectionSegmentCount = 0;
+      return;
+    }
+
+    if (progress <= 0) {
+      this.lastConnectionSegmentCount = connectionConfig.segmentCount;
+      return;
+    }
+
+    if (progress < connectionConfig.warningThreshold) {
+      this.lastConnectionSegmentCount = activeSegmentCount;
+      return;
+    }
+
+    const stage =
+      progress >= connectionConfig.imminentThreshold
+        ? "imminent"
+        : progress >= connectionConfig.criticalThreshold
+          ? "critical"
+          : "warning";
+    const urgency = Phaser.Math.Clamp(
+      (progress - connectionConfig.warningThreshold) /
+        Math.max(0.0001, 1 - connectionConfig.warningThreshold),
+      0,
+      1,
+    );
+    const now = this.time.now;
+    const stageIntervalMs =
+      stage === "imminent"
+        ? connectionConfig.imminentSoundIntervalMs
+        : stage === "critical"
+          ? connectionConfig.criticalSoundIntervalMs
+          : 0;
+
+    if (
+      stage === "warning" &&
+      activeSegmentCount < this.lastConnectionSegmentCount
+    ) {
+      synth.playConnectionWarning(urgency, stage);
+      this.lastConnectionWarningSoundAt = now;
+    } else if (
+      stage !== "warning" &&
+      now - this.lastConnectionWarningSoundAt >= stageIntervalMs
+    ) {
+      synth.playConnectionWarning(urgency, stage);
+      this.lastConnectionWarningSoundAt = now;
+    }
+
+    this.lastConnectionSegmentCount = activeSegmentCount;
+  }
+
+  private getConnectionElapsedRatio() {
+    const turn = this.getCurrentTurn();
+
+    if (!turn || this.sessionStartTime <= 0) {
+      return 0;
+    }
+
+    return Phaser.Math.Clamp(
+      (this.time.now - this.sessionStartTime) / turn.patienceMs,
+      0,
+      1,
+    );
+  }
+
+  private getConnectionActiveSegmentCount(progress: number) {
+    const segmentCount = getConnectionFeedbackConfig().segmentCount;
+    const remainingRatio = Phaser.Math.Clamp(1 - progress, 0, 1);
+
+    return Math.max(0, Math.ceil(remainingRatio * segmentCount));
   }
 
   private getSelectableUtilityIds() {

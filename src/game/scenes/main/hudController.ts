@@ -4,6 +4,7 @@ import {
   PassiveUpgradeId,
 } from "../../data/UpgradeData";
 import {
+  getConnectionFeedbackConfig,
   getHallucinationFeedbackConfig,
   getThermalFeedbackConfig,
 } from "../../data/RunData";
@@ -76,6 +77,7 @@ interface HudControllerBindings {
   getHeat: () => number;
   getHallucination: () => number;
   isOverheated: () => boolean;
+  getConnectionElapsedRatio: () => number;
 }
 
 interface PromptToolButtonUi {
@@ -135,6 +137,9 @@ export class MainSceneHudController {
   private terminalThermalShader?: Phaser.GameObjects.Shader;
   private terminalSafetyOverlay!: Phaser.GameObjects.Rectangle;
   private terminalSafetyShader?: Phaser.GameObjects.Shader;
+  private connectionLabel!: Phaser.GameObjects.Text;
+  private connectionSegments: Phaser.GameObjects.Rectangle[] = [];
+  private patienceBarFill!: Phaser.GameObjects.Rectangle;
   private thermalWarningLamp!: Phaser.GameObjects.Arc;
   private thermalWarningLampHalo!: Phaser.GameObjects.Arc;
   private hallucinationWarningLamp!: Phaser.GameObjects.Arc;
@@ -208,7 +213,7 @@ export class MainSceneHudController {
       .setOrigin(0)
       .setVisible(!this.terminalSafetyShader);
 
-    this.scene.add.text(250, 20, "USER CONNECTION:", {
+    this.connectionLabel = this.scene.add.text(250, 20, "USER CONNECTION:", {
       fontFamily: "monospace",
       fontSize: "14px",
       color: "#d4c5b0",
@@ -217,7 +222,33 @@ export class MainSceneHudController {
     const patienceBarFill = this.scene.add
       .rectangle(402, 22, 370, 11, 0xffaa00)
       .setOrigin(0);
+    patienceBarFill.setVisible(false);
+    this.patienceBarFill = patienceBarFill;
     this.bindings.setPatienceBarFill(patienceBarFill);
+    this.connectionSegments = [];
+    const connectionConfig = getConnectionFeedbackConfig();
+    const segmentGapPx = connectionConfig.segmentGapPx;
+    const segmentWidth =
+      (370 - segmentGapPx * (connectionConfig.segmentCount - 1)) /
+      connectionConfig.segmentCount;
+    for (
+      let segmentIndex = 0;
+      segmentIndex < connectionConfig.segmentCount;
+      segmentIndex += 1
+    ) {
+      this.connectionSegments.push(
+        this.scene.add
+          .rectangle(
+            402 + segmentIndex * (segmentWidth + segmentGapPx),
+            22,
+            segmentWidth,
+            11,
+            0xffaa00,
+            connectionConfig.inactiveSegmentAlpha,
+          )
+          .setOrigin(0, 0),
+      );
+    }
 
     const lineHeightProbe = this.scene.add.text(0, 0, "A", {
       fontFamily: '"Courier New", Courier, monospace',
@@ -242,7 +273,9 @@ export class MainSceneHudController {
     this.chatHistoryContainer = this.scene.add.container(260, 112);
     this.chatHistoryMask = this.scene.add.graphics();
     this.chatHistoryMask.setVisible(false);
-    this.chatHistoryContainer.setMask(this.chatHistoryMask.createGeometryMask());
+    this.chatHistoryContainer.setMask(
+      this.chatHistoryMask.createGeometryMask(),
+    );
 
     this.terminalPromptController = new TerminalPromptController(this.scene, {
       isSearchModeSelected: () => this.bindings.isSearchModeSelected(),
@@ -834,6 +867,7 @@ export class MainSceneHudController {
     this.updateBarsHandler = () => {
       this.syncPromptToolButtons();
       this.syncTerminalEffects();
+      this.syncConnectionFeedback();
       this.terminalPromptController.syncSelectionStates();
       this.syncComputeSection();
       this.syncEconomySection();
@@ -989,6 +1023,7 @@ export class MainSceneHudController {
             getThermalFeedbackConfig().onsetThreshold ||
           this.bindings.getHallucination() >=
             getHallucinationFeedbackConfig().onsetThreshold ||
+          this.bindings.getConnectionElapsedRatio() > 0 ||
           this.scene.time.now < this.tokenPulseUntil
         ) {
           this.scene.events.emit("updateBars");
@@ -1280,6 +1315,58 @@ export class MainSceneHudController {
     this.syncChatHistoryAppearance();
   }
 
+  private syncConnectionFeedback() {
+    const connectionConfig = getConnectionFeedbackConfig();
+    const progress = this.bindings.getConnectionElapsedRatio();
+    const isCritical = progress >= connectionConfig.criticalThreshold;
+    const isImminent = progress >= connectionConfig.imminentThreshold;
+    const pulseRate = isImminent
+      ? connectionConfig.imminentPulseRate
+      : connectionConfig.criticalPulseRate;
+    const pulseWave =
+      isCritical || isImminent
+        ? (Math.sin(this.scene.time.now * 0.001 * pulseRate * Math.PI * 2) +
+            1) /
+          2
+        : 0;
+    const activeSegmentCount = Math.max(
+      0,
+      Math.ceil((1 - progress) * connectionConfig.segmentCount),
+    );
+
+    this.connectionLabel.setColor("#d4c5b0");
+    this.connectionLabel.setAlpha(1);
+
+    this.connectionSegments.forEach((segment, segmentIndex) => {
+      const isActive = segmentIndex < activeSegmentCount;
+      const flickerWave =
+        (Math.sin(
+          this.scene.time.now *
+            0.001 *
+            connectionConfig.criticalSegmentFlickerRate *
+            Math.PI *
+            2 +
+            segmentIndex * 0.9,
+        ) +
+          1) /
+        2;
+      const alpha = isActive
+        ? isImminent
+          ? Phaser.Math.Linear(
+              1 - connectionConfig.imminentFlashMix,
+              1,
+              flickerWave * (0.35 + pulseWave * 0.65),
+            )
+          : isCritical && segmentIndex === activeSegmentCount - 1
+            ? 0.34 + flickerWave * 0.36 + pulseWave * 0.3
+            : 1
+        : connectionConfig.inactiveSegmentAlpha;
+
+      segment.setFillStyle(0xffaa00);
+      segment.setAlpha(alpha);
+    });
+  }
+
   private syncChatHistoryAppearance() {
     this.chatHistoryContainer.setAlpha(this.chatAlpha);
     this.chatHistoryLines.forEach((line) => {
@@ -1294,7 +1381,12 @@ export class MainSceneHudController {
 
     this.chatHistoryMask.clear();
     this.chatHistoryMask.fillStyle(0xffffff, 1);
-    this.chatHistoryMask.fillRect(260, this.chatHistoryY, maskWidth, maskHeight);
+    this.chatHistoryMask.fillRect(
+      260,
+      this.chatHistoryY,
+      maskWidth,
+      maskHeight,
+    );
   }
 
   private getChatViewportHeight() {
@@ -1322,7 +1414,8 @@ export class MainSceneHudController {
     let currentLine = "";
 
     words.forEach((word) => {
-      const candidate = currentLine.length > 0 ? `${currentLine} ${word}` : word;
+      const candidate =
+        currentLine.length > 0 ? `${currentLine} ${word}` : word;
       probe.setText(candidate);
       if (probe.width > maxWidth && currentLine.length > 0) {
         lines.push(currentLine);

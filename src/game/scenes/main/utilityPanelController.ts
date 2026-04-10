@@ -16,6 +16,7 @@ import {
 export interface UtilityPanelBindings {
   getSelectedUtilityId: () => ActiveUtilityId | null;
   getActiveUtilityPanelId: () => ActiveUtilityId | null;
+  canUseUtilityId: (utilityId: ActiveUtilityId) => boolean;
   getUtilityPanelStatusText: () => string;
   getUtilityFeedbackState: () => "idle" | "running" | "success" | "error";
   getUtilityFeedbackFlash: () => number;
@@ -72,6 +73,8 @@ export class MainSceneUtilityPanelController {
   private panelTopBar!: Phaser.GameObjects.Rectangle;
   private panelFrame!: Phaser.GameObjects.Rectangle;
   private flashOverlay!: Phaser.GameObjects.Rectangle;
+  private offlineOverlay!: Phaser.GameObjects.Rectangle;
+  private offlineText!: Phaser.GameObjects.Text;
   private nameText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
@@ -128,6 +131,24 @@ export class MainSceneUtilityPanelController {
       )
       .setOrigin(0)
       .setDepth(0.2);
+
+    this.offlineOverlay = this.scene.add
+      .rectangle(this.panelX + 14, this.panelY + 86, 172, 218, 0x110f0c, 0.74)
+      .setOrigin(0)
+      .setDepth(0.24)
+      .setVisible(false);
+    this.offlineOverlay.setStrokeStyle(1, 0x6d6559, 0.42);
+
+    this.offlineText = this.scene.add
+      .text(this.panelX + this.panelWidth / 2, this.panelY + 196, "OFFLINE", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "16px",
+        color: "#b8af9f",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(0.25)
+      .setVisible(false);
 
     this.nameText = this.scene.add.text(
       this.panelX + 14,
@@ -301,12 +322,29 @@ export class MainSceneUtilityPanelController {
       : undefined;
     const feedbackState = this.bindings.getUtilityFeedbackState();
     const feedbackFlash = this.bindings.getUtilityFeedbackFlash();
+    const isOfflineDisplay =
+      displayUtilityId !== null &&
+      feedbackState === "idle" &&
+      !this.bindings.canUseUtilityId(displayUtilityId);
 
     this.nameText.setText(definition?.name ?? "UTILITY MODULE");
-    this.statusText.setText(this.bindings.getUtilityPanelStatusText());
+    this.statusText.setText(
+      isOfflineDisplay ? "OFFLINE" : this.bindings.getUtilityPanelStatusText(),
+    );
+    this.statusText.setColor(isOfflineDisplay ? "#b8af9f" : "#9fd87d");
 
     if (!displayUtilityId) {
       this.hintText.setText("NO UTILITY STOCKED");
+      this.hintText.setColor("#8b8375");
+    } else if (isOfflineDisplay) {
+      this.hintText.setText(
+        displayUtilityId === "coolant_purge"
+          ? "VENT CASSETTE EMPTY. RESTOCK TO ARM PURGE."
+          : displayUtilityId === "reality_patch"
+            ? "PATCH CARTRIDGE EMPTY. RESTOCK TO STABILIZE."
+            : "BOOST CHARGE EMPTY. RESTOCK TO RESTORE LINK.",
+      );
+      this.hintText.setColor("#8f877b");
     } else if (!activeUtilityId) {
       this.hintText.setText(
         this.bindings.canUseSelectedUtility()
@@ -317,18 +355,22 @@ export class MainSceneUtilityPanelController {
               : "DRAG FROM SRC TO START ROUTING"
           : "UTILITY STOCK EMPTY",
       );
+      this.hintText.setColor("#8b8375");
     } else if (activeUtilityId === "coolant_purge") {
       this.hintText.setText(
         "DRAG LEVERS IN ORDER. HOLD AT FLOOR UNTIL PRESSURE DROPS.",
       );
+      this.hintText.setColor("#8b8375");
     } else if (activeUtilityId === "reality_patch") {
       this.hintText.setText(
         "DRAG THE KNOB SIDEWAYS. ALIGN THE LIVE TRACE WITH TARGET.",
       );
+      this.hintText.setColor("#8b8375");
     } else {
       this.hintText.setText(
         "DRAW ONE CONTINUOUS ROUTE. HIT EVERY NODE BEFORE TARGET.",
       );
+      this.hintText.setColor("#8b8375");
     }
 
     const frameColor =
@@ -336,9 +378,11 @@ export class MainSceneUtilityPanelController {
         ? 0x3c7a46
         : feedbackState === "error"
           ? 0x6e2b1e
-          : activeUtilityId
-            ? 0x4f4331
-            : 0x393128;
+          : isOfflineDisplay
+            ? 0x3a342c
+            : activeUtilityId
+              ? 0x4f4331
+              : 0x393128;
     this.panelFrame.setFillStyle(frameColor);
     this.flashOverlay.setFillStyle(
       feedbackState === "success"
@@ -348,6 +392,8 @@ export class MainSceneUtilityPanelController {
           : 0xffd68a,
       feedbackState === "running" ? 0.04 : feedbackFlash * 0.32,
     );
+    this.offlineOverlay.setVisible(isOfflineDisplay);
+    this.offlineText.setVisible(isOfflineDisplay);
 
     this.drawCoolantPanel(displayUtilityId === "coolant_purge");
     this.drawRealityPanel(displayUtilityId === "reality_patch");
@@ -787,6 +833,14 @@ export class MainSceneUtilityPanelController {
   }
 
   private ensurePanelActivated(utilityId: ActiveUtilityId) {
+    if (
+      this.bindings.getActiveUtilityPanelId() === utilityId &&
+      !this.bindings.canUseUtilityId(utilityId) &&
+      this.bindings.getUtilityFeedbackState() === "idle"
+    ) {
+      return false;
+    }
+
     if (this.bindings.getActiveUtilityPanelId() === utilityId) {
       return true;
     }

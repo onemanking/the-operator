@@ -78,6 +78,7 @@ interface HudControllerBindings {
   getSafetyDetectedWordCount: () => number;
   getSelectedUtilityId: () => ActiveUtilityId | null;
   getActiveUtilityPanelId: () => ActiveUtilityId | null;
+  canUseUtilityId: (utilityId: ActiveUtilityId) => boolean;
   getUtilityPanelStatusText: () => string;
   getUtilityFeedbackState: () => "idle" | "running" | "success" | "error";
   getUtilityFeedbackFlash: () => number;
@@ -762,6 +763,8 @@ export class MainSceneHudController {
       {
         getSelectedUtilityId: () => this.bindings.getSelectedUtilityId(),
         getActiveUtilityPanelId: () => this.bindings.getActiveUtilityPanelId(),
+        canUseUtilityId: (utilityId) =>
+          this.bindings.canUseUtilityId(utilityId),
         getUtilityPanelStatusText: () =>
           this.bindings.getUtilityPanelStatusText(),
         getUtilityFeedbackState: () => this.bindings.getUtilityFeedbackState(),

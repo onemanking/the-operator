@@ -406,7 +406,7 @@ export class MainScene extends Phaser.Scene {
           : 0;
 
         return definition
-          ? `${definition.shortLabel}\n${definition.effectText}\nX${charges}`
+          ? `${definition.shortLabel}\n${charges > 0 ? definition.effectText : "OFFLINE"}\nX${charges}`
           : "NO UTILITY\nSTOCK";
       },
       canCycleUtilities: () => this.getSelectableUtilityIds().length > 1,
@@ -442,6 +442,7 @@ export class MainScene extends Phaser.Scene {
       getSafetyDetectedWordCount: () => this.getSafetyDetectedWordCount(),
       getSelectedUtilityId: () => this.selectedUtilityId,
       getActiveUtilityPanelId: () => this.activeUtilityPanelId,
+      canUseUtilityId: (utilityId) => this.canUseUtilityId(utilityId),
       getUtilityPanelStatusText: () => this.utilityStatusText,
       getUtilityFeedbackState: () => this.utilityFeedbackState,
       getUtilityFeedbackFlash: () => this.getUtilityFeedbackFlash(),
@@ -587,7 +588,7 @@ export class MainScene extends Phaser.Scene {
       ? getActiveUtilityDefinition(utilityId)
       : undefined;
 
-    if (!utilityId || !definition || !this.canUseUtilityId(utilityId)) {
+    if (!utilityId || !definition) {
       synth.playError();
       return;
     }
@@ -599,13 +600,7 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    this.activeUtilityPanelId = utilityId;
-    this.utilityFeedbackState = "running";
-    this.utilityFeedbackUntil = 0;
-    this.utilityFeedbackDurationMs = 0;
-    this.utilityStatusText = this.getUtilityBootStatusText(utilityId);
-    synth.playUtilityArm(utilityId);
-    this.events.emit("updateBars");
+    this.activateUtilityPanel(utilityId, true);
   }
 
   private cycleSelectedUtility(direction: 1 | -1) {
@@ -625,7 +620,30 @@ export class MainScene extends Phaser.Scene {
         : (currentIndex + direction + utilityIds.length) % utilityIds.length;
 
     this.selectedUtilityId = utilityIds[nextIndex];
+    this.activateUtilityPanel(this.selectedUtilityId, false);
     synth.playButtonPress();
+  }
+
+  private activateUtilityPanel(
+    utilityId: ActiveUtilityId,
+    playActivationSound: boolean,
+  ) {
+    this.activeUtilityPanelId = utilityId;
+    this.utilityFeedbackState = this.canUseUtilityId(utilityId)
+      ? "running"
+      : "idle";
+    this.utilityFeedbackUntil = 0;
+    this.utilityFeedbackDurationMs = 0;
+    this.utilityStatusText = this.getUtilityBootStatusText(utilityId);
+
+    if (playActivationSound) {
+      if (this.canUseUtilityId(utilityId)) {
+        synth.playUtilityArm(utilityId);
+      } else {
+        synth.playError();
+      }
+    }
+
     this.events.emit("updateBars");
   }
 
@@ -1036,6 +1054,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   private getUtilityBootStatusText(utilityId: ActiveUtilityId) {
+    if (!this.canUseUtilityId(utilityId)) {
+      return "OFFLINE";
+    }
+
     if (utilityId === "coolant_purge") {
       const nextLeverIndex = this.getCoolantNextRequiredLeverIndex();
       return nextLeverIndex === null
@@ -2053,7 +2075,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private getSelectableUtilityIds() {
-    return getUnlockedActiveUtilityIds(this.runState);
+    return ACTIVE_UTILITIES.map((utility) => utility.id);
   }
 
   private syncSelectedUtilityId(preferredId: ActiveUtilityId | null = null) {
@@ -2064,26 +2086,13 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (
-      preferredId &&
-      utilityIds.includes(preferredId) &&
-      getActiveUtilityCharges(this.runState, preferredId) > 0
-    ) {
-      this.selectedUtilityId = preferredId;
-      return;
-    }
-
-    const usableUtilityId = utilityIds.find((utilityId) =>
-      this.canUseUtilityId(utilityId),
-    );
-
-    if (usableUtilityId) {
-      this.selectedUtilityId = usableUtilityId;
-      return;
-    }
-
     if (preferredId && utilityIds.includes(preferredId)) {
       this.selectedUtilityId = preferredId;
+      return;
+    }
+
+    if (this.selectedUtilityId && utilityIds.includes(this.selectedUtilityId)) {
+      this.selectedUtilityId = this.selectedUtilityId;
       return;
     }
 
@@ -2108,24 +2117,9 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (this.canUseUtilityId(this.selectedUtilityId)) {
-      return;
-    }
-
-    const previousSelectedUtilityId = this.selectedUtilityId;
-    this.syncSelectedUtilityId();
-
-    if (this.selectedUtilityId !== previousSelectedUtilityId) {
-      if (
-        this.activeUtilityPanelId &&
-        !this.canUseUtilityId(this.activeUtilityPanelId)
-      ) {
-        this.activeUtilityPanelId = null;
-        this.utilityFeedbackState = "idle";
-        this.utilityFeedbackUntil = 0;
-        this.utilityFeedbackDurationMs = 0;
-      }
-
+    const utilityIds = this.getSelectableUtilityIds();
+    if (!utilityIds.includes(this.selectedUtilityId)) {
+      this.syncSelectedUtilityId();
       this.utilityStatusText = this.selectedUtilityId
         ? this.getUtilityBootStatusText(this.selectedUtilityId)
         : "STANDBY";

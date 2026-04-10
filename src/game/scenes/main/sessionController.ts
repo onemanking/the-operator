@@ -6,6 +6,7 @@ import {
   EncounterDefinition,
   EncounterTurnDefinition,
 } from "../../data/SessionData";
+import { AgentId, SkillId, ToolId } from "../../data/PromptIds";
 import { RunState } from "../../types/SceneData";
 import {
   EncounterEvaluationResult,
@@ -19,7 +20,7 @@ import {
   getTerminalPromptLines,
   TERMINAL_PROMPT_DIVIDER,
 } from "./terminalPromptController";
-import { ChatMessage, ToolId } from "./types";
+import { ChatMessage } from "./types";
 
 interface SessionControllerBindings {
   getRunState: () => RunState;
@@ -44,8 +45,8 @@ interface SessionControllerBindings {
   getTaskTextObj: () => Phaser.GameObjects.Text;
   getChatTextObj: () => Phaser.GameObjects.Text;
   getPatienceBarFill: () => Phaser.GameObjects.Rectangle;
-  getActiveAgents: () => string[];
-  getActiveSkills: () => string[];
+  getActiveAgents: () => AgentId[];
+  getActiveSkills: () => SkillId[];
   getSelectedPromptToolIds: () => ToolId[];
   getEncounterToolRuntime: () => EncounterToolRuntimeSnapshot;
   clearSearchSelection: () => void;
@@ -484,7 +485,10 @@ export class MainSceneSessionController {
       .replace(/{expectedTools}/g, expectedTools);
   }
 
-  private formatRequirementList(values: readonly string[], fallback: string) {
+  private formatRequirementList<T extends string>(
+    values: readonly T[],
+    fallback: string,
+  ) {
     if (values.length === 0) {
       return fallback;
     }

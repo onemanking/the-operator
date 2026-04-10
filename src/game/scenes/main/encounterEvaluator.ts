@@ -1,6 +1,6 @@
 import { EncounterTurnDefinition } from "../../data/SessionData";
 import { RunPassiveModifiers } from "../../data/UpgradeData";
-import { ToolId } from "./types";
+import { AgentId, SkillId, ToolId } from "../../data/PromptIds";
 import {
   getDedupedNormalizedWords,
   getSearchSelectionHeat,
@@ -8,8 +8,8 @@ import {
 } from "./toolRuntimeHelpers";
 
 export interface EncounterLoadoutSnapshot {
-  activeAgentIds: string[];
-  activeSkillIds: string[];
+  activeAgentIds: AgentId[];
+  activeSkillIds: SkillId[];
   activeToolIds: ToolId[];
 }
 

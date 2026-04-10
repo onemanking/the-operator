@@ -1,7 +1,7 @@
 import { ContentCategoryId } from "./ContentPolicyData";
 import { PassiveUpgradeId } from "./UpgradeData";
 import { ActiveUtilityId } from "./UtilityData";
-import { ToolId } from "../scenes/main/types";
+import { AgentId, SkillId, ToolId } from "./PromptIds";
 import { createInitialRunState, RunState } from "../types/SceneData";
 
 export type TestScenarioId = "guard" | "compute" | "search" | "utility";
@@ -9,8 +9,8 @@ export type TestScenarioId = "guard" | "compute" | "search" | "utility";
 interface TestScenarioDefinition {
   encounterId: string;
   forbiddenCategoryIds: ContentCategoryId[];
-  equippedAgentIds: string[];
-  equippedSkillIds: string[];
+  equippedAgentIds: AgentId[];
+  equippedSkillIds: SkillId[];
   selectedPromptToolIds: ToolId[];
   heat?: number;
   hallucination?: number;
@@ -22,28 +22,28 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
   guard: {
     encounterId: "tool-test-guard-policy",
     forbiddenCategoryIds: ["weapons"],
-    equippedAgentIds: ["General_Agent.md"],
+    equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
-    selectedPromptToolIds: ["safety"],
+    selectedPromptToolIds: [ToolId.Safety],
   },
   compute: {
     encounterId: "tool-test-compute-capacitor",
     forbiddenCategoryIds: [],
-    equippedAgentIds: ["General_Agent.md"],
+    equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
-    selectedPromptToolIds: ["compute"],
+    selectedPromptToolIds: [ToolId.Compute],
   },
   search: {
     encounterId: "tool-test-search-selection",
     forbiddenCategoryIds: [],
-    equippedAgentIds: ["General_Agent.md"],
+    equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
-    selectedPromptToolIds: ["search"],
+    selectedPromptToolIds: [ToolId.Search],
   },
   utility: {
     encounterId: "tool-test-utility-suite",
     forbiddenCategoryIds: [],
-    equippedAgentIds: ["General_Agent.md"],
+    equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     heat: 60,

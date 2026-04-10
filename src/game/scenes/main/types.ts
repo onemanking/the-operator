@@ -1,4 +1,21 @@
 import Phaser from "phaser";
+import { AgentId, SkillId, ToolId } from "../../data/PromptIds";
+
+export {
+  AGENT_IDS,
+  AgentId,
+  PROMPT_TOOL_IDS,
+  SKILL_IDS,
+  SkillId,
+  ToolId,
+  isAgentId,
+  isSkillId,
+  isToolId,
+  normalizeAgentIds,
+  normalizeSkillIds,
+  normalizeToolId,
+  normalizeToolIds,
+} from "../../data/PromptIds";
 
 export interface ChatMessage {
   sender: "SYSTEM" | "USER" | "LLM";
@@ -8,8 +25,6 @@ export interface ChatMessage {
 export type DiskType = "agent" | "skill";
 export type DriveId = DiskType;
 export type StorageTab = "all" | DiskType;
-export const PROMPT_TOOL_IDS = ["search", "compute", "safety"] as const;
-export type ToolId = (typeof PROMPT_TOOL_IDS)[number];
 
 export interface PromptToolDefinition {
   toolId: ToolId;
@@ -17,20 +32,26 @@ export interface PromptToolDefinition {
   shortLabel: string;
 }
 
-export function isToolId(value: string): value is ToolId {
-  return PROMPT_TOOL_IDS.includes(value as ToolId);
-}
-
 export interface CapacitySummary {
   used: number;
   total: number;
 }
 
-export interface StorageDiskDefinition {
-  label: string;
-  type: DiskType;
+export interface AgentStorageDiskDefinition {
+  label: AgentId;
+  type: "agent";
   color: number;
 }
+
+export interface SkillStorageDiskDefinition {
+  label: SkillId;
+  type: "skill";
+  color: number;
+}
+
+export type StorageDiskDefinition =
+  | AgentStorageDiskDefinition
+  | SkillStorageDiskDefinition;
 
 export interface StorageDiskInstance {
   definition: StorageDiskDefinition;

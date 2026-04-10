@@ -329,7 +329,7 @@ export class MainSceneHudController {
         .setStrokeStyle(1, 0x081208);
       const indicatorLamps: Phaser.GameObjects.Rectangle[] = [];
 
-      if (tool.toolId === "compute") {
+      if (tool.toolId === ToolId.Compute) {
         for (let lampIndex = 0; lampIndex < 5; lampIndex += 1) {
           indicatorLamps.push(
             this.scene.add
@@ -1018,7 +1018,7 @@ export class MainSceneHudController {
     this.promptToolButtons.forEach((button, toolId) => {
       const isSelected = selectedPromptToolIds.has(toolId);
       const isComputeReady =
-        toolId === "compute" && this.bindings.isComputeReady();
+        toolId === ToolId.Compute && this.bindings.isComputeReady();
       const computeRatio = Math.min(
         1,
         this.bindings.getComputeCharge() / this.bindings.getComputeThreshold(),

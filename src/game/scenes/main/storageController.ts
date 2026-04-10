@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
 import { STORAGE_DISKS, STORAGE_TABS, createDriveConfigs } from "./config";
+import { AgentId, SkillId, isAgentId, isSkillId } from "../../data/PromptIds";
 import {
   DiskLoadResult,
   DriveConfig,
@@ -13,10 +14,10 @@ import {
 } from "./types";
 
 interface StorageControllerBindings {
-  getActiveAgents: () => string[];
-  setActiveAgents: (value: string[]) => void;
-  getActiveSkills: () => string[];
-  setActiveSkills: (value: string[]) => void;
+  getActiveAgents: () => AgentId[];
+  setActiveAgents: (value: AgentId[]) => void;
+  getActiveSkills: () => SkillId[];
+  setActiveSkills: (value: SkillId[]) => void;
   getAgentCapacity: () => number;
   getSkillCapacity: () => number;
 }
@@ -473,8 +474,9 @@ export class MainSceneStorageController {
   private getFilteredStorageDisks() {
     return this.storageDisks.filter(({ definition }) => {
       const isMounted =
-        this.activeAgents.includes(definition.label) ||
-        this.activeSkills.includes(definition.label);
+        definition.type === "agent"
+          ? this.activeAgents.includes(definition.label)
+          : this.activeSkills.includes(definition.label);
       if (isMounted) return false;
       if (this.storageTab === "all") return true;
       return definition.type === this.storageTab;
@@ -804,6 +806,10 @@ export class MainSceneStorageController {
 
   private tryLoadDisk(driveId: DriveId, label: string): DiskLoadResult {
     if (driveId === "agent") {
+      if (!isAgentId(label)) {
+        return { success: false, statusMessage: "INVALID AGENT FORMAT" };
+      }
+
       if (this.activeAgents.includes(label)) {
         return { success: false, statusMessage: "AGENT ALREADY LOADED" };
       }
@@ -820,6 +826,10 @@ export class MainSceneStorageController {
         statusMessage:
           nextAgents.length === 1 ? "AGENT CORE READY" : "AGENT ARRAY EXPANDED",
       };
+    }
+
+    if (!isSkillId(label)) {
+      return { success: false, statusMessage: "INVALID SKILL FORMAT" };
     }
 
     if (this.activeSkills.includes(label)) {

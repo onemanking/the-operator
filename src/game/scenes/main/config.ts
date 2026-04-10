@@ -1,19 +1,21 @@
 import Phaser from "phaser";
 import { RUN_CONFIG } from "../../data/RunData";
 import {
+  AgentId,
   DriveConfig,
   DriveId,
   PromptToolDefinition,
+  SkillId,
   StorageDiskDefinition,
   StorageTabDefinition,
   ToolId,
 } from "./types";
 
 export const STORAGE_DISKS: StorageDiskDefinition[] = [
-  { label: "Coding_Agent.md", type: "agent", color: 0x99958a },
-  { label: "General_Agent.md", type: "agent", color: 0x99958a },
-  { label: "Python_Skill.md", type: "skill", color: 0x7a8a99 },
-  { label: "Creative_Skill.md", type: "skill", color: 0x7a8a99 },
+  { label: AgentId.Coding, type: "agent", color: 0x99958a },
+  { label: AgentId.General, type: "agent", color: 0x99958a },
+  { label: SkillId.Python, type: "skill", color: 0x7a8a99 },
+  { label: SkillId.Creative, type: "skill", color: 0x7a8a99 },
 ];
 
 export const STORAGE_TABS: StorageTabDefinition[] = [
@@ -23,12 +25,12 @@ export const STORAGE_TABS: StorageTabDefinition[] = [
 ];
 
 export const PROMPT_TOOLS: PromptToolDefinition[] = [
-  { toolId: "search", label: "SEARCH", shortLabel: "SRCH" },
-  { toolId: "compute", label: "COMPUTE", shortLabel: "COMP" },
-  { toolId: "safety", label: "SAFETY FILTER", shortLabel: "SAFE" },
+  { toolId: ToolId.Search, label: "SEARCH", shortLabel: "SRCH" },
+  { toolId: ToolId.Compute, label: "COMPUTE", shortLabel: "COMP" },
+  { toolId: ToolId.Safety, label: "SAFETY FILTER", shortLabel: "SAFE" },
 ];
 
-export function getPromptToolDefinition(toolId: string) {
+export function getPromptToolDefinition(toolId: ToolId) {
   return PROMPT_TOOLS.find((tool) => tool.toolId === toolId);
 }
 

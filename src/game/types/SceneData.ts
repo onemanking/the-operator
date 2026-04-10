@@ -1,14 +1,23 @@
 import { ContentCategoryId } from "../data/ContentPolicyData";
+import { PassiveUpgradeId } from "../data/UpgradeData";
+import {
+  AgentId,
+  SkillId,
+  ToolId,
+  normalizeAgentIds,
+  normalizeSkillIds,
+  normalizeToolIds,
+} from "../data/PromptIds";
 import { RUN_CONFIG } from "../data/RunData";
 
 export interface RunLoadoutState {
-  equippedAgentIds: string[];
-  equippedSkillIds: string[];
-  selectedPromptToolIds: string[];
+  equippedAgentIds: AgentId[];
+  equippedSkillIds: SkillId[];
+  selectedPromptToolIds: ToolId[];
   agentCapacity: number;
   skillCapacity: number;
-  unlockedPromptToolIds: string[];
-  passiveUpgradeIds: string[];
+  unlockedPromptToolIds: ToolId[];
+  passiveUpgradeIds: PassiveUpgradeId[];
 }
 
 export interface RunUtilityInventoryState {
@@ -64,7 +73,7 @@ export function createInitialRunState(): RunState {
       selectedPromptToolIds: [],
       agentCapacity: RUN_CONFIG.defaultAgentCapacity,
       skillCapacity: RUN_CONFIG.defaultSkillCapacity,
-      unlockedPromptToolIds: ["search", "compute", "safety"],
+      unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
       passiveUpgradeIds: [],
     },
     utilityInventory: {
@@ -124,13 +133,16 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     | (Partial<RunLoadoutState> & {
         activeUtilityIds?: string[];
         selectedToolId?: string;
+        equippedAgentIds?: readonly string[];
+        equippedSkillIds?: readonly string[];
+        selectedPromptToolIds?: readonly string[];
+        unlockedPromptToolIds?: readonly string[];
       })
     | undefined;
   const legacyUtilityIds = legacyLoadout?.activeUtilityIds ?? [];
-  const legacySelectedPromptToolIds =
-    legacyLoadout?.selectedToolId && legacyLoadout.selectedToolId !== "none"
-      ? [legacyLoadout.selectedToolId]
-      : [];
+  const legacySelectedPromptToolIds = normalizeToolIds(
+    legacyLoadout?.selectedToolId ? [legacyLoadout.selectedToolId] : [],
+  );
   const mergedUtilityUnlockedIds = [
     ...new Set([
       ...legacyUtilityIds,
@@ -156,23 +168,26 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     loadout: {
       ...initial.loadout,
       ...data.loadout,
-      equippedAgentIds: [
-        ...(data.loadout?.equippedAgentIds ?? initial.loadout.equippedAgentIds),
-      ],
-      equippedSkillIds: [
-        ...(data.loadout?.equippedSkillIds ?? initial.loadout.equippedSkillIds),
-      ],
-      selectedPromptToolIds: [
-        ...(
-          data.loadout?.selectedPromptToolIds ?? legacySelectedPromptToolIds
-        ).map((toolId) => (toolId === "calculate" ? "compute" : toolId)),
-      ],
-      unlockedPromptToolIds: [
-        ...(
-          data.loadout?.unlockedPromptToolIds ??
-          initial.loadout.unlockedPromptToolIds
-        ).map((toolId) => (toolId === "calculate" ? "compute" : toolId)),
-      ],
+      equippedAgentIds: normalizeAgentIds(
+        data.loadout?.equippedAgentIds ??
+          legacyLoadout?.equippedAgentIds ??
+          initial.loadout.equippedAgentIds,
+      ),
+      equippedSkillIds: normalizeSkillIds(
+        data.loadout?.equippedSkillIds ??
+          legacyLoadout?.equippedSkillIds ??
+          initial.loadout.equippedSkillIds,
+      ),
+      selectedPromptToolIds: normalizeToolIds(
+        data.loadout?.selectedPromptToolIds ??
+          legacyLoadout?.selectedPromptToolIds ??
+          legacySelectedPromptToolIds,
+      ),
+      unlockedPromptToolIds: normalizeToolIds(
+        data.loadout?.unlockedPromptToolIds ??
+          legacyLoadout?.unlockedPromptToolIds ??
+          initial.loadout.unlockedPromptToolIds,
+      ),
       passiveUpgradeIds: [
         ...(data.loadout?.passiveUpgradeIds ??
           initial.loadout.passiveUpgradeIds),

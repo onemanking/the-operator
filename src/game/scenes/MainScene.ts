@@ -37,7 +37,7 @@ import {
   getRunPassiveModifiers,
 } from "../data/UpgradeData";
 import { sortPromptToolIds } from "./main/config";
-import { ChatMessage, isToolId, ToolId } from "./main/types";
+import { AgentId, ChatMessage, SkillId, ToolId, isToolId } from "./main/types";
 import { MainSceneStorageController } from "./main/storageController";
 import { MainSceneSessionController } from "./main/sessionController";
 import { MainSceneHudController } from "./main/hudController";
@@ -80,8 +80,8 @@ export class MainScene extends Phaser.Scene {
   private heatBarFill!: Phaser.GameObjects.Rectangle;
   private hallucinationBarFill!: Phaser.GameObjects.Rectangle;
 
-  private activeAgents: string[] = [];
-  private activeSkills: string[] = [];
+  private activeAgents: AgentId[] = [];
+  private activeSkills: SkillId[] = [];
   private selectedPromptToolIds: ToolId[] = [];
   private selectedSearchWordsByIndex = new Map<number, string>();
   private safetyScanResult: PromptForbiddenScanResult | null = null;
@@ -346,14 +346,17 @@ export class MainScene extends Phaser.Scene {
       getComputeCharge: () => this.computeCharge,
       getComputeThreshold: () =>
         getPromptToolRuntimeConfig().compute.chargeThreshold,
-      isSearchModeSelected: () => this.selectedPromptToolIds.includes("search"),
-      isSafetyModeSelected: () => this.selectedPromptToolIds.includes("safety"),
+      isSearchModeSelected: () =>
+        this.selectedPromptToolIds.includes(ToolId.Search),
+      isSafetyModeSelected: () =>
+        this.selectedPromptToolIds.includes(ToolId.Safety),
       canStartSafetyScan: () =>
-        this.selectedPromptToolIds.includes("safety") && !this.isOverheated,
+        this.selectedPromptToolIds.includes(ToolId.Safety) &&
+        !this.isOverheated,
       isComputeReady: () => isComputeReady(this.computeCharge),
       isComputeLatched: () => this.isComputeLatched(),
       isComputeToolSelected: () =>
-        this.selectedPromptToolIds.includes("compute"),
+        this.selectedPromptToolIds.includes(ToolId.Compute),
       isSafetyScanning: () => this.isSafetyScanning,
       getSafetyScanPointX: () => this.safetyScanPointX,
       getSafetyScanPointY: () => this.safetyScanPointY,
@@ -410,7 +413,7 @@ export class MainScene extends Phaser.Scene {
 
     if (
       this.isSafetyScanning &&
-      (!this.selectedPromptToolIds.includes("safety") || this.isOverheated)
+      (!this.selectedPromptToolIds.includes(ToolId.Safety) || this.isOverheated)
     ) {
       this.endSafetyScan();
     }
@@ -518,7 +521,10 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (this.selectedPromptToolIds.includes("search") && toolId !== "search") {
+    if (
+      this.selectedPromptToolIds.includes(ToolId.Search) &&
+      toolId !== ToolId.Search
+    ) {
       this.clearSearchSelection();
     }
 
@@ -526,15 +532,21 @@ export class MainScene extends Phaser.Scene {
       ? []
       : sortPromptToolIds([toolId]);
 
-    if (nextPromptToolIds.length === 0 && toolId === "search") {
+    if (nextPromptToolIds.length === 0 && toolId === ToolId.Search) {
       this.clearSearchSelection();
     }
 
-    if (this.selectedPromptToolIds.includes("safety") && toolId !== "safety") {
+    if (
+      this.selectedPromptToolIds.includes(ToolId.Safety) &&
+      toolId !== ToolId.Safety
+    ) {
       this.resetSafetyInteractionState(false);
     }
 
-    if (this.selectedPromptToolIds.includes(toolId) && toolId === "safety") {
+    if (
+      this.selectedPromptToolIds.includes(toolId) &&
+      toolId === ToolId.Safety
+    ) {
       this.resetSafetyInteractionState(false);
     }
 
@@ -545,7 +557,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private toggleSearchWord(wordIndex: number, rawWord: string) {
-    if (!this.selectedPromptToolIds.includes("search")) {
+    if (!this.selectedPromptToolIds.includes(ToolId.Search)) {
       return;
     }
 
@@ -606,11 +618,11 @@ export class MainScene extends Phaser.Scene {
     const hadComputeReadyState =
       this.computePrimed || this.computeDecayResumesAt > 0;
 
-    if (this.selectedPromptToolIds.includes("search")) {
+    if (this.selectedPromptToolIds.includes(ToolId.Search)) {
       this.clearSearchSelection();
     }
 
-    if (this.selectedPromptToolIds.includes("safety")) {
+    if (this.selectedPromptToolIds.includes(ToolId.Safety)) {
       this.resetSafetyInteractionState(false);
     }
 
@@ -635,7 +647,10 @@ export class MainScene extends Phaser.Scene {
     scanPointX: number,
     scanPointY: number,
   ) {
-    if (!this.selectedPromptToolIds.includes("safety") || this.isOverheated) {
+    if (
+      !this.selectedPromptToolIds.includes(ToolId.Safety) ||
+      this.isOverheated
+    ) {
       return;
     }
 
@@ -747,7 +762,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private applyRevealedSafetyWordIndexes(wordIndexes: readonly number[]) {
-    if (!this.selectedPromptToolIds.includes("safety")) {
+    if (!this.selectedPromptToolIds.includes(ToolId.Safety)) {
       return;
     }
 
@@ -781,7 +796,7 @@ export class MainScene extends Phaser.Scene {
   private applySafetyScanCharge(elapsedSeconds: number) {
     if (
       !this.isSafetyScanning ||
-      !this.selectedPromptToolIds.includes("safety") ||
+      !this.selectedPromptToolIds.includes(ToolId.Safety) ||
       this.safetyCurrentIntersectedWordIndexes.size === 0 ||
       this.safetyScanSpeedPxPerSecond >
         getPromptToolRuntimeConfig().safety.maxStableScanSpeed
@@ -987,14 +1002,14 @@ export class MainScene extends Phaser.Scene {
     const activeToolIds: ToolId[] = [];
 
     if (
-      this.selectedPromptToolIds.includes("search") &&
+      this.selectedPromptToolIds.includes(ToolId.Search) &&
       this.getSelectedSearchWords().length > 0
     ) {
-      activeToolIds.push("search");
+      activeToolIds.push(ToolId.Search);
     }
 
     if (this.computePrimed) {
-      activeToolIds.push("compute");
+      activeToolIds.push(ToolId.Compute);
     }
 
     return sortPromptToolIds(activeToolIds);
@@ -1066,7 +1081,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private applySafetyToolHeat(deltaSeconds: number) {
-    if (!this.selectedPromptToolIds.includes("safety")) {
+    if (!this.selectedPromptToolIds.includes(ToolId.Safety)) {
       return;
     }
 

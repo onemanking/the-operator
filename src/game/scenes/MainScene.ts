@@ -1126,7 +1126,7 @@ export class MainScene extends Phaser.Scene {
 
     if (previousHeat < 100 && this.heat >= 100 && !this.isOverheated) {
       this.setIsOverheated(true);
-      this.isCommitLocked = false;
+      this.setCommitLocked(false);
       synth.playError();
       this.cameras.main.shake(350, 0.012);
       this.sessionController.postSystemMessage(
@@ -1223,6 +1223,11 @@ export class MainScene extends Phaser.Scene {
     const progress = this.getConnectionElapsedRatio();
     const connectionConfig = getConnectionFeedbackConfig();
     const activeSegmentCount = this.getConnectionActiveSegmentCount(progress);
+
+    if (this.isCommitLocked) {
+      this.lastConnectionSegmentCount = activeSegmentCount;
+      return;
+    }
 
     if (progress >= 1) {
       this.lastConnectionSegmentCount = 0;
@@ -1395,7 +1400,9 @@ export class MainScene extends Phaser.Scene {
       this.connectionPauseStartedAt !== null &&
       this.sessionStartTime > 0
     ) {
-      this.sessionStartTime += this.time.now - this.connectionPauseStartedAt;
+      const pausedDuration = this.time.now - this.connectionPauseStartedAt;
+      this.sessionStartTime += pausedDuration;
+      this.lastConnectionWarningSoundAt += pausedDuration;
       this.connectionPauseStartedAt = null;
     } else {
       this.connectionPauseStartedAt = null;

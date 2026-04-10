@@ -27,6 +27,8 @@ import {
   getPromptToolRuntimeConfig,
   getRunRecoveryProfile,
   getThermalFeedbackConfig,
+  getUtilityMinigameConfig,
+  SignalBoostLayoutConfig,
 } from "../data/RunData";
 import {
   cloneRunState,
@@ -46,6 +48,7 @@ import { MainSceneStorageController } from "./main/storageController";
 import { MainSceneSessionController } from "./main/sessionController";
 import { MainSceneHudController } from "./main/hudController";
 import { MainSceneStickyNotesController } from "./main/stickyNotesController";
+import { getSignalGridBounds } from "./main/utilityPanelLayout";
 import {
   EncounterToolRuntimeSnapshot,
   getProjectedInferenceActionHeat,
@@ -63,6 +66,27 @@ import {
   normalizeSearchWord,
   scanPromptForForbiddenContent,
 } from "./main/toolRuntimeHelpers";
+
+interface CoolantLeverRuntimeState {
+  completed: boolean;
+  holdProgress: number;
+  dragRatio: number;
+  remainingSeconds: number;
+}
+
+interface RealityPatchRuntimeState {
+  currentFrequency: number;
+  lockProgress: number;
+  draggingPointerId: number | null;
+}
+
+interface SignalBoostRuntimeState {
+  draggingPointerId: number | null;
+  path: number[];
+  visitedRequiredNodeIndexes: Set<number>;
+  flashedCellIndex: number | null;
+  flashedCellUntil: number;
+}
 
 export class MainScene extends Phaser.Scene {
   private runState: RunState = hydrateRunState();
@@ -111,6 +135,30 @@ export class MainScene extends Phaser.Scene {
   private projectedInferenceHeat: number = 0;
   private projectedRefuseHeat: number = 0;
   private selectedUtilityId: ActiveUtilityId | null = null;
+  private activeUtilityPanelId: ActiveUtilityId | null = null;
+  private utilityFeedbackState: "idle" | "running" | "success" | "error" =
+    "idle";
+  private utilityFeedbackUntil: number = 0;
+  private utilityFeedbackDurationMs: number = 0;
+  private utilityStatusText: string = "STANDBY";
+  private coolantLeverStates: CoolantLeverRuntimeState[] = [];
+  private coolantDraggingPointerId: number | null = null;
+  private coolantDraggingLeverIndex: number | null = null;
+  private realityPatchState: RealityPatchRuntimeState = {
+    currentFrequency: 1,
+    lockProgress: 0,
+    draggingPointerId: null,
+  };
+  private signalBoostState: SignalBoostRuntimeState = {
+    draggingPointerId: null,
+    path: [],
+    visitedRequiredNodeIndexes: new Set<number>(),
+    flashedCellIndex: null,
+    flashedCellUntil: 0,
+  };
+  private realityLastPointerX: number | null = null;
+  private lastCoolantPulseAt: number = 0;
+  private lastRealityAdjustToneAt: number = 0;
 
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
@@ -175,6 +223,11 @@ export class MainScene extends Phaser.Scene {
     this.projectedInferenceHeat = 0;
     this.projectedRefuseHeat = 0;
     this.selectedUtilityId = null;
+    this.activeUtilityPanelId = null;
+    this.utilityFeedbackState = "idle";
+    this.utilityFeedbackUntil = 0;
+    this.utilityFeedbackDurationMs = 0;
+    this.utilityStatusText = "STANDBY";
     this.currentEncounterIndex = this.runState.encounterProgress.encounterIndex;
     this.currentTurnIndex = this.runState.encounterProgress.turnIndex;
     this.chatHistory = [];
@@ -190,6 +243,13 @@ export class MainScene extends Phaser.Scene {
     this.connectionPauseStartedAt = null;
     this.lastConnectionSegmentCount =
       getConnectionFeedbackConfig().segmentCount;
+    this.lastCoolantPulseAt = 0;
+    this.lastRealityAdjustToneAt = 0;
+    this.realityLastPointerX = null;
+    this.ensureUtilityRuntimeInitialized();
+    this.resetCoolantPurgeState();
+    this.resetRealityPatchState();
+    this.resetSignalBoostState();
     this.syncSelectedUtilityId();
   }
 
@@ -380,6 +440,53 @@ export class MainScene extends Phaser.Scene {
         this.getSafetyRevealProgress(wordIndex),
       getSafetyRevealFlash: (wordIndex) => this.getSafetyRevealFlash(wordIndex),
       getSafetyDetectedWordCount: () => this.getSafetyDetectedWordCount(),
+      getSelectedUtilityId: () => this.selectedUtilityId,
+      getActiveUtilityPanelId: () => this.activeUtilityPanelId,
+      getUtilityPanelStatusText: () => this.utilityStatusText,
+      getUtilityFeedbackState: () => this.utilityFeedbackState,
+      getUtilityFeedbackFlash: () => this.getUtilityFeedbackFlash(),
+      getCoolantLeverOrder: () =>
+        this.runState.utilityRuntime.coolantPurgeLeverOrder,
+      getCoolantLeverProgress: (leverIndex) =>
+        this.getCoolantLeverProgress(leverIndex),
+      getCoolantLeverDecayRatio: (leverIndex) =>
+        this.getCoolantLeverDecayRatio(leverIndex),
+      getCoolantLeverDragRatio: (leverIndex) =>
+        this.coolantLeverStates[leverIndex]?.dragRatio ?? 0,
+      isCoolantLeverCompleted: (leverIndex) =>
+        this.coolantLeverStates[leverIndex]?.completed ?? false,
+      getCoolantNextRequiredLeverIndex: () =>
+        this.getCoolantNextRequiredLeverIndex(),
+      onCoolantLeverDragStart: (leverIndex, pointerId) =>
+        this.startCoolantLeverDrag(leverIndex, pointerId),
+      onCoolantLeverDragMove: (pointerId, dragRatio) =>
+        this.updateCoolantLeverDrag(pointerId, dragRatio),
+      onCoolantLeverDragEnd: (pointerId) => this.endCoolantLeverDrag(pointerId),
+      getRealityCurrentFrequencyRatio: () =>
+        this.getRealityCurrentFrequencyRatio(),
+      getRealityTargetFrequencyRatio: () =>
+        this.getRealityTargetFrequencyRatio(),
+      getRealityLockProgress: () => this.realityPatchState.lockProgress,
+      getRealityJitterIntensity: () => this.getRealityJitterIntensity(),
+      isRealityDragging: () =>
+        this.realityPatchState.draggingPointerId !== null,
+      onRealityTuneStart: (pointerId) => this.startRealityPatchTune(pointerId),
+      onRealityTuneDelta: (pointerId, deltaX) =>
+        this.updateRealityPatchTune(pointerId, deltaX),
+      onRealityTuneEnd: (pointerId) => this.endRealityPatchTune(pointerId),
+      getSignalLayout: () => this.getActiveSignalLayout(),
+      getSignalPath: () => this.signalBoostState.path,
+      isSignalRequiredNode: (cellIndex) =>
+        this.getActiveSignalLayout().requiredNodeIndexes.includes(cellIndex),
+      isSignalVisitedRequiredNode: (cellIndex) =>
+        this.signalBoostState.visitedRequiredNodeIndexes.has(cellIndex),
+      getSignalFlashCellIndex: () => this.signalBoostState.flashedCellIndex,
+      onSignalDragStart: (pointerId, cellIndex) =>
+        this.startSignalBoostDrag(pointerId, cellIndex),
+      onSignalDragMove: (pointerId, cellIndex) =>
+        this.updateSignalBoostDrag(pointerId, cellIndex),
+      onSignalDragEnd: (pointerId, cellIndex) =>
+        this.endSignalBoostDrag(pointerId, cellIndex),
       canUseUtility: () => {
         return this.canUseSelectedUtility();
       },
@@ -412,6 +519,7 @@ export class MainScene extends Phaser.Scene {
 
     this.hudController.createLayout();
     this.hudController.createPromptToolGrid();
+    this.hudController.createUtilityActivationPanel();
     this.hudController.createComputeSection();
     this.hudController.createEconomySection();
     this.hudController.createPassiveSection();
@@ -441,6 +549,8 @@ export class MainScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     this.sessionController.update(delta);
+    this.updateUtilityMinigames(delta / 1000);
+    this.syncUtilitySelectionForAvailability();
 
     if (
       this.isSafetyScanning &&
@@ -456,11 +566,7 @@ export class MainScene extends Phaser.Scene {
     this.applyHallucinationFeedback();
     this.applyConnectionFeedback();
 
-    if (this.computeCharge > 0) {
-      if (this.isComputeLatched()) {
-        return;
-      }
-
+    if (this.computeCharge > 0 && !this.isComputeLatched()) {
       const nextCharge = clampComputeCharge(
         this.computeCharge -
           getComputeDecayPerSecond(this.computeCharge) * (delta / 1000),
@@ -471,6 +577,8 @@ export class MainScene extends Phaser.Scene {
         this.events.emit("updateBars");
       }
     }
+
+    this.hudController.update();
   }
 
   private handleUtilityUse() {
@@ -478,15 +586,389 @@ export class MainScene extends Phaser.Scene {
     const definition = utilityId
       ? getActiveUtilityDefinition(utilityId)
       : undefined;
-    const recoveryProfile = getRunRecoveryProfile();
 
     if (!utilityId || !definition || !this.canUseUtilityId(utilityId)) {
       synth.playError();
       return;
     }
 
-    if (!consumeActiveUtilityCharge(this.runState, utilityId)) {
+    if (
+      this.utilityFeedbackState === "success" &&
+      this.activeUtilityPanelId === utilityId
+    ) {
+      return;
+    }
+
+    this.activeUtilityPanelId = utilityId;
+    this.utilityFeedbackState = "running";
+    this.utilityFeedbackUntil = 0;
+    this.utilityFeedbackDurationMs = 0;
+    this.utilityStatusText = this.getUtilityBootStatusText(utilityId);
+    synth.playUtilityArm(utilityId);
+    this.events.emit("updateBars");
+  }
+
+  private cycleSelectedUtility(direction: 1 | -1) {
+    const utilityIds = this.getSelectableUtilityIds();
+
+    if (utilityIds.length <= 1) {
       synth.playError();
+      return;
+    }
+
+    const currentIndex = this.selectedUtilityId
+      ? utilityIds.indexOf(this.selectedUtilityId)
+      : -1;
+    const nextIndex =
+      currentIndex === -1
+        ? 0
+        : (currentIndex + direction + utilityIds.length) % utilityIds.length;
+
+    this.selectedUtilityId = utilityIds[nextIndex];
+    synth.playButtonPress();
+    this.events.emit("updateBars");
+  }
+
+  private updateUtilityMinigames(deltaSeconds: number) {
+    const isUtilitySuccessPending = this.utilityFeedbackState === "success";
+
+    if (!isUtilitySuccessPending) {
+      this.pollUtilityPointerInteractions();
+      this.updateCoolantPurge(deltaSeconds);
+      this.updateRealityPatch(deltaSeconds);
+    }
+
+    if (
+      this.signalBoostState.flashedCellIndex !== null &&
+      this.time.now >= this.signalBoostState.flashedCellUntil
+    ) {
+      this.signalBoostState.flashedCellIndex = null;
+    }
+
+    if (
+      this.utilityFeedbackState !== "idle" &&
+      this.utilityFeedbackUntil > 0 &&
+      this.time.now >= this.utilityFeedbackUntil
+    ) {
+      const completedUtilityId = this.activeUtilityPanelId;
+
+      if (this.utilityFeedbackState === "success") {
+        this.activeUtilityPanelId = null;
+        if (completedUtilityId === "coolant_purge") {
+          this.resetCoolantPurgeState();
+        } else if (completedUtilityId === "reality_patch") {
+          this.resetRealityPatchState();
+        } else if (completedUtilityId === "signal_boost") {
+          this.resetSignalBoostState();
+        }
+      }
+
+      this.utilityFeedbackState = this.activeUtilityPanelId
+        ? "running"
+        : "idle";
+      this.utilityFeedbackUntil = 0;
+      this.utilityFeedbackDurationMs = 0;
+      this.utilityStatusText = this.activeUtilityPanelId
+        ? this.getUtilityBootStatusText(this.activeUtilityPanelId)
+        : "STANDBY";
+    }
+  }
+
+  private updateCoolantPurge(deltaSeconds: number) {
+    const coolantConfig = getUtilityMinigameConfig().coolant;
+
+    this.coolantLeverStates.forEach((leverState, leverIndex) => {
+      if (leverState.completed) {
+        leverState.remainingSeconds = Math.max(
+          0,
+          leverState.remainingSeconds - deltaSeconds,
+        );
+
+        if (leverState.remainingSeconds <= 0) {
+          leverState.completed = false;
+          leverState.holdProgress = 0;
+          leverState.dragRatio = 0;
+          if (this.activeUtilityPanelId === "coolant_purge") {
+            this.failUtilityInteraction(
+              "coolant_purge",
+              `VENT ${leverIndex + 1} LOST SEAL`,
+            );
+          }
+        }
+
+        return;
+      }
+
+      if (this.coolantDraggingLeverIndex !== leverIndex) {
+        leverState.dragRatio = Math.max(
+          0,
+          leverState.dragRatio -
+            coolantConfig.handleReturnPerSecond * deltaSeconds,
+        );
+        leverState.holdProgress = Math.max(
+          0,
+          leverState.holdProgress - deltaSeconds * 3.2,
+        );
+        return;
+      }
+
+      if (leverState.dragRatio >= coolantConfig.readyDragRatio) {
+        leverState.holdProgress = Math.min(
+          1,
+          leverState.holdProgress +
+            deltaSeconds / coolantConfig.holdSecondsPerLever,
+        );
+
+        if (this.time.now - this.lastCoolantPulseAt >= 120) {
+          synth.playCoolantPurgeLoop(leverState.holdProgress);
+          this.lastCoolantPulseAt = this.time.now;
+        }
+
+        if (leverState.holdProgress >= 1) {
+          leverState.completed = true;
+          leverState.dragRatio = 1;
+          leverState.remainingSeconds = coolantConfig.completedDecaySeconds;
+          this.coolantDraggingPointerId = null;
+          this.coolantDraggingLeverIndex = null;
+          synth.playCoolantPurgeLatch();
+          this.cameras.main.shake(80, 0.0014);
+
+          const nextLeverIndex = this.getCoolantNextRequiredLeverIndex();
+          if (nextLeverIndex === null) {
+            this.completeUtilityActivation("coolant_purge");
+          } else {
+            this.utilityStatusText = `VENT ${nextLeverIndex + 1} READY`;
+          }
+        }
+      } else {
+        leverState.holdProgress = Math.max(
+          0,
+          leverState.holdProgress - deltaSeconds * 4.4,
+        );
+      }
+    });
+  }
+
+  private startCoolantLeverDrag(leverIndex: number, pointerId: number) {
+    if (
+      this.activeUtilityPanelId !== "coolant_purge" ||
+      !this.canUseUtilityId("coolant_purge")
+    ) {
+      return;
+    }
+
+    const requiredLeverIndex = this.getCoolantNextRequiredLeverIndex();
+    if (requiredLeverIndex !== leverIndex) {
+      this.failUtilityInteraction(
+        "coolant_purge",
+        `VENT ${requiredLeverIndex === null ? leverIndex + 1 : requiredLeverIndex + 1} FIRST`,
+      );
+      return;
+    }
+
+    this.coolantDraggingPointerId = pointerId;
+    this.coolantDraggingLeverIndex = leverIndex;
+    this.utilityStatusText = `VENT ${leverIndex + 1} HOLD`;
+  }
+
+  private updateCoolantLeverDrag(pointerId: number, dragRatio: number) {
+    if (this.coolantDraggingLeverIndex === null) {
+      return;
+    }
+
+    const leverState = this.coolantLeverStates[this.coolantDraggingLeverIndex];
+    if (!leverState || leverState.completed) {
+      return;
+    }
+
+    leverState.dragRatio = dragRatio;
+  }
+
+  private endCoolantLeverDrag(pointerId: number) {
+    if (this.coolantDraggingLeverIndex === null) {
+      return;
+    }
+
+    this.coolantDraggingPointerId = null;
+    this.coolantDraggingLeverIndex = null;
+  }
+
+  private updateRealityPatch(deltaSeconds: number) {
+    if (this.activeUtilityPanelId !== "reality_patch") {
+      return;
+    }
+
+    const realityConfig = getUtilityMinigameConfig().reality;
+    const differenceRatio =
+      Math.abs(
+        this.realityPatchState.currentFrequency -
+          this.runState.utilityRuntime.realityPatchTargetFrequency,
+      ) /
+      (realityConfig.maximumFrequency - realityConfig.minimumFrequency);
+    const withinTolerance = differenceRatio <= realityConfig.lockToleranceRatio;
+
+    if (withinTolerance) {
+      this.realityPatchState.lockProgress = Math.min(
+        1,
+        this.realityPatchState.lockProgress +
+          deltaSeconds / realityConfig.lockFillSeconds,
+      );
+    } else {
+      this.realityPatchState.lockProgress = Math.max(
+        0,
+        this.realityPatchState.lockProgress -
+          deltaSeconds * realityConfig.lockDecayPerSecond,
+      );
+    }
+
+    this.utilityStatusText = withinTolerance
+      ? `LOCK ${(this.realityPatchState.lockProgress * 100).toFixed(0)}%`
+      : "TUNE FREQUENCY";
+
+    if (this.realityPatchState.lockProgress >= 1) {
+      this.completeUtilityActivation("reality_patch");
+    }
+  }
+
+  private startRealityPatchTune(pointerId: number) {
+    if (
+      this.activeUtilityPanelId !== "reality_patch" ||
+      !this.canUseUtilityId("reality_patch")
+    ) {
+      return;
+    }
+
+    this.realityPatchState.draggingPointerId = pointerId;
+    this.realityLastPointerX = this.input.activePointer.x;
+    this.utilityStatusText = "TUNE FREQUENCY";
+  }
+
+  private updateRealityPatchTune(pointerId: number, deltaX: number) {
+    if (this.realityPatchState.draggingPointerId === null) {
+      return;
+    }
+
+    const realityConfig = getUtilityMinigameConfig().reality;
+    this.realityPatchState.currentFrequency = Phaser.Math.Clamp(
+      this.realityPatchState.currentFrequency +
+        deltaX * realityConfig.dragSensitivity,
+      realityConfig.minimumFrequency,
+      realityConfig.maximumFrequency,
+    );
+
+    if (this.time.now - this.lastRealityAdjustToneAt >= 90) {
+      synth.playRealityPatchAdjust(this.getRealityMatchRatio());
+      this.lastRealityAdjustToneAt = this.time.now;
+    }
+  }
+
+  private endRealityPatchTune(pointerId: number) {
+    if (this.realityPatchState.draggingPointerId === null) {
+      return;
+    }
+
+    this.realityPatchState.draggingPointerId = null;
+    this.realityLastPointerX = null;
+  }
+
+  private startSignalBoostDrag(pointerId: number, cellIndex: number | null) {
+    if (
+      this.activeUtilityPanelId !== "signal_boost" ||
+      !this.canUseUtilityId("signal_boost")
+    ) {
+      return;
+    }
+
+    const layout = this.getActiveSignalLayout();
+    if (cellIndex !== layout.sourceIndex) {
+      this.failUtilityInteraction("signal_boost", "START AT SRC");
+      return;
+    }
+
+    this.signalBoostState.draggingPointerId = pointerId;
+    this.signalBoostState.path = [layout.sourceIndex];
+    this.signalBoostState.visitedRequiredNodeIndexes = new Set();
+    if (layout.requiredNodeIndexes.includes(layout.sourceIndex)) {
+      this.signalBoostState.visitedRequiredNodeIndexes.add(layout.sourceIndex);
+    }
+
+    this.utilityStatusText = "ROUTE LIVE";
+    synth.playSignalBoostNode(0);
+  }
+
+  private updateSignalBoostDrag(pointerId: number, cellIndex: number | null) {
+    if (cellIndex === null || this.signalBoostState.path.length === 0) {
+      return;
+    }
+
+    const lastCellIndex =
+      this.signalBoostState.path[this.signalBoostState.path.length - 1];
+    if (cellIndex === lastCellIndex) {
+      return;
+    }
+
+    if (!this.areSignalCellsAdjacent(lastCellIndex, cellIndex)) {
+      return;
+    }
+
+    if (this.signalBoostState.path.includes(cellIndex)) {
+      this.failSignalBoost(cellIndex, "PATH LOOPED");
+      return;
+    }
+
+    this.signalBoostState.path.push(cellIndex);
+    if (this.getActiveSignalLayout().requiredNodeIndexes.includes(cellIndex)) {
+      this.signalBoostState.visitedRequiredNodeIndexes.add(cellIndex);
+    }
+
+    synth.playSignalBoostNode(
+      this.signalBoostState.visitedRequiredNodeIndexes.size,
+    );
+    this.utilityStatusText = `NODES ${this.signalBoostState.visitedRequiredNodeIndexes.size}/${this.getActiveSignalLayout().requiredNodeIndexes.length}`;
+  }
+
+  private endSignalBoostDrag(pointerId: number, cellIndex: number | null) {
+    if (this.signalBoostState.path.length === 0) {
+      return;
+    }
+
+    if (cellIndex !== null) {
+      this.updateSignalBoostDrag(pointerId, cellIndex);
+    }
+
+    this.signalBoostState.draggingPointerId = null;
+    const layout = this.getActiveSignalLayout();
+    const endedAtTarget =
+      cellIndex === layout.targetIndex &&
+      this.signalBoostState.path[this.signalBoostState.path.length - 1] ===
+        layout.targetIndex;
+    const completedRequired = layout.requiredNodeIndexes.every((requiredNode) =>
+      this.signalBoostState.visitedRequiredNodeIndexes.has(requiredNode),
+    );
+
+    if (endedAtTarget && completedRequired) {
+      this.completeUtilityActivation("signal_boost");
+      return;
+    }
+
+    this.failSignalBoost(cellIndex, "LINK COLLAPSED");
+  }
+
+  private failSignalBoost(cellIndex: number | null, statusText: string) {
+    this.signalBoostState.flashedCellIndex = cellIndex;
+    this.signalBoostState.flashedCellUntil =
+      this.time.now + getUtilityMinigameConfig().signal.failureFlashMs;
+    this.resetSignalBoostState();
+    this.failUtilityInteraction("signal_boost", statusText);
+  }
+
+  private completeUtilityActivation(utilityId: ActiveUtilityId) {
+    const definition = getActiveUtilityDefinition(utilityId);
+    const recoveryProfile = getRunRecoveryProfile();
+    const sharedUtilityConfig = getUtilityMinigameConfig().shared;
+
+    if (!definition || !consumeActiveUtilityCharge(this.runState, utilityId)) {
+      this.failUtilityInteraction(utilityId, "UTILITY FAULT");
       return;
     }
 
@@ -522,29 +1004,297 @@ export class MainScene extends Phaser.Scene {
       );
     }
 
+    this.utilityFeedbackState = "success";
+    this.utilityFeedbackDurationMs = sharedUtilityConfig.successFlashMs;
+    this.utilityFeedbackUntil =
+      this.time.now + sharedUtilityConfig.autoCloseDelayMs;
+    this.utilityStatusText =
+      utilityId === "coolant_purge"
+        ? "THERMAL DROP STABLE"
+        : utilityId === "reality_patch"
+          ? "REALITY LOCKED"
+          : "LINK RESTORED";
+    synth.playUtilitySuccess(utilityId);
+    this.cameras.main.shake(110, 0.0012);
     this.syncSelectedUtilityId(utilityId);
     this.events.emit("updateBars");
   }
 
-  private cycleSelectedUtility(direction: 1 | -1) {
-    const utilityIds = this.getSelectableUtilityIds();
+  private failUtilityInteraction(
+    utilityId: ActiveUtilityId,
+    statusText: string,
+  ) {
+    const sharedUtilityConfig = getUtilityMinigameConfig().shared;
 
-    if (utilityIds.length <= 1) {
-      synth.playError();
+    this.utilityFeedbackState = "error";
+    this.utilityFeedbackDurationMs = sharedUtilityConfig.errorFlashMs;
+    this.utilityFeedbackUntil =
+      this.time.now + sharedUtilityConfig.errorFlashMs;
+    this.utilityStatusText = statusText;
+    synth.playUtilityFail(utilityId);
+    this.cameras.main.shake(70, 0.0011);
+  }
+
+  private getUtilityBootStatusText(utilityId: ActiveUtilityId) {
+    if (utilityId === "coolant_purge") {
+      const nextLeverIndex = this.getCoolantNextRequiredLeverIndex();
+      return nextLeverIndex === null
+        ? "VENT SEQUENCE READY"
+        : `VENT ${nextLeverIndex + 1} READY`;
+    }
+
+    if (utilityId === "reality_patch") {
+      return "TUNE FREQUENCY";
+    }
+
+    return "START AT SRC";
+  }
+
+  private getUtilityFeedbackFlash() {
+    if (
+      this.utilityFeedbackState === "running" ||
+      this.utilityFeedbackState === "idle" ||
+      this.utilityFeedbackUntil <= 0 ||
+      this.utilityFeedbackDurationMs <= 0
+    ) {
+      return 0;
+    }
+
+    return Phaser.Math.Clamp(
+      (this.utilityFeedbackUntil - this.time.now) /
+        this.utilityFeedbackDurationMs,
+      0,
+      1,
+    );
+  }
+
+  private getCoolantLeverProgress(leverIndex: number) {
+    const leverState = this.coolantLeverStates[leverIndex];
+    if (!leverState) {
+      return 0;
+    }
+
+    return leverState.completed ? 1 : leverState.holdProgress;
+  }
+
+  private getCoolantLeverDecayRatio(leverIndex: number) {
+    const leverState = this.coolantLeverStates[leverIndex];
+    if (!leverState?.completed) {
+      return 0;
+    }
+
+    return Phaser.Math.Clamp(
+      leverState.remainingSeconds /
+        getUtilityMinigameConfig().coolant.completedDecaySeconds,
+      0,
+      1,
+    );
+  }
+
+  private getCoolantNextRequiredLeverIndex() {
+    return (
+      this.runState.utilityRuntime.coolantPurgeLeverOrder.find(
+        (leverIndex) => !this.coolantLeverStates[leverIndex]?.completed,
+      ) ?? null
+    );
+  }
+
+  private getRealityCurrentFrequencyRatio() {
+    const realityConfig = getUtilityMinigameConfig().reality;
+    return Phaser.Math.Clamp(
+      (this.realityPatchState.currentFrequency -
+        realityConfig.minimumFrequency) /
+        (realityConfig.maximumFrequency - realityConfig.minimumFrequency),
+      0,
+      1,
+    );
+  }
+
+  private getRealityTargetFrequencyRatio() {
+    const realityConfig = getUtilityMinigameConfig().reality;
+    return Phaser.Math.Clamp(
+      (this.runState.utilityRuntime.realityPatchTargetFrequency -
+        realityConfig.minimumFrequency) /
+        (realityConfig.maximumFrequency - realityConfig.minimumFrequency),
+      0,
+      1,
+    );
+  }
+
+  private getRealityJitterIntensity() {
+    const hallucinationRatio = Phaser.Math.Clamp(
+      this.hallucination / 100,
+      0,
+      1,
+    );
+    return (
+      hallucinationRatio *
+      getUtilityMinigameConfig().reality.hallucinationJitterAmplitude
+    );
+  }
+
+  private getRealityMatchRatio() {
+    const realityConfig = getUtilityMinigameConfig().reality;
+    const differenceRatio =
+      Math.abs(
+        this.realityPatchState.currentFrequency -
+          this.runState.utilityRuntime.realityPatchTargetFrequency,
+      ) /
+      (realityConfig.maximumFrequency - realityConfig.minimumFrequency);
+
+    return Phaser.Math.Clamp(
+      1 - differenceRatio / Math.max(realityConfig.lockToleranceRatio, 0.0001),
+      0,
+      1,
+    );
+  }
+
+  private getActiveSignalLayout(): SignalBoostLayoutConfig {
+    const signalConfig = getUtilityMinigameConfig().signal;
+    return (
+      signalConfig.layouts[
+        this.runState.utilityRuntime.signalBoostLayoutIndex
+      ] ?? signalConfig.layouts[0]
+    );
+  }
+
+  private areSignalCellsAdjacent(
+    leftCellIndex: number,
+    rightCellIndex: number,
+  ) {
+    const gridSize = getUtilityMinigameConfig().signal.gridSize;
+    const leftColumn = leftCellIndex % gridSize;
+    const leftRow = Math.floor(leftCellIndex / gridSize);
+    const rightColumn = rightCellIndex % gridSize;
+    const rightRow = Math.floor(rightCellIndex / gridSize);
+
+    return (
+      Math.abs(leftColumn - rightColumn) + Math.abs(leftRow - rightRow) === 1
+    );
+  }
+
+  private ensureUtilityRuntimeInitialized() {
+    const utilityRuntime = this.runState.utilityRuntime;
+    const signalLayouts = getUtilityMinigameConfig().signal.layouts;
+
+    if (
+      utilityRuntime.initialized &&
+      utilityRuntime.coolantPurgeLeverOrder.length === 3 &&
+      utilityRuntime.signalBoostLayoutIndex >= 0 &&
+      utilityRuntime.signalBoostLayoutIndex < signalLayouts.length
+    ) {
       return;
     }
 
-    const currentIndex = this.selectedUtilityId
-      ? utilityIds.indexOf(this.selectedUtilityId)
-      : -1;
-    const nextIndex =
-      currentIndex === -1
-        ? 0
-        : (currentIndex + direction + utilityIds.length) % utilityIds.length;
+    utilityRuntime.initialized = true;
+    utilityRuntime.coolantPurgeLeverOrder = Phaser.Utils.Array.Shuffle([
+      0, 1, 2,
+    ]);
+    utilityRuntime.realityPatchTargetFrequency = Phaser.Math.FloatBetween(
+      getUtilityMinigameConfig().reality.targetFrequencyMin,
+      getUtilityMinigameConfig().reality.targetFrequencyMax,
+    );
+    utilityRuntime.signalBoostLayoutIndex = Phaser.Math.Between(
+      0,
+      signalLayouts.length - 1,
+    );
+  }
 
-    this.selectedUtilityId = utilityIds[nextIndex];
-    synth.playButtonPress();
-    this.events.emit("updateBars");
+  private resetCoolantPurgeState() {
+    this.coolantLeverStates = [0, 1, 2].map(() => ({
+      completed: false,
+      holdProgress: 0,
+      dragRatio: 0,
+      remainingSeconds: 0,
+    }));
+    this.coolantDraggingPointerId = null;
+    this.coolantDraggingLeverIndex = null;
+  }
+
+  private resetRealityPatchState() {
+    const realityConfig = getUtilityMinigameConfig().reality;
+    const targetFrequency =
+      this.runState.utilityRuntime.realityPatchTargetFrequency;
+    const offsetDirection = Math.random() < 0.5 ? -1 : 1;
+    const offsetMagnitude = Phaser.Math.FloatBetween(0.12, 0.22);
+
+    this.realityPatchState = {
+      currentFrequency: Phaser.Math.Clamp(
+        targetFrequency + offsetDirection * offsetMagnitude,
+        realityConfig.minimumFrequency,
+        realityConfig.maximumFrequency,
+      ),
+      lockProgress: 0,
+      draggingPointerId: null,
+    };
+    this.realityLastPointerX = null;
+  }
+
+  private resetSignalBoostState() {
+    this.signalBoostState.draggingPointerId = null;
+    this.signalBoostState.path = [];
+    this.signalBoostState.visitedRequiredNodeIndexes = new Set<number>();
+  }
+
+  private pollUtilityPointerInteractions() {
+    const pointer = this.input.activePointer;
+
+    if (this.coolantDraggingLeverIndex !== null) {
+      const dragRatio = Phaser.Math.Clamp((pointer.y - 348) / 70, 0, 1);
+      this.updateCoolantLeverDrag(pointer.id, dragRatio);
+
+      if (!pointer.isDown) {
+        this.endCoolantLeverDrag(pointer.id);
+      }
+    }
+
+    if (this.realityPatchState.draggingPointerId !== null) {
+      if (this.realityLastPointerX === null) {
+        this.realityLastPointerX = pointer.x;
+      }
+
+      const deltaX = pointer.x - this.realityLastPointerX;
+      if (Math.abs(deltaX) > 0) {
+        this.updateRealityPatchTune(pointer.id, deltaX);
+        this.realityLastPointerX = pointer.x;
+      }
+
+      if (!pointer.isDown) {
+        this.endRealityPatchTune(pointer.id);
+      }
+    }
+
+    if (this.signalBoostState.draggingPointerId !== null) {
+      const cellIndex = this.getSignalCellIndexFromPointer(
+        pointer.x,
+        pointer.y,
+      );
+      this.updateSignalBoostDrag(pointer.id, cellIndex);
+
+      if (!pointer.isDown) {
+        this.endSignalBoostDrag(pointer.id, cellIndex);
+      }
+    }
+  }
+
+  private getSignalCellIndexFromPointer(pointerX: number, pointerY: number) {
+    const signalGrid = getSignalGridBounds();
+    const signalGridLeft = signalGrid.left;
+    const signalGridTop = signalGrid.top;
+    const signalCellSize = signalGrid.cellSize;
+
+    if (
+      pointerX < signalGridLeft ||
+      pointerY < signalGridTop ||
+      pointerX >= signalGridLeft + signalCellSize * 3 ||
+      pointerY >= signalGridTop + signalCellSize * 3
+    ) {
+      return null;
+    }
+
+    const column = Math.floor((pointerX - signalGridLeft) / signalCellSize);
+    const row = Math.floor((pointerY - signalGridTop) / signalCellSize);
+    return row * 3 + column;
   }
 
   private togglePromptTool(toolId: ToolId) {
@@ -1349,28 +2099,38 @@ export class MainScene extends Phaser.Scene {
   }
 
   private canUseUtilityId(utilityId: ActiveUtilityId) {
-    const definition = getActiveUtilityDefinition(utilityId);
+    return canUseActiveUtility(this.runState, utilityId);
+  }
 
-    if (!definition || !canUseActiveUtility(this.runState, utilityId)) {
-      return false;
+  private syncUtilitySelectionForAvailability() {
+    if (!this.selectedUtilityId) {
+      this.syncSelectedUtilityId();
+      return;
     }
 
-    if (definition.heatReduction) {
-      return this.heat > 0;
+    if (this.canUseUtilityId(this.selectedUtilityId)) {
+      return;
     }
 
-    if (definition.hallucinationReduction) {
-      return this.hallucination > 0;
-    }
+    const previousSelectedUtilityId = this.selectedUtilityId;
+    this.syncSelectedUtilityId();
 
-    if (definition.connectionRestoreMs) {
-      return (
-        this.getElapsedSessionTime() > 0 &&
-        Boolean(this.getCurrentTurnDefinition())
-      );
-    }
+    if (this.selectedUtilityId !== previousSelectedUtilityId) {
+      if (
+        this.activeUtilityPanelId &&
+        !this.canUseUtilityId(this.activeUtilityPanelId)
+      ) {
+        this.activeUtilityPanelId = null;
+        this.utilityFeedbackState = "idle";
+        this.utilityFeedbackUntil = 0;
+        this.utilityFeedbackDurationMs = 0;
+      }
 
-    return false;
+      this.utilityStatusText = this.selectedUtilityId
+        ? this.getUtilityBootStatusText(this.selectedUtilityId)
+        : "STANDBY";
+      this.events.emit("updateBars");
+    }
   }
 
   private getCurrentTurnDefinition() {

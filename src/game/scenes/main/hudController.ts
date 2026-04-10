@@ -6,8 +6,10 @@ import {
 import {
   getConnectionFeedbackConfig,
   getHallucinationFeedbackConfig,
+  SignalBoostLayoutConfig,
   getThermalFeedbackConfig,
 } from "../../data/RunData";
+import { ActiveUtilityId } from "../../data/UtilityData";
 import { synth } from "../../utils/SoundSynth";
 import { createHallucinationFeedbackShader } from "./hallucinationFeedbackShader";
 import { PROMPT_TOOLS } from "./config";
@@ -17,6 +19,7 @@ import {
   TERMINAL_PROMPT_LINE_HEIGHT,
   TerminalPromptController,
 } from "./terminalPromptController";
+import { MainSceneUtilityPanelController } from "./utilityPanelController";
 import { ChatMessage, ToolId } from "./types";
 
 interface HudControllerBindings {
@@ -73,6 +76,36 @@ interface HudControllerBindings {
   getSafetyRevealProgress: (wordIndex: number) => number;
   getSafetyRevealFlash: (wordIndex: number) => number;
   getSafetyDetectedWordCount: () => number;
+  getSelectedUtilityId: () => ActiveUtilityId | null;
+  getActiveUtilityPanelId: () => ActiveUtilityId | null;
+  getUtilityPanelStatusText: () => string;
+  getUtilityFeedbackState: () => "idle" | "running" | "success" | "error";
+  getUtilityFeedbackFlash: () => number;
+  getCoolantLeverOrder: () => readonly number[];
+  getCoolantLeverProgress: (leverIndex: number) => number;
+  getCoolantLeverDecayRatio: (leverIndex: number) => number;
+  getCoolantLeverDragRatio: (leverIndex: number) => number;
+  isCoolantLeverCompleted: (leverIndex: number) => boolean;
+  getCoolantNextRequiredLeverIndex: () => number | null;
+  onCoolantLeverDragStart: (leverIndex: number, pointerId: number) => void;
+  onCoolantLeverDragMove: (pointerId: number, dragRatio: number) => void;
+  onCoolantLeverDragEnd: (pointerId: number) => void;
+  getRealityCurrentFrequencyRatio: () => number;
+  getRealityTargetFrequencyRatio: () => number;
+  getRealityLockProgress: () => number;
+  getRealityJitterIntensity: () => number;
+  isRealityDragging: () => boolean;
+  onRealityTuneStart: (pointerId: number) => void;
+  onRealityTuneDelta: (pointerId: number, deltaX: number) => void;
+  onRealityTuneEnd: (pointerId: number) => void;
+  getSignalLayout: () => SignalBoostLayoutConfig;
+  getSignalPath: () => readonly number[];
+  isSignalRequiredNode: (cellIndex: number) => boolean;
+  isSignalVisitedRequiredNode: (cellIndex: number) => boolean;
+  getSignalFlashCellIndex: () => number | null;
+  onSignalDragStart: (pointerId: number, cellIndex: number | null) => void;
+  onSignalDragMove: (pointerId: number, cellIndex: number | null) => void;
+  onSignalDragEnd: (pointerId: number, cellIndex: number | null) => void;
   canUseUtility: () => boolean;
   getHeat: () => number;
   getHallucination: () => number;
@@ -153,6 +186,7 @@ export class MainSceneHudController {
   private computePulseLabel!: Phaser.GameObjects.Text;
   private promptToolButtons = new Map<ToolId, PromptToolButtonUi>();
   private terminalPromptController!: TerminalPromptController;
+  private utilityPanelController!: MainSceneUtilityPanelController;
   private updateBarsHandler?: () => void;
   private cleanupHandler?: () => void;
   private renderPromptHandler?: (payload: { prompt: string }) => void;
@@ -720,6 +754,67 @@ export class MainSceneHudController {
       synth.playButtonPress();
       this.bindings.onSelectNextUtility();
     });
+  }
+
+  createUtilityActivationPanel() {
+    this.utilityPanelController = new MainSceneUtilityPanelController(
+      this.scene,
+      {
+        getSelectedUtilityId: () => this.bindings.getSelectedUtilityId(),
+        getActiveUtilityPanelId: () => this.bindings.getActiveUtilityPanelId(),
+        getUtilityPanelStatusText: () =>
+          this.bindings.getUtilityPanelStatusText(),
+        getUtilityFeedbackState: () => this.bindings.getUtilityFeedbackState(),
+        getUtilityFeedbackFlash: () => this.bindings.getUtilityFeedbackFlash(),
+        canUseSelectedUtility: () => this.bindings.canUseUtility(),
+        onStartUtilityActivation: () => this.bindings.onUseUtility(),
+        getCoolantLeverOrder: () => this.bindings.getCoolantLeverOrder(),
+        getCoolantLeverProgress: (leverIndex) =>
+          this.bindings.getCoolantLeverProgress(leverIndex),
+        getCoolantLeverDecayRatio: (leverIndex) =>
+          this.bindings.getCoolantLeverDecayRatio(leverIndex),
+        getCoolantLeverDragRatio: (leverIndex) =>
+          this.bindings.getCoolantLeverDragRatio(leverIndex),
+        isCoolantLeverCompleted: (leverIndex) =>
+          this.bindings.isCoolantLeverCompleted(leverIndex),
+        getCoolantNextRequiredLeverIndex: () =>
+          this.bindings.getCoolantNextRequiredLeverIndex(),
+        onCoolantLeverDragStart: (leverIndex, pointerId) =>
+          this.bindings.onCoolantLeverDragStart(leverIndex, pointerId),
+        onCoolantLeverDragMove: (pointerId, dragRatio) =>
+          this.bindings.onCoolantLeverDragMove(pointerId, dragRatio),
+        onCoolantLeverDragEnd: (pointerId) =>
+          this.bindings.onCoolantLeverDragEnd(pointerId),
+        getRealityCurrentFrequencyRatio: () =>
+          this.bindings.getRealityCurrentFrequencyRatio(),
+        getRealityTargetFrequencyRatio: () =>
+          this.bindings.getRealityTargetFrequencyRatio(),
+        getRealityLockProgress: () => this.bindings.getRealityLockProgress(),
+        getRealityJitterIntensity: () =>
+          this.bindings.getRealityJitterIntensity(),
+        isRealityDragging: () => this.bindings.isRealityDragging(),
+        onRealityTuneStart: (pointerId) =>
+          this.bindings.onRealityTuneStart(pointerId),
+        onRealityTuneDelta: (pointerId, deltaX) =>
+          this.bindings.onRealityTuneDelta(pointerId, deltaX),
+        onRealityTuneEnd: (pointerId) =>
+          this.bindings.onRealityTuneEnd(pointerId),
+        getSignalLayout: () => this.bindings.getSignalLayout(),
+        getSignalPath: () => this.bindings.getSignalPath(),
+        isSignalRequiredNode: (cellIndex) =>
+          this.bindings.isSignalRequiredNode(cellIndex),
+        isSignalVisitedRequiredNode: (cellIndex) =>
+          this.bindings.isSignalVisitedRequiredNode(cellIndex),
+        getSignalFlashCellIndex: () => this.bindings.getSignalFlashCellIndex(),
+        onSignalDragStart: (pointerId, cellIndex) =>
+          this.bindings.onSignalDragStart(pointerId, cellIndex),
+        onSignalDragMove: (pointerId, cellIndex) =>
+          this.bindings.onSignalDragMove(pointerId, cellIndex),
+        onSignalDragEnd: (pointerId, cellIndex) =>
+          this.bindings.onSignalDragEnd(pointerId, cellIndex),
+      },
+    );
+    this.utilityPanelController.create();
   }
 
   createStatusBars() {
@@ -1745,8 +1840,13 @@ export class MainSceneHudController {
     this.utilityNextLabel.setAlpha(canCycleUtilities ? 1 : 0.45);
   }
 
+  update() {
+    this.utilityPanelController?.update();
+  }
+
   private cleanupSceneListeners() {
     this.terminalPromptController?.destroy();
+    this.utilityPanelController?.destroy();
 
     if (this.updateBarsHandler) {
       this.scene.events.off("updateBars", this.updateBarsHandler);

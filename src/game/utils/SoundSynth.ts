@@ -165,6 +165,98 @@ export class SoundSynth {
       );
     }
   }
+
+  playUtilityArm(
+    utilityId: "coolant_purge" | "reality_patch" | "signal_boost",
+  ) {
+    if (utilityId === "coolant_purge") {
+      this.playBeep(124, "square", 0.04, 0.08);
+      setTimeout(() => this.playBeep(82, "sawtooth", 0.08, 0.07), 28);
+      return;
+    }
+
+    if (utilityId === "reality_patch") {
+      this.playBeep(260, "sine", 0.05, 0.06);
+      setTimeout(() => this.playBeep(360, "triangle", 0.06, 0.05), 32);
+      setTimeout(() => this.playBeep(470, "sine", 0.08, 0.04), 70);
+      return;
+    }
+
+    this.playBeep(1480, "triangle", 0.01, 0.04);
+    setTimeout(() => this.playBeep(210, "sine", 0.06, 0.03), 18);
+  }
+
+  playUtilityFail(
+    utilityId: "coolant_purge" | "reality_patch" | "signal_boost",
+  ) {
+    if (utilityId === "coolant_purge") {
+      this.playBeep(150, "sawtooth", 0.12, 0.12);
+      setTimeout(() => this.playBeep(198, "sawtooth", 0.08, 0.1), 36);
+      setTimeout(() => this.playBeep(116, "triangle", 0.1, 0.07), 74);
+      return;
+    }
+
+    if (utilityId === "reality_patch") {
+      this.playBeep(118, "square", 0.14, 0.09);
+      setTimeout(() => this.playBeep(112, "square", 0.12, 0.08), 18);
+      return;
+    }
+
+    this.playBeep(360, "sawtooth", 0.05, 0.07);
+    setTimeout(() => this.playBeep(240, "sawtooth", 0.07, 0.07), 34);
+    setTimeout(() => this.playBeep(162, "triangle", 0.08, 0.06), 72);
+  }
+
+  playUtilitySuccess(
+    utilityId: "coolant_purge" | "reality_patch" | "signal_boost",
+  ) {
+    if (utilityId === "coolant_purge") {
+      this.playBeep(420, "triangle", 0.06, 0.07);
+      setTimeout(() => this.playBeep(220, "triangle", 0.08, 0.08), 44);
+      setTimeout(() => this.playBeep(88, "sawtooth", 0.16, 0.09), 98);
+      return;
+    }
+
+    if (utilityId === "reality_patch") {
+      this.playBeep(440, "sine", 0.1, 0.06);
+      this.playBeep(554, "sine", 0.1, 0.05);
+      setTimeout(() => this.playBeep(659, "triangle", 0.14, 0.05), 34);
+      return;
+    }
+
+    this.playBeep(800, "sine", 0.05, 0.06);
+    setTimeout(() => this.playBeep(1000, "sine", 0.05, 0.06), 34);
+    setTimeout(() => this.playBeep(1220, "triangle", 0.08, 0.05), 72);
+  }
+
+  playCoolantPurgeLoop(intensity: number) {
+    const clampedIntensity = Math.max(0, Math.min(1, intensity));
+    this.playBeep(
+      740 + clampedIntensity * 280,
+      "sawtooth",
+      0.02,
+      0.012 + clampedIntensity * 0.018,
+    );
+  }
+
+  playCoolantPurgeLatch() {
+    this.playBeep(380, "triangle", 0.05, 0.07);
+    setTimeout(() => this.playBeep(160, "square", 0.08, 0.05), 28);
+  }
+
+  playRealityPatchAdjust(matchRatio: number) {
+    const clampedMatchRatio = Math.max(0, Math.min(1, matchRatio));
+    this.playBeep(
+      600 + clampedMatchRatio * 540,
+      "sine",
+      0.04,
+      0.018 + clampedMatchRatio * 0.022,
+    );
+  }
+
+  playSignalBoostNode(nodeCount: number) {
+    this.playBeep(540 + nodeCount * 110, "square", 0.03, 0.045);
+  }
 }
 
 export const synth = new SoundSynth();

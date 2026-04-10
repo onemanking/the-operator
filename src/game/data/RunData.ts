@@ -102,6 +102,53 @@ export interface PromptToolRuntimeConfig {
   safety: SafetyToolRuntimeConfig;
 }
 
+export interface UtilitySharedRuntimeConfig {
+  autoCloseDelayMs: number;
+  successFlashMs: number;
+  errorFlashMs: number;
+}
+
+export interface CoolantPurgeRuntimeConfig {
+  holdSecondsPerLever: number;
+  completedDecaySeconds: number;
+  handleReturnPerSecond: number;
+  readyDragRatio: number;
+  wrongLeverFlashMs: number;
+}
+
+export interface RealityPatchRuntimeConfig {
+  minimumFrequency: number;
+  maximumFrequency: number;
+  targetFrequencyMin: number;
+  targetFrequencyMax: number;
+  dragSensitivity: number;
+  lockToleranceRatio: number;
+  lockFillSeconds: number;
+  lockDecayPerSecond: number;
+  baseJitterAmplitude: number;
+  hallucinationJitterAmplitude: number;
+}
+
+export interface SignalBoostLayoutConfig {
+  sourceIndex: number;
+  targetIndex: number;
+  requiredNodeIndexes: number[];
+}
+
+export interface SignalBoostRuntimeConfig {
+  gridSize: number;
+  lineWidthPx: number;
+  failureFlashMs: number;
+  layouts: SignalBoostLayoutConfig[];
+}
+
+export interface UtilityMinigameConfig {
+  shared: UtilitySharedRuntimeConfig;
+  coolant: CoolantPurgeRuntimeConfig;
+  reality: RealityPatchRuntimeConfig;
+  signal: SignalBoostRuntimeConfig;
+}
+
 const RUN_RECOVERY_PROFILE: RunRecoveryProfile = {
   heatRecoveryPerSecond: 8,
   heatRecoveryDelayMs: 1500,
@@ -189,6 +236,55 @@ const CONNECTION_FEEDBACK_CONFIG: ConnectionFeedbackConfig = {
   imminentSoundIntervalMs: 220,
 };
 
+const UTILITY_MINIGAME_CONFIG: UtilityMinigameConfig = {
+  shared: {
+    autoCloseDelayMs: 500,
+    successFlashMs: 500,
+    errorFlashMs: 240,
+  },
+  coolant: {
+    holdSecondsPerLever: 0.5,
+    completedDecaySeconds: 4.2,
+    handleReturnPerSecond: 4.8,
+    readyDragRatio: 0.9,
+    wrongLeverFlashMs: 220,
+  },
+  reality: {
+    minimumFrequency: 0.72,
+    maximumFrequency: 1.28,
+    targetFrequencyMin: 0.84,
+    targetFrequencyMax: 1.16,
+    dragSensitivity: 0.0034,
+    lockToleranceRatio: 0.08,
+    lockFillSeconds: 0.32,
+    lockDecayPerSecond: 2.6,
+    baseJitterAmplitude: 0.01,
+    hallucinationJitterAmplitude: 0.11,
+  },
+  signal: {
+    gridSize: 3,
+    lineWidthPx: 6,
+    failureFlashMs: 220,
+    layouts: [
+      {
+        sourceIndex: 0,
+        targetIndex: 8,
+        requiredNodeIndexes: [1, 4, 7],
+      },
+      {
+        sourceIndex: 2,
+        targetIndex: 6,
+        requiredNodeIndexes: [1, 4, 3],
+      },
+      {
+        sourceIndex: 6,
+        targetIndex: 2,
+        requiredNodeIndexes: [7, 4, 5],
+      },
+    ],
+  },
+};
+
 export function getRunRecoveryProfile(): RunRecoveryProfile {
   return RUN_RECOVERY_PROFILE;
 }
@@ -207,4 +303,8 @@ export function getHallucinationFeedbackConfig(): HallucinationFeedbackConfig {
 
 export function getConnectionFeedbackConfig(): ConnectionFeedbackConfig {
   return CONNECTION_FEEDBACK_CONFIG;
+}
+
+export function getUtilityMinigameConfig(): UtilityMinigameConfig {
+  return UTILITY_MINIGAME_CONFIG;
 }

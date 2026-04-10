@@ -35,6 +35,13 @@ export interface RunToolRuntimeState {
   computePrimed: boolean;
 }
 
+export interface RunUtilityRuntimeState {
+  initialized: boolean;
+  coolantPurgeLeverOrder: number[];
+  realityPatchTargetFrequency: number;
+  signalBoostLayoutIndex: number;
+}
+
 export interface RunState {
   runId: string;
   day: number;
@@ -45,6 +52,7 @@ export interface RunState {
   gameOver: boolean;
   loadout: RunLoadoutState;
   utilityInventory: RunUtilityInventoryState;
+  utilityRuntime: RunUtilityRuntimeState;
   encounterProgress: RunEncounterProgress;
   toolRuntime: RunToolRuntimeState;
   maintenanceSettledDay: number | null;
@@ -80,6 +88,12 @@ export function createInitialRunState(): RunState {
       unlockedIds: [],
       chargesById: {},
     },
+    utilityRuntime: {
+      initialized: false,
+      coolantPurgeLeverOrder: [0, 1, 2],
+      realityPatchTargetFrequency: 1,
+      signalBoostLayoutIndex: 0,
+    },
     encounterProgress: {
       encounterIndex: 0,
       turnIndex: 0,
@@ -114,6 +128,12 @@ export function cloneRunState(runState: RunState): RunState {
     utilityInventory: {
       unlockedIds: [...runState.utilityInventory.unlockedIds],
       chargesById: { ...runState.utilityInventory.chargesById },
+    },
+    utilityRuntime: {
+      ...runState.utilityRuntime,
+      coolantPurgeLeverOrder: [
+        ...runState.utilityRuntime.coolantPurgeLeverOrder,
+      ],
     },
     encounterProgress: { ...runState.encounterProgress },
     toolRuntime: { ...runState.toolRuntime },
@@ -200,6 +220,14 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
         ...(data.utilityInventory?.chargesById ??
           initial.utilityInventory.chargesById),
       },
+    },
+    utilityRuntime: {
+      ...initial.utilityRuntime,
+      ...data.utilityRuntime,
+      coolantPurgeLeverOrder: [
+        ...(data.utilityRuntime?.coolantPurgeLeverOrder ??
+          initial.utilityRuntime.coolantPurgeLeverOrder),
+      ],
     },
     encounterProgress: {
       ...initial.encounterProgress,

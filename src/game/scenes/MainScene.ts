@@ -126,6 +126,7 @@ export class MainScene extends Phaser.Scene {
   private lastThermalWarningSoundAt: number = 0;
   private lastHallucinationWarningSoundAt: number = 0;
   private lastConnectionWarningSoundAt: number = 0;
+  private connectionPauseStartedAt: number | null = null;
   private lastConnectionSegmentCount: number =
     getConnectionFeedbackConfig().segmentCount;
 
@@ -186,6 +187,7 @@ export class MainScene extends Phaser.Scene {
     this.lastThermalWarningSoundAt = 0;
     this.lastHallucinationWarningSoundAt = 0;
     this.lastConnectionWarningSoundAt = 0;
+    this.connectionPauseStartedAt = null;
     this.lastConnectionSegmentCount =
       getConnectionFeedbackConfig().segmentCount;
     this.syncSelectedUtilityId();
@@ -270,11 +272,12 @@ export class MainScene extends Phaser.Scene {
       syncStorageUi: () => this.storageController.syncUi(),
       isCommitLocked: () => this.isCommitLocked,
       setIsCommitLocked: (value) => {
-        this.isCommitLocked = value;
+        this.setCommitLocked(value);
       },
       getSessionStartTime: () => this.sessionStartTime,
       setSessionStartTime: (value) => {
         this.sessionStartTime = value;
+        this.connectionPauseStartedAt = null;
       },
       getFollowUpCount: () => this.followUpCount,
       setFollowUpCount: (value) => {
@@ -1281,7 +1284,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     return Phaser.Math.Clamp(
-      (this.time.now - this.sessionStartTime) / turn.patienceMs,
+      (this.getConnectionClockNow() - this.sessionStartTime) / turn.patienceMs,
       0,
       1,
     );
@@ -1376,7 +1379,33 @@ export class MainScene extends Phaser.Scene {
       return 0;
     }
 
-    return this.time.now - this.sessionStartTime;
+    return this.getConnectionClockNow() - this.sessionStartTime;
+  }
+
+  private setCommitLocked(value: boolean) {
+    if (this.isCommitLocked === value) {
+      return;
+    }
+
+    if (value) {
+      if (this.sessionStartTime > 0 && this.connectionPauseStartedAt === null) {
+        this.connectionPauseStartedAt = this.time.now;
+      }
+    } else if (
+      this.connectionPauseStartedAt !== null &&
+      this.sessionStartTime > 0
+    ) {
+      this.sessionStartTime += this.time.now - this.connectionPauseStartedAt;
+      this.connectionPauseStartedAt = null;
+    } else {
+      this.connectionPauseStartedAt = null;
+    }
+
+    this.isCommitLocked = value;
+  }
+
+  private getConnectionClockNow() {
+    return this.connectionPauseStartedAt ?? this.time.now;
   }
 
   private restoreUserConnection(connectionRestoreMs: number) {

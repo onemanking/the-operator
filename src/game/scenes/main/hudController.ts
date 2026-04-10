@@ -16,7 +16,7 @@ import {
   TERMINAL_PROMPT_LINE_HEIGHT,
   TerminalPromptController,
 } from "./terminalPromptController";
-import { ToolId } from "./types";
+import { ChatMessage, ToolId } from "./types";
 
 interface HudControllerBindings {
   onInference: () => void;
@@ -40,7 +40,6 @@ interface HudControllerBindings {
   onSafetyScanEnd: (pointerId: number) => void;
   onPulseCompute: () => void;
   setTaskTextObj: (value: Phaser.GameObjects.Text) => void;
-  setChatTextObj: (value: Phaser.GameObjects.Text) => void;
   setPatienceBarFill: (value: Phaser.GameObjects.Rectangle) => void;
   setHeatBarFill: (value: Phaser.GameObjects.Rectangle) => void;
   setHallucinationBarFill: (value: Phaser.GameObjects.Rectangle) => void;
@@ -92,6 +91,16 @@ interface PassiveHudChipUi {
   label: Phaser.GameObjects.Text;
 }
 
+interface ChatLineUi {
+  text: Phaser.GameObjects.Text;
+  color?: string;
+}
+
+interface ChatLineEntry {
+  text: string;
+  color?: string;
+}
+
 export class MainSceneHudController {
   private hoveredAction: "inference" | "refuse" | null = null;
   private tokenDeltaBaseY: number = 0;
@@ -113,7 +122,12 @@ export class MainSceneHudController {
   private utilityNextBtn!: Phaser.GameObjects.Rectangle;
   private utilityNextLabel!: Phaser.GameObjects.Text;
   private taskTextObj!: Phaser.GameObjects.Text;
-  private chatTextObj!: Phaser.GameObjects.Text;
+  private chatHistoryContainer!: Phaser.GameObjects.Container;
+  private chatHistoryLines: ChatLineUi[] = [];
+  private chatColor: string = "#33ff33";
+  private chatAlpha: number = 1;
+  private chatHistoryMask!: Phaser.GameObjects.Graphics;
+  private chatHistoryY: number = 0;
   private terminalBg!: Phaser.GameObjects.Rectangle;
   private terminalHallucinationOverlay!: Phaser.GameObjects.Rectangle;
   private terminalHallucinationShader?: Phaser.GameObjects.Shader;
@@ -225,13 +239,10 @@ export class MainSceneHudController {
     this.taskTextObj.setLineSpacing(taskLineSpacing);
     this.bindings.setTaskTextObj(this.taskTextObj);
 
-    this.chatTextObj = this.scene.add.text(260, 112, "", {
-      fontFamily: '"Courier New", Courier, monospace',
-      fontSize: "14px",
-      color: "#33ff33",
-      wordWrap: { width: 500 },
-    });
-    this.bindings.setChatTextObj(this.chatTextObj);
+    this.chatHistoryContainer = this.scene.add.container(260, 112);
+    this.chatHistoryMask = this.scene.add.graphics();
+    this.chatHistoryMask.setVisible(false);
+    this.chatHistoryContainer.setMask(this.chatHistoryMask.createGeometryMask());
 
     this.terminalPromptController = new TerminalPromptController(this.scene, {
       isSearchModeSelected: () => this.bindings.isSearchModeSelected(),
@@ -280,9 +291,63 @@ export class MainSceneHudController {
         ),
       onSafetyScanEnd: (pointerId) => this.bindings.onSafetyScanEnd(pointerId),
       onPromptLayoutChanged: (bottomY) => {
-        this.chatTextObj.setY(bottomY);
+        this.setChatHistoryY(bottomY);
       },
     });
+  }
+
+  setChatHistoryY(value: number) {
+    this.chatHistoryY = value;
+    this.chatHistoryContainer.setY(value);
+    this.syncChatHistoryMask();
+  }
+
+  renderChatHistory(messages: ChatMessage[]) {
+    this.chatHistoryContainer.removeAll(true);
+    this.chatHistoryLines = [];
+
+    const wrappedEntries: ChatLineEntry[] = [];
+    const wrapWidth = 500;
+
+    messages.forEach((msg) => {
+      let prefix = "";
+      if (msg.sender === "SYSTEM") prefix = "> ";
+      else if (msg.sender === "USER") prefix = "USER: ";
+      else if (msg.sender === "LLM") prefix = "LLM: ";
+
+      const wrappedLines = this.wrapChatLine(prefix + msg.text, wrapWidth);
+      wrappedLines.forEach((lineText, index) => {
+        wrappedEntries.push({
+          text: index === 0 ? lineText : lineText,
+          color: msg.color,
+        });
+      });
+    });
+
+    const lineHeight = this.getChatLineHeight();
+    const lineGap = 10;
+    const entryHeight = lineHeight + lineGap;
+    const maxVisibleHeight = this.getChatViewportHeight();
+    const maxVisibleEntries = Math.max(
+      1,
+      Math.floor(maxVisibleHeight / entryHeight),
+    );
+    const visibleEntries = wrappedEntries.slice(-maxVisibleEntries);
+
+    let cursorY = 0;
+    visibleEntries.forEach((entry) => {
+      const lineText = this.scene.add.text(0, cursorY, entry.text, {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "14px",
+        color: entry.color ?? this.chatColor,
+      });
+
+      this.chatHistoryContainer.add(lineText);
+      this.chatHistoryLines.push({ text: lineText, color: entry.color });
+      cursorY += entryHeight;
+    });
+
+    this.syncChatHistoryAppearance();
   }
 
   createEconomySection() {
@@ -1210,8 +1275,69 @@ export class MainSceneHudController {
 
     this.taskTextObj.setColor(taskColor);
     this.taskTextObj.setAlpha(taskAlpha);
-    this.chatTextObj.setColor(chatColor);
-    this.chatTextObj.setAlpha(chatAlpha);
+    this.chatColor = chatColor;
+    this.chatAlpha = chatAlpha;
+    this.syncChatHistoryAppearance();
+  }
+
+  private syncChatHistoryAppearance() {
+    this.chatHistoryContainer.setAlpha(this.chatAlpha);
+    this.chatHistoryLines.forEach((line) => {
+      line.text.setColor(line.color ?? this.chatColor);
+    });
+    this.syncChatHistoryMask();
+  }
+
+  private syncChatHistoryMask() {
+    const maskWidth = 500;
+    const maskHeight = Math.max(40, this.getChatViewportHeight());
+
+    this.chatHistoryMask.clear();
+    this.chatHistoryMask.fillStyle(0xffffff, 1);
+    this.chatHistoryMask.fillRect(260, this.chatHistoryY, maskWidth, maskHeight);
+  }
+
+  private getChatViewportHeight() {
+    const terminalBottomY = this.terminalBg.y + this.terminalBg.height;
+    return Math.max(0, terminalBottomY - this.chatHistoryY - 10);
+  }
+
+  private getChatLineHeight() {
+    const probe = this.scene.add.text(0, 0, "A", {
+      fontFamily: '"Courier New", Courier, monospace',
+      fontSize: "14px",
+    });
+    const height = probe.height;
+    probe.destroy();
+    return height;
+  }
+
+  private wrapChatLine(text: string, maxWidth: number) {
+    const probe = this.scene.add.text(0, 0, "", {
+      fontFamily: '"Courier New", Courier, monospace',
+      fontSize: "14px",
+    });
+    const words = text.split(/\s+/).filter((word) => word.length > 0);
+    const lines: string[] = [];
+    let currentLine = "";
+
+    words.forEach((word) => {
+      const candidate = currentLine.length > 0 ? `${currentLine} ${word}` : word;
+      probe.setText(candidate);
+      if (probe.width > maxWidth && currentLine.length > 0) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = candidate;
+      }
+    });
+
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
+
+    probe.destroy();
+    return lines;
   }
 
   private getThermalIntensity() {

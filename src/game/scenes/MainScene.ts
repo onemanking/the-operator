@@ -79,7 +79,6 @@ export class MainScene extends Phaser.Scene {
   private chatHistory: ChatMessage[] = [];
 
   private taskTextObj!: Phaser.GameObjects.Text;
-  private chatTextObj!: Phaser.GameObjects.Text;
   private patienceBarFill!: Phaser.GameObjects.Rectangle;
   private heatBarFill!: Phaser.GameObjects.Rectangle;
   private hallucinationBarFill!: Phaser.GameObjects.Rectangle;
@@ -246,8 +245,13 @@ export class MainScene extends Phaser.Scene {
       setChatHistory: (value) => {
         this.chatHistory = value;
       },
+      renderChatHistory: (value) => {
+        this.hudController.renderChatHistory(value);
+      },
+      setChatHistoryY: (value) => {
+        this.hudController.setChatHistoryY(value);
+      },
       getTaskTextObj: () => this.taskTextObj,
-      getChatTextObj: () => this.chatTextObj,
       getPatienceBarFill: () => this.patienceBarFill,
       getActiveAgents: () => this.activeAgents,
       getActiveSkills: () => this.activeSkills,
@@ -303,9 +307,6 @@ export class MainScene extends Phaser.Scene {
       onPulseCompute: () => this.pulseCompute(),
       setTaskTextObj: (value) => {
         this.taskTextObj = value;
-      },
-      setChatTextObj: (value) => {
-        this.chatTextObj = value;
       },
       setPatienceBarFill: (value) => {
         this.patienceBarFill = value;

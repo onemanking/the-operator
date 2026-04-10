@@ -42,8 +42,9 @@ interface SessionControllerBindings {
   getEncounters: () => EncounterDefinition[];
   getChatHistory: () => ChatMessage[];
   setChatHistory: (value: ChatMessage[]) => void;
+  renderChatHistory: (value: ChatMessage[]) => void;
+  setChatHistoryY: (value: number) => void;
   getTaskTextObj: () => Phaser.GameObjects.Text;
-  getChatTextObj: () => Phaser.GameObjects.Text;
   getPatienceBarFill: () => Phaser.GameObjects.Rectangle;
   getActiveAgents: () => AgentId[];
   getActiveSkills: () => SkillId[];
@@ -117,13 +118,11 @@ export class MainSceneSessionController {
       repeat: headerText.length - 1,
       callback: () => {
         this.bindings.getTaskTextObj().text += headerText[index];
-        this.bindings
-          .getChatTextObj()
-          .setY(
-            this.bindings.getTaskTextObj().y +
-              this.bindings.getTaskTextObj().height +
-              20,
-          );
+        this.bindings.setChatHistoryY(
+          this.bindings.getTaskTextObj().y +
+            this.bindings.getTaskTextObj().height +
+            20,
+        );
         if (
           headerText[index] !== " " &&
           headerText[index] !== "\n" &&
@@ -401,8 +400,8 @@ export class MainSceneSessionController {
     }
   }
 
-  postSystemMessage(text: string) {
-    this.addChatMessage("SYSTEM", text);
+  postSystemMessage(text: string, color?: string) {
+    this.addChatMessage("SYSTEM", text, false, undefined, color);
   }
 
   private triggerOverheat() {
@@ -420,22 +419,25 @@ export class MainSceneSessionController {
     reward: number = 10,
     failureProgressMode: "none" | "next-turn" | "next-encounter" = "none",
   ) {
-    const successHeadline = message.length > 0 ? message : "REQUEST RESOLVED";
-    const text = success
-      ? reward > 0
-        ? `>> ${successHeadline}\n>> +${reward} TOKENS`
-        : `>> ${successHeadline}`
-      : `>> ERROR\n>> ${message}`;
-
     if (success) {
+      const successHeadline =
+        message.length > 0 ? message : "REQUEST RESOLVED";
+      const text =
+        reward > 0
+          ? `>> ${successHeadline}\n>> +${reward} TOKENS`
+          : `>> ${successHeadline}`;
+
       this.bindings.setTokens(this.bindings.getTokens() + reward);
       synth.playSuccess();
+      this.postSystemMessage(text);
     } else {
       synth.playError();
       this.scene.cameras.main.shake(200, 0.01);
+      this.postSystemMessage(">> ERROR", "#ff6f61");
+      if (message.length > 0) {
+        this.addChatMessage("SYSTEM", `>> ${message}`, false, undefined, "#ff6f61");
+      }
     }
-
-    this.postSystemMessage(text);
 
     if (this.bindings.getHallucination() >= 100) {
       this.scene.time.delayedCall(1500, () =>
@@ -598,16 +600,8 @@ export class MainSceneSessionController {
   }
 
   private updateTerminalDisplay() {
-    let displayText = "";
     const visibleHistory = this.bindings.getChatHistory().slice(-7.5);
-    visibleHistory.forEach((msg) => {
-      let prefix = "";
-      if (msg.sender === "SYSTEM") prefix = "> ";
-      else if (msg.sender === "USER") prefix = "USER: ";
-      else if (msg.sender === "LLM") prefix = "LLM: ";
-      displayText += prefix + msg.text + "\n\n";
-    });
-    this.bindings.getChatTextObj().text = displayText;
+    this.bindings.renderChatHistory(visibleHistory);
   }
 
   private addChatMessage(
@@ -615,10 +609,11 @@ export class MainSceneSessionController {
     text: string,
     typewrite: boolean = false,
     callback?: () => void,
+    color?: string,
   ) {
     if (typewrite) {
       const chatHistory = this.bindings.getChatHistory();
-      chatHistory.push({ sender, text: "" });
+      chatHistory.push({ sender, text: "", color });
       this.bindings.setChatHistory(chatHistory);
       const msgIndex = chatHistory.length - 1;
       let i = 0;
@@ -635,7 +630,7 @@ export class MainSceneSessionController {
       });
     } else {
       const chatHistory = this.bindings.getChatHistory();
-      chatHistory.push({ sender, text });
+      chatHistory.push({ sender, text, color });
       this.bindings.setChatHistory(chatHistory);
       this.updateTerminalDisplay();
       if (callback) callback();

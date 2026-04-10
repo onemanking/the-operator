@@ -20,6 +20,7 @@ export {
 export interface ChatMessage {
   sender: "SYSTEM" | "USER" | "LLM";
   text: string;
+  color?: string;
 }
 
 export type DiskType = "agent" | "skill";

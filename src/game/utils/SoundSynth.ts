@@ -130,26 +130,40 @@ export class SoundSynth {
   ) {
     const clampedIntensity = Math.max(0, Math.min(1, intensity));
     const baseFrequency =
-      (stage === "warning" ? 920 : stage === "critical" ? 1140 : 1440) +
-      clampedIntensity * 140;
+      (stage === "warning" ? 520 : stage === "critical" ? 680 : 860) +
+      clampedIntensity * 110;
     const baseDuration =
-      (stage === "imminent" ? 0.022 : 0.03) + clampedIntensity * 0.018;
+      (stage === "imminent" ? 0.02 : 0.028) + clampedIntensity * 0.016;
     const baseVolume =
-      (stage === "warning" ? 0.018 : stage === "critical" ? 0.028 : 0.04) +
-      clampedIntensity * 0.02;
+      (stage === "warning" ? 0.02 : stage === "critical" ? 0.03 : 0.042) +
+      clampedIntensity * 0.018;
 
-    this.playBeep(baseFrequency, "square", baseDuration, baseVolume);
+    this.playBeep(baseFrequency, "triangle", baseDuration, baseVolume);
     setTimeout(
       () => {
         this.playBeep(
-          baseFrequency * (stage === "imminent" ? 1.21 : 1.11),
-          stage === "warning" ? "triangle" : "sine",
-          Math.max(0.015, baseDuration * 0.72),
-          baseVolume * 0.65,
+          baseFrequency * (stage === "imminent" ? 1.85 : 1.6),
+          "sine",
+          Math.max(0.012, baseDuration * 0.55),
+          baseVolume * 0.52,
         );
       },
-      stage === "imminent" ? 18 : 24,
+      stage === "imminent" ? 14 : 20,
     );
+
+    if (stage !== "warning") {
+      setTimeout(
+        () => {
+          this.playBeep(
+            baseFrequency * 0.76,
+            "triangle",
+            Math.max(0.012, baseDuration * 0.45),
+            baseVolume * 0.32,
+          );
+        },
+        stage === "imminent" ? 34 : 46,
+      );
+    }
   }
 }
 

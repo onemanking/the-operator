@@ -316,12 +316,6 @@ export class MainScene extends Phaser.Scene {
       setHallucinationBarFill: (value) => {
         this.hallucinationBarFill = value;
       },
-      getShiftModifierLabel: () => {
-        const modifiers = getShiftModifierDefinitions(
-          this.runState.shiftModifierIds,
-        );
-        return modifiers[0]?.hudLabel ?? null;
-      },
       getUnlockedPromptToolIds: () => {
         return this.runState.loadout.unlockedPromptToolIds.filter(isToolId);
       },

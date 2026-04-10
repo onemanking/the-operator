@@ -44,7 +44,6 @@ interface HudControllerBindings {
   setPatienceBarFill: (value: Phaser.GameObjects.Rectangle) => void;
   setHeatBarFill: (value: Phaser.GameObjects.Rectangle) => void;
   setHallucinationBarFill: (value: Phaser.GameObjects.Rectangle) => void;
-  getShiftModifierLabel: () => string | null;
   getUnlockedPromptToolIds: () => ToolId[];
   getSelectedPromptToolIds: () => ToolId[];
   getSelectedSearchWordIndexes: () => number[];
@@ -628,18 +627,6 @@ export class MainSceneHudController {
     this.scene.add.rectangle(0, 668, 1024, 100, 0x22201c).setOrigin(0);
     this.scene.add.rectangle(0, 664, 1024, 4, 0x111111).setOrigin(0);
 
-    const shiftModifierText = this.scene.add.text(
-      20,
-      676,
-      `SHIFT MOD: ${this.bindings.getShiftModifierLabel() ?? "NORMAL"}`,
-      {
-        fontFamily: "monospace",
-        fontSize: "12px",
-        color: "#ffb000",
-        wordWrap: { width: 984 },
-      },
-    );
-
     const leftColumnX = 20;
     const rightColumnX = 530;
     const rowOneY = 694;
@@ -786,10 +773,6 @@ export class MainSceneHudController {
       this.syncEconomySection();
       this.syncPassiveSection();
       this.syncUtilitySection();
-
-      shiftModifierText.setText(
-        `SHIFT MOD: ${this.bindings.getShiftModifierLabel() ?? "NORMAL"}`,
-      );
       heatBarFill.width = 246 * Math.min(1, this.bindings.getHeat() / 100);
       hallucinationBarFill.width =
         246 * Math.min(1, this.bindings.getHallucination() / 100);

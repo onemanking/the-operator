@@ -54,27 +54,27 @@ export function createDriveConfigs(capacityOverrides?: {
   return {
     agent: {
       id: "agent",
-      title: "DRIVE A: AGENT",
+      title: "DRIVE A: [AGENTS]",
       acceptType: "agent",
-      snapPoint: new Phaser.Math.Vector2(536, 539),
-      hoverBounds: new Phaser.Geom.Rectangle(428, 513, 216, 52),
+      snapPoint: new Phaser.Math.Vector2(558, 534),
+      hoverBounds: new Phaser.Geom.Rectangle(434, 512, 252, 44),
       capacity:
         capacityOverrides?.agentCapacity ?? RUN_CONFIG.defaultAgentCapacity,
-      housingY: 508,
-      housingHeight: 60,
-      lcdY: 546,
+      housingY: 510,
+      housingHeight: 54,
+      lcdY: 532,
     },
     skill: {
       id: "skill",
-      title: "DRIVE B: SKILLS",
+      title: "DRIVE B: [SKILLS]",
       acceptType: "skill",
-      snapPoint: new Phaser.Math.Vector2(536, 608),
-      hoverBounds: new Phaser.Geom.Rectangle(428, 582, 216, 52),
+      snapPoint: new Phaser.Math.Vector2(558, 602),
+      hoverBounds: new Phaser.Geom.Rectangle(434, 580, 252, 44),
       capacity:
         capacityOverrides?.skillCapacity ?? RUN_CONFIG.defaultSkillCapacity,
       housingY: 578,
-      housingHeight: 72,
-      lcdY: 621,
+      housingHeight: 54,
+      lcdY: 600,
     },
   };
 }

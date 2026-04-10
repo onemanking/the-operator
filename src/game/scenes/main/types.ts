@@ -77,8 +77,8 @@ export interface DriveUi {
   glow: Phaser.GameObjects.Rectangle;
   frame: Phaser.GameObjects.Rectangle;
   mouth: Phaser.GameObjects.Rectangle;
+  lightHalo: Phaser.GameObjects.Arc;
   light: Phaser.GameObjects.Arc;
-  statusText: Phaser.GameObjects.Text;
   mountedText: Phaser.GameObjects.Text;
   ejectButton: Phaser.GameObjects.Rectangle;
   ejectLabel: Phaser.GameObjects.Text;

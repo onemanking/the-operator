@@ -687,13 +687,24 @@ export class MainSceneHudController {
       .setOrigin(0)
       .setAlpha(0.42);
 
-    this.scene.add.text(rightColumnX, rowOneY, "TOK:", {
+    const tokenHousingWidth = 188;
+    const tokenHousingCenterX = rightColumnX + 140;
+    const tokenHousingLeftX = tokenHousingCenterX - tokenHousingWidth / 2;
+    const tokenHousingRightX = tokenHousingCenterX + tokenHousingWidth / 2;
+
+    this.scene.add.text(rightColumnX, rowOneY, "TOKEN:", {
       fontFamily: "monospace",
       fontSize: "14px",
       color: "#d4c5b0",
     });
     this.tokenHousing = this.scene.add
-      .rectangle(rightColumnX + 125, rowOneY + 8, 172, 22, 0x15120e)
+      .rectangle(
+        tokenHousingCenterX,
+        rowOneY + 8,
+        tokenHousingWidth,
+        22,
+        0x15120e,
+      )
       .setOrigin(0.5)
       .setStrokeStyle(2, 0x3d3527);
     this.tokenLamps = [];
@@ -701,7 +712,7 @@ export class MainSceneHudController {
       this.tokenLamps.push(
         this.scene.add
           .rectangle(
-            rightColumnX + 42 + lampIndex * 14,
+            tokenHousingLeftX + 15 + lampIndex * 14,
             rowOneY + 8,
             9,
             9,
@@ -712,21 +723,21 @@ export class MainSceneHudController {
       );
     }
     this.tokenValueText = this.scene.add
-      .text(rightColumnX + 125, rowOneY + 6, "0 TOK", {
+      .text(tokenHousingRightX - 10, rowOneY + 6, "0 TOKEN", {
         fontFamily: "monospace",
-        fontSize: "17px",
+        fontSize: "16px",
         color: "#ffb000",
         fontStyle: "bold",
       })
-      .setOrigin(0.5);
+      .setOrigin(1, 0.5);
     this.tokenDeltaText = this.scene.add
-      .text(rightColumnX + 212, rowOneY + 6, "", {
+      .text(tokenHousingRightX + 10, rowOneY + 6, "", {
         fontFamily: "monospace",
         fontSize: "10px",
         color: "#9cfb64",
         fontStyle: "bold",
       })
-      .setOrigin(1, 0.5)
+      .setOrigin(0, 0.5)
       .setAlpha(0);
     this.tokenDeltaBaseY = rowOneY + 6;
 
@@ -1377,7 +1388,7 @@ export class MainSceneHudController {
           ? this.mixColor(0x15120e, 0x15331a, pulseWave * 0.65)
           : 0x15120e;
 
-    this.tokenValueText.setText(`${tokens} TOK`);
+    this.tokenValueText.setText(`${tokens} TOKEN`);
     this.tokenValueText.setColor(this.toHexColor(tokenColor));
     this.tokenValueText.setScale(1 + pulseWave * 0.08);
     this.tokenHousing.setFillStyle(housingColor);

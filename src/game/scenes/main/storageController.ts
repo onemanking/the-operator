@@ -28,6 +28,14 @@ export class MainSceneStorageController {
   private readonly rackItemSpacing = 72;
   private readonly rackStartY = 132;
   private readonly driveConfigs: Record<DriveId, DriveConfig>;
+  private readonly driveMountedLabels: Record<DriveId, string> = {
+    agent: "",
+    skill: "",
+  };
+  private readonly driveMountedScrollOffsets: Record<DriveId, number> = {
+    agent: 0,
+    skill: 0,
+  };
 
   private driveModules = {} as Record<DriveId, DriveUi>;
   private storageTab: StorageTab = "all";
@@ -40,6 +48,7 @@ export class MainSceneStorageController {
   private storageScrollUpLabel!: Phaser.GameObjects.Text;
   private storageScrollDownLabel!: Phaser.GameObjects.Text;
   private activeDraggedDisk: Phaser.GameObjects.Container | null = null;
+  private driveMountedScrollTimer?: Phaser.Time.TimerEvent;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -52,36 +61,97 @@ export class MainSceneStorageController {
   }
 
   createContextAssemblyArea() {
-    this.scene.add.text(250, 480, "CONTEXT ASSEMBLY [DUAL DRIVE]", {
+    this.scene.add.text(250, 480, "CONTEXT ASSEMBLY", {
       fontFamily: "monospace",
       color: "#d4c5b0",
       fontStyle: "bold",
     });
 
     const driveHousing = this.scene.add
-      .rectangle(250, 506, 524, 154, 0x181512)
+      .rectangle(250, 506, 524, 136, 0x181512)
       .setOrigin(0);
     driveHousing.setStrokeStyle(4, 0x0a0a0a);
-
-    this.scene.add
-      .rectangle(266, 523, 96, 24, 0x77674f)
-      .setOrigin(0)
-      .setStrokeStyle(2, 0x2a241a);
-    this.scene.add
-      .text(314, 535, "BUS LINK", {
-        fontFamily: "monospace",
-        fontSize: "12px",
-        color: "#17120d",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-    this.scene.add.rectangle(314, 564, 8, 16, 0x77674f).setOrigin(0.5, 0);
 
     this.createDriveModule(this.driveConfigs.agent);
     this.createDriveModule(this.driveConfigs.skill);
 
+    this.ensureMountedTextScrollTimer();
     this.updateSlotsDisplay();
     this.refreshDriveIdleState();
+  }
+
+  private getDrivePalette(driveId: DriveId) {
+    if (driveId === "agent") {
+      return {
+        titleColor: "#23351d",
+        slotGlow: 0x8adf74,
+        frameDim: 0x49603b,
+        slotRailLight: 0xc9e8b3,
+        lcdBorder: 0x335f33,
+        lcdText: "#6cff69",
+        haloColor: 0xb7ff8a,
+        haloStroke: 0x345a24,
+        lampOff: 0x193118,
+        lampOn: 0x7eb15d,
+        accentBright: 0xc7ff8d,
+      };
+    }
+
+    return {
+      titleColor: "#1d2940",
+      slotGlow: 0x6f9eff,
+      frameDim: 0x41557a,
+      slotRailLight: 0xc6d7ff,
+      lcdBorder: 0x35527d,
+      lcdText: "#7ec0ff",
+      haloColor: 0xb7d4ff,
+      haloStroke: 0x29446c,
+      lampOff: 0x16243d,
+      lampOn: 0x6f9eff,
+      accentBright: 0xc4dbff,
+    };
+  }
+
+  private ensureMountedTextScrollTimer() {
+    if (this.driveMountedScrollTimer) return;
+
+    this.driveMountedScrollTimer = this.scene.time.addEvent({
+      delay: 180,
+      loop: true,
+      callback: () => {
+        this.syncMountedTextMarquee("agent");
+        this.syncMountedTextMarquee("skill");
+      },
+    });
+  }
+
+  private getMountedTextCharCapacity(driveId: DriveId) {
+    return driveId === "agent" ? 18 : 18;
+  }
+
+  private syncMountedTextMarquee(driveId: DriveId, reset: boolean = false) {
+    const ui = this.driveModules[driveId];
+    if (!ui) return;
+
+    const source = this.driveMountedLabels[driveId] ?? "";
+    const capacity = this.getMountedTextCharCapacity(driveId);
+
+    if (reset) {
+      this.driveMountedScrollOffsets[driveId] = 0;
+    }
+
+    if (source.length <= capacity) {
+      ui.mountedText.setText(source);
+      return;
+    }
+
+    const spacer = "   ";
+    const cycleLength = source.length + spacer.length;
+    const looped = `${source}${spacer}${source}`;
+    const offset = this.driveMountedScrollOffsets[driveId] % cycleLength;
+
+    ui.mountedText.setText(looped.slice(offset, offset + capacity));
+    this.driveMountedScrollOffsets[driveId] = (offset + 1) % cycleLength;
   }
 
   createStorageRack() {
@@ -144,11 +214,14 @@ export class MainSceneStorageController {
         this.prepareDiskForDrag(storageDisk);
         storageDisk.container.setData("snapReady", false);
         const driveId = storageDisk.definition.type;
-        const driveLabel =
-          driveId === "agent"
-            ? "ALIGN AGENT TO DRIVE A"
-            : "ALIGN SKILL TO DRIVE B";
-        this.setDriveStatus(driveId, driveLabel, "#f2cf86");
+        const palette = this.getDrivePalette(driveId);
+        this.setDriveLampState(
+          driveId,
+          palette.lampOn,
+          palette.accentBright,
+          0.18,
+          1.06,
+        );
       },
     );
 
@@ -209,67 +282,76 @@ export class MainSceneStorageController {
   private createDriveModule(config: DriveConfig) {
     const labelY = config.housingY + 10;
     const slotCenterY = config.snapPoint.y;
+    const frameCenterX = config.snapPoint.x;
+    const palette = this.getDrivePalette(config.id);
 
     this.scene.add
-      .rectangle(262, config.housingY, 500, config.housingHeight, 0x221d18)
+      .rectangle(262, config.housingY, 500, config.housingHeight, 0x7f786b)
       .setOrigin(0)
       .setStrokeStyle(2, 0x111111);
+    this.scene.add
+      .rectangle(262, config.housingY, 500, 4, 0xa79e8c)
+      .setOrigin(0);
+    this.scene.add
+      .rectangle(
+        262,
+        config.housingY + config.housingHeight - 4,
+        500,
+        4,
+        0x3d3932,
+      )
+      .setOrigin(0);
     this.scene.add.text(278, labelY, config.title, {
       fontFamily: "monospace",
       fontSize: "12px",
-      color: "#d4c5b0",
+      color: palette.titleColor,
       fontStyle: "bold",
     });
 
     const glow = this.scene.add
-      .rectangle(config.snapPoint.x, slotCenterY, 308, 28, 0x8d7b4e, 0.08)
+      .rectangle(frameCenterX, slotCenterY, 270, 28, palette.slotGlow, 0.08)
       .setOrigin(0.5);
     const frame = this.scene.add
-      .rectangle(config.snapPoint.x, slotCenterY, 292, 30, 0x2a2722)
+      .rectangle(frameCenterX, slotCenterY, 236, 18, 0x39352d)
       .setOrigin(0.5);
-    frame.setStrokeStyle(2, 0x574d38);
+    frame.setStrokeStyle(2, palette.frameDim);
     const mouth = this.scene.add
-      .rectangle(config.snapPoint.x, slotCenterY, 270, 12, 0x040404)
+      .rectangle(frameCenterX, slotCenterY, 208, 6, 0x040404)
       .setOrigin(0.5);
 
     this.scene.add
-      .rectangle(config.snapPoint.x, slotCenterY - 13, 282, 5, 0x6d614a)
+      .rectangle(frameCenterX, slotCenterY - 8, 224, 3, palette.slotRailLight)
       .setOrigin(0.5);
     this.scene.add
-      .rectangle(config.snapPoint.x, slotCenterY + 13, 282, 5, 0x0d0d0d)
+      .rectangle(frameCenterX, slotCenterY + 8, 224, 3, 0x1b1915)
       .setOrigin(0.5);
 
     const lcdBg = this.scene.add
-      .rectangle(278, config.lcdY, 324, 18, 0x0f1a0f)
+      .rectangle(278, config.lcdY, 156, 18, 0x0f1a0f)
       .setOrigin(0)
-      .setStrokeStyle(1, 0x2d452d);
+      .setStrokeStyle(1, palette.lcdBorder);
     const mountedText = this.scene.add.text(286, config.lcdY + 2, "", {
       fontFamily: "monospace",
-      fontSize: "12px",
-      color: "#33ff33",
+      fontSize: "11px",
+      color: palette.lcdText,
     });
 
+    const lightHalo = this.scene.add
+      .circle(716, config.housingY + 16, 10, palette.haloColor, 0)
+      .setStrokeStyle(1, palette.haloStroke, 0.45);
     const light = this.scene.add
-      .circle(622, config.lcdY + 9, 6, 0x5e491c)
-      .setStrokeStyle(1, 0x1f1b14);
-    const statusText = this.scene.add
-      .text(760, config.lcdY + 2, "", {
-        fontFamily: "monospace",
-        fontSize: "10px",
-        color: "#b99655",
-        fontStyle: "bold",
-      })
-      .setOrigin(1, 0);
+      .circle(716, config.housingY + 16, 6, palette.lampOff, 1)
+      .setStrokeStyle(2, 0x111111);
 
     const ejectButton = this.scene.add
-      .rectangle(684, slotCenterY - 10, 64, 20, 0x8a1f17)
+      .rectangle(688, config.housingY + 28, 56, 18, 0x8a1f17)
       .setOrigin(0)
       .setStrokeStyle(2, 0x380c09)
       .setInteractive({ useHandCursor: true });
     const ejectLabel = this.scene.add
-      .text(716, slotCenterY, "EJECT", {
+      .text(716, config.housingY + 37, "EJECT", {
         fontFamily: "monospace",
-        fontSize: "11px",
+        fontSize: "10px",
         color: "#f7d4cf",
         fontStyle: "bold",
       })
@@ -299,8 +381,8 @@ export class MainSceneStorageController {
       glow,
       frame,
       mouth,
+      lightHalo,
       light,
-      statusText,
       mountedText,
       ejectButton,
       ejectLabel,
@@ -308,6 +390,7 @@ export class MainSceneStorageController {
 
     lcdBg.setDepth(glow.depth + 1);
     mountedText.setDepth(lcdBg.depth + 1);
+    this.syncMountedTextMarquee(config.id, true);
   }
 
   private createStorageTabs() {
@@ -622,7 +705,6 @@ export class MainSceneStorageController {
       storageDisk.container.setData("snapReady", false);
       this.refreshDriveIdleState(driveId);
       this.setDriveHoverState(otherDriveId, false, true);
-      this.setDriveStatus(otherDriveId, "INCOMPATIBLE FORMAT", "#ff8d68");
       return;
     }
 
@@ -630,13 +712,6 @@ export class MainSceneStorageController {
       this.setDiskPosition(storageDisk, dragX, dragY);
       storageDisk.container.setData("snapReady", false);
       this.refreshDriveIdleState();
-      this.setDriveStatus(
-        driveId,
-        driveId === "agent"
-          ? "ALIGN AGENT TO DRIVE A"
-          : "ALIGN SKILL TO DRIVE B",
-        "#f2cf86",
-      );
       return;
     }
 
@@ -655,7 +730,6 @@ export class MainSceneStorageController {
     storageDisk.container.setData("targetDriveId", driveId);
     this.setDriveHoverState(otherDriveId, false);
     this.setDriveHoverState(driveId, true);
-    this.setDriveStatus(driveId, "RELEASE TO LOAD", "#c7ff8d");
   }
 
   private getDriveSnapTarget(
@@ -675,6 +749,7 @@ export class MainSceneStorageController {
     isInvalid: boolean = false,
   ) {
     const ui = this.driveModules[driveId];
+    const palette = this.getDrivePalette(driveId);
 
     if (!ui) return;
     if (!isHovering && !isInvalid) {
@@ -685,22 +760,35 @@ export class MainSceneStorageController {
     if (isInvalid) {
       ui.glow.setFillStyle(0xa63a22, 0.22);
       ui.frame.setStrokeStyle(3, 0xff8d68);
-      ui.light.setFillStyle(0xd95b42);
       ui.mouth.setFillStyle(0x1c0604);
+      this.setDriveLampState(driveId, 0xd95b42, 0xff8d68, 0.24, 1.08);
       return;
     }
 
-    ui.glow.setFillStyle(0xb7ff8a, 0.24);
-    ui.frame.setStrokeStyle(3, 0xc7ff8d);
-    ui.light.setFillStyle(0xb7ff8a);
+    ui.glow.setFillStyle(palette.slotGlow, 0.24);
+    ui.frame.setStrokeStyle(3, palette.accentBright);
     ui.mouth.setFillStyle(0x0b1208);
+    this.setDriveLampState(
+      driveId,
+      palette.lampOn,
+      palette.accentBright,
+      0.18,
+      1.08,
+    );
   }
 
-  private setDriveStatus(driveId: DriveId, message: string, color: string) {
+  private setDriveLampState(
+    driveId: DriveId,
+    coreColor: number,
+    haloColor: number,
+    haloAlpha: number,
+    haloScale: number = 1,
+  ) {
     const ui = this.driveModules[driveId];
     if (!ui) return;
-    ui.statusText.setText(message);
-    ui.statusText.setColor(color);
+    ui.light.setFillStyle(coreColor, 1);
+    ui.lightHalo.setFillStyle(haloColor, haloAlpha);
+    ui.lightHalo.setScale(haloScale);
   }
 
   private refreshDriveIdleState(targetDriveId?: DriveId) {
@@ -710,6 +798,7 @@ export class MainSceneStorageController {
 
     driveIds.forEach((driveId) => {
       const ui = this.driveModules[driveId];
+      const palette = this.getDrivePalette(driveId);
       if (!ui) return;
 
       const isLoaded =
@@ -718,22 +807,17 @@ export class MainSceneStorageController {
           : this.activeSkills.length > 0;
       const canEject = isLoaded;
 
-      ui.glow.setFillStyle(0x8d7b4e, 0.08);
-      ui.frame.setStrokeStyle(2, isLoaded ? 0x6c7a4f : 0x574d38);
+      ui.glow.setFillStyle(palette.slotGlow, isLoaded ? 0.1 : 0.05);
+      ui.frame.setStrokeStyle(2, isLoaded ? palette.frameDim : 0x4f493d);
       ui.mouth.setFillStyle(0x040404);
-      ui.light.setFillStyle(isLoaded ? 0x7eb15d : 0x5e491c);
       ui.ejectButton.setAlpha(canEject ? 1 : 0.35);
       ui.ejectLabel.setAlpha(canEject ? 1 : 0.35);
-      this.setDriveStatus(
+      this.setDriveLampState(
         driveId,
-        isLoaded
-          ? driveId === "agent"
-            ? "AGENT ARRAY STAGED"
-            : "SKILL ARRAY STAGED"
-          : driveId === "agent"
-            ? "WAITING FOR AGENTS"
-            : "WAITING FOR SKILLS",
-        isLoaded ? "#93d06b" : "#b99655",
+        isLoaded ? palette.lampOn : palette.lampOff,
+        isLoaded ? palette.haloColor : palette.haloColor,
+        isLoaded ? 0.14 : 0,
+        isLoaded ? 1.03 : 1,
       );
     });
   }
@@ -752,8 +836,7 @@ export class MainSceneStorageController {
     if (!result.success) {
       synth.playError();
       this.setDriveHoverState(driveId, false, true);
-      this.setDriveStatus(driveId, result.statusMessage, "#ff8d68");
-      driveUi?.light.setFillStyle(0xc6543f);
+      this.setDriveLampState(driveId, 0xc6543f, 0xff8d68, 0.24, 1.12);
       this.scene.cameras.main.shake(90, 0.003);
       this.resetDiskPosition(storageDisk);
       this.scene.time.delayedCall(180, () =>
@@ -765,8 +848,14 @@ export class MainSceneStorageController {
     synth.playDriveInsert();
     this.updateSlotsDisplay();
     this.setDriveHoverState(driveId, false);
-    this.setDriveStatus(driveId, result.statusMessage, "#c7ff8d");
-    driveUi?.light.setFillStyle(0xb7ff8a);
+    const palette = this.getDrivePalette(driveId);
+    this.setDriveLampState(
+      driveId,
+      palette.lampOn,
+      palette.accentBright,
+      0.22,
+      1.08,
+    );
     this.scene.cameras.main.shake(70, 0.0015);
     this.pulseContextTarget(result.driveId ?? driveId);
 
@@ -793,7 +882,7 @@ export class MainSceneStorageController {
     });
 
     this.scene.tweens.add({
-      targets: driveUi ? [driveUi.glow, driveUi.light] : [],
+      targets: driveUi ? [driveUi.glow, driveUi.lightHalo, driveUi.light] : [],
       scaleX: 1.08,
       scaleY: 1.08,
       duration: 90,
@@ -853,12 +942,13 @@ export class MainSceneStorageController {
 
   private pulseContextTarget(target: DriveId) {
     const light = this.driveModules[target]?.light;
+    const lightHalo = this.driveModules[target]?.lightHalo;
     const text = this.driveModules[target]?.mountedText;
 
-    if (!light || !text) return;
+    if (!light || !lightHalo || !text) return;
 
     this.scene.tweens.add({
-      targets: [light, text],
+      targets: [light, lightHalo, text],
       scaleX: 1.07,
       scaleY: 1.07,
       duration: 90,
@@ -870,10 +960,8 @@ export class MainSceneStorageController {
   private ejectDrive(driveId: DriveId) {
     if (driveId === "agent") {
       this.bindings.setActiveAgents([]);
-      this.setDriveStatus("agent", "AGENTS EJECTED", "#f2cf86");
     } else {
       this.bindings.setActiveSkills([]);
-      this.setDriveStatus("skill", "SKILLS EJECTED", "#f2cf86");
     }
 
     this.updateSlotsDisplay();
@@ -919,22 +1007,16 @@ export class MainSceneStorageController {
   }
 
   private updateSlotsDisplay() {
-    this.driveModules.agent?.mountedText.setText(
+    this.driveMountedLabels.agent =
       this.activeAgents.length > 0
-        ? `AGENTS ${this.activeAgents.length}/${this.driveConfigs.agent.capacity}: [${this.activeAgents.join(", ")}]`
-        : `AGENTS 0/${this.driveConfigs.agent.capacity}: []`,
-    );
-    this.driveModules.skill?.mountedText.setText(
+        ? `${this.activeAgents.length}/${this.driveConfigs.agent.capacity} [${this.activeAgents.join(", ")}]`
+        : `0/${this.driveConfigs.agent.capacity} []`;
+    this.driveMountedLabels.skill =
       this.activeSkills.length > 0
-        ? `SKILLS ${this.activeSkills.length}/${this.driveConfigs.skill.capacity}: [${this.activeSkills.join(", ")}]`
-        : `SKILLS 0/${this.driveConfigs.skill.capacity}: []`,
-    );
+        ? `${this.activeSkills.length}/${this.driveConfigs.skill.capacity} [${this.activeSkills.join(", ")}]`
+        : `0/${this.driveConfigs.skill.capacity} []`;
 
-    this.driveModules.agent?.light.setFillStyle(
-      this.activeAgents.length > 0 ? 0x7bff86 : 0x5d461d,
-    );
-    this.driveModules.skill?.light.setFillStyle(
-      this.activeSkills.length > 0 ? 0x7bff86 : 0x5d461d,
-    );
+    this.syncMountedTextMarquee("agent", true);
+    this.syncMountedTextMarquee("skill", true);
   }
 }

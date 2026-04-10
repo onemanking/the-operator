@@ -236,6 +236,7 @@ export class MainSceneHudController {
     this.terminalPromptController = new TerminalPromptController(this.scene, {
       isSearchModeSelected: () => this.bindings.isSearchModeSelected(),
       isSafetyModeSelected: () => this.bindings.isSafetyModeSelected(),
+      getHallucination: () => this.bindings.getHallucination(),
       canStartSafetyScan: () => this.bindings.canStartSafetyScan(),
       isSafetyScanning: () => this.bindings.isSafetyScanning(),
       getSafetyScanPointX: () => this.bindings.getSafetyScanPointX(),

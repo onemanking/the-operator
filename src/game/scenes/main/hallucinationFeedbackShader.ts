@@ -39,11 +39,11 @@ void main(void)
     float shimmer = smoothstep(0.55, 1.0, sin(time * shimmerRate * 1.9 + uv.y * 18.0) * 0.5 + 0.5);
     float grain = noise(fragCoord.xy * 0.13 + vec2(time * 4.0, time * 2.0)) - 0.5;
 
-    vec3 ghostViolet = vec3(0.56, 0.43, 1.0);
-    vec3 ghostLavender = vec3(0.83, 0.78, 1.0);
-    vec3 color = mix(ghostViolet, ghostLavender, 0.34 + shimmer * 0.28);
-    color *= 0.42 + intensity * 0.58;
-    color += vec3(0.09, 0.07, 0.16) * max(grain, 0.0) * intensity;
+    vec3 ghostViolet = vec3(0.18, 0.14, 0.32);
+    vec3 ghostLavender = vec3(0.28, 0.23, 0.44);
+    vec3 color = mix(ghostViolet, ghostLavender, 0.28 + shimmer * 0.22);
+    color *= 0.28 + intensity * 0.2;
+    color += vec3(0.04, 0.03, 0.08) * max(grain, 0.0) * intensity;
 
     float alpha = active * clamp(
         ghostLine * (0.08 + intensity * 0.16) +
@@ -51,7 +51,7 @@ void main(void)
         abs(wander + scanJitter) * resolution.x * 0.08 +
         abs(grain) * intensity * 0.06,
         0.0,
-        0.34
+      0.28
     );
 
     gl_FragColor = vec4(color, alpha);

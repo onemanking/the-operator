@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getHallucinationFeedbackConfig } from "../../data/RunData";
 import {
   PromptTokenBounds,
   SAFETY_FILM_TEXT_ALPHA,
@@ -15,6 +16,7 @@ import {
 interface TerminalPromptControllerBindings {
   isSearchModeSelected: () => boolean;
   isSafetyModeSelected: () => boolean;
+  getHallucination: () => number;
   canStartSafetyScan: () => boolean;
   isSafetyScanning: () => boolean;
   getSafetyScanPointX: () => number;
@@ -370,14 +372,31 @@ export class TerminalPromptController {
     const isSearchModeSelected = this.bindings.isSearchModeSelected();
     const isSafetyModeSelected = this.bindings.isSafetyModeSelected();
     const safetyNoiseIntensity = this.bindings.getSafetyScanNoiseIntensity();
+    const hallucinationConfig = getHallucinationFeedbackConfig();
+    const hallucinationIntensity = Phaser.Math.Clamp(
+      (this.bindings.getHallucination() - hallucinationConfig.onsetThreshold) /
+        (hallucinationConfig.fullIntensityThreshold -
+          hallucinationConfig.onsetThreshold),
+      0,
+      1,
+    );
+    const hallucinationTextAlpha = Phaser.Math.Linear(
+      1,
+      0.84,
+      hallucinationIntensity,
+    );
 
     this.syncScannerLayout();
     this.safetyScannerController.syncVisualState();
 
     this.userLabel?.setColor(isSafetyModeSelected ? "#995042" : "#33ff33");
-    this.userLabel?.setAlpha(isSafetyModeSelected ? 0.72 : 1);
+    this.userLabel?.setAlpha(
+      (isSafetyModeSelected ? 0.72 : 1) * hallucinationTextAlpha,
+    );
     this.divider?.setColor(isSafetyModeSelected ? "#884235" : "#33ff33");
-    this.divider?.setAlpha(isSafetyModeSelected ? 0.66 : 1);
+    this.divider?.setAlpha(
+      (isSafetyModeSelected ? 0.66 : 1) * hallucinationTextAlpha,
+    );
 
     this.tokens.forEach((token) => {
       const isSelected = selectedWordIndexes.has(token.index);
@@ -419,7 +438,7 @@ export class TerminalPromptController {
 
       if (isSearchModeSelected) {
         token.text.setColor(isSelected ? "#081208" : "#33ff33");
-        token.text.setAlpha(1);
+        token.text.setAlpha(hallucinationTextAlpha);
         token.text.setShadow(0, 0, "#000000", 0, false, false);
         this.clearSafetyGlyphFx(token);
       } else if (isSafetyModeSelected) {
@@ -446,6 +465,7 @@ export class TerminalPromptController {
               )
             : SAFETY_FILM_TEXT_ALPHA,
         );
+        token.text.setAlpha(token.text.alpha * hallucinationTextAlpha);
         token.text.setShadow(0, 0, "#000000", 0, false, false);
         this.syncSafetyGlyphFx(
           token,
@@ -455,7 +475,7 @@ export class TerminalPromptController {
         );
       } else {
         token.text.setColor("#33ff33");
-        token.text.setAlpha(1);
+        token.text.setAlpha(hallucinationTextAlpha);
         token.text.setShadow(0, 0, "#000000", 0, false, false);
         this.clearSafetyGlyphFx(token);
       }

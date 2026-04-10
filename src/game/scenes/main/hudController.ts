@@ -486,7 +486,7 @@ export class MainSceneHudController {
       .setStrokeStyle(2, 0x111111)
       .setInteractive({ useHandCursor: true });
     this.computePulseLabel = this.scene.add
-      .text(904, 310, "PULSE", {
+      .text(904, 310, "PRESS", {
         fontFamily: "monospace",
         fontSize: "16px",
         color: "#111111",

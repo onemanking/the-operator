@@ -995,6 +995,9 @@ export class MainSceneStorageController {
       scaleY: 1,
       duration: 140,
       ease: "Back.easeOut",
+      onComplete: () => {
+        this.renderStorageRackItems();
+      },
     });
 
     this.scene.tweens.add({

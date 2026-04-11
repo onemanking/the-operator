@@ -12,10 +12,10 @@ import {
 } from "./types";
 
 export const STORAGE_DISKS: StorageDiskDefinition[] = [
-  { label: AgentId.Coding, type: "agent", color: 0x99958a },
   { label: AgentId.General, type: "agent", color: 0x99958a },
-  { label: SkillId.Python, type: "skill", color: 0x7a8a99 },
+  { label: AgentId.Coding, type: "agent", color: 0x99958a },
   { label: SkillId.Creative, type: "skill", color: 0x7a8a99 },
+  { label: SkillId.Python, type: "skill", color: 0x7a8a99 },
 ];
 
 export const STORAGE_TABS: StorageTabDefinition[] = [

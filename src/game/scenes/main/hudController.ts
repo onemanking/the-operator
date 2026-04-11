@@ -19,6 +19,7 @@ import {
   TERMINAL_PROMPT_LINE_HEIGHT,
   TerminalPromptController,
 } from "./terminalPromptController";
+import { MainSceneSearchToolPanelController } from "./searchToolPanelController";
 import { MainSceneUtilityPanelController } from "./utilityPanelController";
 import { ChatMessage, ToolId } from "./types";
 
@@ -29,7 +30,7 @@ interface HudControllerBindings {
   onSelectPreviousUtility: () => void;
   onSelectNextUtility: () => void;
   onTogglePromptTool: (toolId: ToolId) => void;
-  onToggleSearchWord: (wordIndex: number, rawWord: string) => void;
+  onSearchPulsePress: () => void;
   onSafetyScanStart: (
     pointerId: number,
     scanPointX: number,
@@ -50,6 +51,21 @@ interface HudControllerBindings {
   getUnlockedPromptToolIds: () => ToolId[];
   getSelectedPromptToolIds: () => ToolId[];
   getSelectedSearchWordIndexes: () => number[];
+  getSearchTargetWords: () => readonly string[];
+  getSearchLockedWords: () => readonly string[];
+  getSearchCurrentTargetIndex: () => number;
+  getSearchCurrentTargetWord: () => string | null;
+  getSearchPulseProgress: () => number;
+  getSearchTimingWindowRatio: () => number;
+  getSearchPulseState: () =>
+    | "idle"
+    | "running"
+    | "success"
+    | "error"
+    | "empty"
+    | "complete";
+  getSearchFeedbackFlash: () => number;
+  getSearchNoTargetSweepProgress: () => number;
   getTokens: () => number;
   getPassiveHudItems: () => PassiveUpgradeHudItem[];
   getUtilityDisplayText: () => string;
@@ -138,6 +154,7 @@ interface ChatLineEntry {
 }
 
 export class MainSceneHudController {
+  private readonly toolControlDepth = 2.4;
   private hoveredAction: "inference" | "refuse" | null = null;
   private tokenDeltaBaseY: number = 0;
   private tokenValueText!: Phaser.GameObjects.Text;
@@ -179,6 +196,7 @@ export class MainSceneHudController {
   private hallucinationWarningLamp!: Phaser.GameObjects.Arc;
   private hallucinationWarningLampHalo!: Phaser.GameObjects.Arc;
   private heatPreviewFill!: Phaser.GameObjects.Rectangle;
+  private searchPanelController!: MainSceneSearchToolPanelController;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
   private computeStatusText!: Phaser.GameObjects.Text;
@@ -326,6 +344,9 @@ export class MainSceneHudController {
       getSafetyScanBandWidth: () => this.bindings.getSafetyScanBandWidth(),
       getSelectedWordIndexes: () =>
         this.bindings.getSelectedSearchWordIndexes(),
+      getSearchLockedWords: () => this.bindings.getSearchLockedWords(),
+      getSearchCurrentTargetWord: () =>
+        this.bindings.getSearchCurrentTargetWord(),
       getSafetyMatchedWordIndexes: () =>
         this.bindings.getSafetyMatchedWordIndexes(),
       getSafetyRevealedWordIndexes: () =>
@@ -341,8 +362,7 @@ export class MainSceneHudController {
 
         return this.taskTextObj.y + this.taskTextObj.height + 19;
       },
-      onToggleWord: (wordIndex, rawWord) =>
-        this.bindings.onToggleSearchWord(wordIndex, rawWord),
+      onToggleWord: () => undefined,
       onSafetyScanStart: (pointerId, scanPointX, scanPointY) =>
         this.bindings.onSafetyScanStart(pointerId, scanPointX, scanPointY),
       onSafetyScanMove: (
@@ -434,14 +454,22 @@ export class MainSceneHudController {
     const rowCount = Math.max(1, Math.ceil(toolDefinitions.length / 2));
     const panelHeight = 72 + rowCount * 70;
 
-    this.scene.add.rectangle(804, 0, 220, panelHeight, 0x2c2a25).setOrigin(0);
-    this.scene.add.rectangle(800, 0, 4, panelHeight, 0x111111).setOrigin(0);
-    this.scene.add.text(824, 20, "TOOL CONTROL", {
-      fontFamily: "monospace",
-      fontSize: "20px",
-      color: "#d4c5b0",
-      fontStyle: "bold",
-    });
+    this.scene.add
+      .rectangle(804, 0, 220, panelHeight, 0x2c2a25)
+      .setOrigin(0)
+      .setDepth(this.toolControlDepth);
+    this.scene.add
+      .rectangle(800, 0, 4, panelHeight, 0x111111)
+      .setOrigin(0)
+      .setDepth(this.toolControlDepth + 0.01);
+    this.scene.add
+      .text(824, 20, "TOOL CONTROL", {
+        fontFamily: "monospace",
+        fontSize: "20px",
+        color: "#d4c5b0",
+        fontStyle: "bold",
+      })
+      .setDepth(this.toolControlDepth + 0.04);
 
     toolDefinitions.forEach((tool, index) => {
       const column = index % 2;
@@ -451,15 +479,18 @@ export class MainSceneHudController {
 
       const shadow = this.scene.add
         .rectangle(x + 40, y + 32, 80, 52, 0x111111)
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(this.toolControlDepth + 0.01);
       const body = this.scene.add
         .rectangle(x + 40, y + 28, 80, 52, 0x7f796e)
         .setOrigin(0.5)
         .setStrokeStyle(2, 0x111111)
+        .setDepth(this.toolControlDepth + 0.02)
         .setInteractive({ useHandCursor: true });
       const lamp = this.scene.add
         .circle(x + 14, y + 14, 5, 0x173617)
-        .setStrokeStyle(1, 0x081208);
+        .setStrokeStyle(1, 0x081208)
+        .setDepth(this.toolControlDepth + 0.03);
       const indicatorLamps: Phaser.GameObjects.Rectangle[] = [];
 
       if (tool.toolId === ToolId.Compute) {
@@ -468,6 +499,7 @@ export class MainSceneHudController {
             this.scene.add
               .rectangle(x + 10 + lampIndex * 14, y - 2, 9, 5, 0x2f2a21)
               .setOrigin(0, 0.5)
+              .setDepth(this.toolControlDepth + 0.03)
               .setStrokeStyle(1, 0x111111),
           );
         }
@@ -480,7 +512,8 @@ export class MainSceneHudController {
           color: "#111111",
           fontStyle: "bold",
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(this.toolControlDepth + 0.04);
 
       body.on("pointerdown", () => {
         body.y += 4;
@@ -670,6 +703,31 @@ export class MainSceneHudController {
       this.computePulseLabel,
       thresholdText,
     ]);
+    this.computePanel.setDepth(this.toolControlDepth);
+  }
+
+  createSearchSection() {
+    this.searchPanelController = new MainSceneSearchToolPanelController(
+      this.scene,
+      {
+        isSearchToolSelected: () => this.bindings.isSearchModeSelected(),
+        getSearchTargetWords: () => this.bindings.getSearchTargetWords(),
+        getSearchLockedWords: () => this.bindings.getSearchLockedWords(),
+        getSearchCurrentTargetIndex: () =>
+          this.bindings.getSearchCurrentTargetIndex(),
+        getSearchCurrentTargetWord: () =>
+          this.bindings.getSearchCurrentTargetWord(),
+        getSearchPulseProgress: () => this.bindings.getSearchPulseProgress(),
+        getSearchTimingWindowRatio: () =>
+          this.bindings.getSearchTimingWindowRatio(),
+        getSearchPulseState: () => this.bindings.getSearchPulseState(),
+        getSearchFeedbackFlash: () => this.bindings.getSearchFeedbackFlash(),
+        getSearchNoTargetSweepProgress: () =>
+          this.bindings.getSearchNoTargetSweepProgress(),
+        onSearchPulsePress: () => this.bindings.onSearchPulsePress(),
+      },
+    );
+    this.searchPanelController.create();
   }
 
   createUtilitySection() {
@@ -1212,6 +1270,13 @@ export class MainSceneHudController {
       const isSelected = selectedPromptToolIds.has(toolId);
       const isComputeReady =
         toolId === ToolId.Compute && this.bindings.isComputeReady();
+      const searchLockedCount = this.bindings.getSearchLockedWords().length;
+      const searchTargetCount = this.bindings.getSearchTargetWords().length;
+      const isSearchArmed = toolId === ToolId.Search && searchLockedCount > 0;
+      const isSearchComplete =
+        toolId === ToolId.Search &&
+        searchTargetCount > 0 &&
+        searchLockedCount >= searchTargetCount;
       const computeRatio = Math.min(
         1,
         this.bindings.getComputeCharge() / this.bindings.getComputeThreshold(),
@@ -1222,10 +1287,26 @@ export class MainSceneHudController {
       button.body.setFillStyle(isSelected ? 0xb9af9b : 0x7f796e);
       button.label.setColor(isSelected ? "#101010" : "#111111");
       button.lamp.setFillStyle(
-        isComputeReady ? 0xffc84d : isSelected ? 0x33ff33 : 0x173617,
+        isSearchComplete
+          ? 0x9cfb64
+          : isSearchArmed
+            ? 0xffc84d
+            : isComputeReady
+              ? 0xffc84d
+              : isSelected
+                ? 0x33ff33
+                : 0x173617,
       );
       button.shadow.setFillStyle(
-        isComputeReady ? 0x5a4312 : isSelected ? 0x294829 : 0x111111,
+        isSearchComplete
+          ? 0x2c5824
+          : isSearchArmed
+            ? 0x5a4312
+            : isComputeReady
+              ? 0x5a4312
+              : isSelected
+                ? 0x294829
+                : 0x111111,
       );
 
       button.indicatorLamps.forEach((indicatorLamp, lampIndex) => {
@@ -1292,9 +1373,6 @@ export class MainSceneHudController {
       1,
     );
 
-    this.scene.input.setDefaultCursor(
-      searchModeSelected ? "zoom-in" : "default",
-    );
     this.terminalBg.setFillStyle(0x051505);
     this.terminalBg.setStrokeStyle(2, perceptionStrokeColor);
 
@@ -1845,6 +1923,7 @@ export class MainSceneHudController {
 
   update() {
     this.utilityPanelController?.update();
+    this.searchPanelController?.update();
   }
 
   private cleanupSceneListeners() {

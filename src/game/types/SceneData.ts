@@ -33,6 +33,8 @@ export interface RunEncounterProgress {
 export interface RunToolRuntimeState {
   computeCharge: number;
   computePrimed: boolean;
+  searchLockedWords: string[];
+  searchCurrentTargetIndex: number;
 }
 
 export interface RunUtilityRuntimeState {
@@ -101,6 +103,8 @@ export function createInitialRunState(): RunState {
     toolRuntime: {
       computeCharge: 0,
       computePrimed: false,
+      searchLockedWords: [],
+      searchCurrentTargetIndex: 0,
     },
     maintenanceSettledDay: null,
     maintenanceOfferIds: [],
@@ -136,7 +140,10 @@ export function cloneRunState(runState: RunState): RunState {
       ],
     },
     encounterProgress: { ...runState.encounterProgress },
-    toolRuntime: { ...runState.toolRuntime },
+    toolRuntime: {
+      ...runState.toolRuntime,
+      searchLockedWords: [...runState.toolRuntime.searchLockedWords],
+    },
     maintenanceSettledDay: runState.maintenanceSettledDay,
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
@@ -236,6 +243,13 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     toolRuntime: {
       ...initial.toolRuntime,
       ...data.toolRuntime,
+      searchLockedWords: [
+        ...(data.toolRuntime?.searchLockedWords ??
+          initial.toolRuntime.searchLockedWords),
+      ],
+      searchCurrentTargetIndex:
+        data.toolRuntime?.searchCurrentTargetIndex ??
+        initial.toolRuntime.searchCurrentTargetIndex,
       computePrimed:
         data.toolRuntime?.computePrimed ??
         (data.toolRuntime?.computeCharge ??

@@ -21,17 +21,59 @@ That now also means each tool should ship with a readable audiovisual language, 
 
 The game currently uses three prompt tools:
 
-### Search
+## Active Utility Module
 
-- The prompt is tokenized into individual words.
-- Each word can be selected or deselected by clicking it.
-- Selected words are normalized before evaluation.
-- A Search encounter succeeds when the selected normalized word set contains every required search word.
-- Extra words are allowed, but they add heat.
-- The HUD shows a heat preview based on the current loadout before commit.
-- When Search is active, the selectable words are visually marked so the player can see the clickable targets immediately.
+The live shift now also includes a dedicated active-utility module in the empty
+right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
 
-### Compute
+- Utilities are still selected from the lower-right utility bay.
+- Pressing the utility bay no longer applies the recovery effect instantly.
+- The player must complete the utility-specific minigame in the vertical module
+  before the effect is applied and the charge is consumed.
+- The module auto-closes after a short success beat, so the utility reads like a
+  real machine action rather than a permanent overlay.
+
+### Coolant Purge
+
+- Uses three hydraulic purge levers in a randomized per-run order.
+- Each lever must be dragged down and held until its pressure gauge finishes
+  venting.
+- Completed levers stay latched only for a short decay window; if the window
+  expires, that lever drops out and must be redone.
+- Success vents heat immediately once all three levers are secured.
+
+### Reality Patch
+
+- Uses an oscilloscope screen and a single tuning knob.
+- The player adjusts only the live waveform frequency while a fixed target trace
+  stays visible behind it.
+- When the two traces stay within tolerance long enough, the lock bar fills and
+  the hallucination scrub is applied.
+- Higher hallucination increases waveform jitter, making the alignment harder to
+  hold.
+
+### Signal Boost
+
+- Uses a 3x3 signal-routing grid in the same vertical module.
+- The player must draw a single orthogonal route from source to target while
+  touching every required signal node.
+- Releasing early, crossing a used cell, or finishing without all signal nodes
+  causes a snap-back failure and forces a retry.
+- Success restores user connection time immediately.
+
+### Search Config
+
+- Search now runs as a `Radar Pulse Synchronization` timing module in the vertical panel under `TOOL CONTROL`.
+- Required search words are locked in sequentially, one word at a time.
+- The active radar pulse loops on the current word until the player presses within the timing window as the pulse collapses into the center reticle.
+- A successful press produces a signal-lock flash, stores that word as active search context, and advances to the next required word.
+- A missed or mistimed press plays a desync beat, adds extra thermal load, and immediately retries the same word on the next pulse.
+- Leaving the Search module open without pressing still adds passive thermal load over time.
+- Closing Search no longer clears its progress for the current turn. Reopening the tool resumes from the next unfinished word.
+- Search still contributes loadout heat through the locked normalized word set, and evaluation succeeds when that locked set contains every required search word.
+- If the turn has no search targets, Search performs a single sweep and reports `NO SIGNATURES FOUND`.
+
+### Compute Config
 
 - Compute charges by repeated pulses.
 - Charge decays over time when the player stops interacting.
@@ -97,7 +139,8 @@ The current tool behavior is split across these systems:
 - `src/game/data/RunData.ts` stores tunable values such as Search heat costs and Compute charge/decay numbers.
 - `src/game/types/SceneData.ts` persists runtime state such as Compute charge and armed state.
 - `src/game/scenes/MainScene.ts` owns the runtime truth for selected tools, selected words, Compute charge, and projected heat.
-- `src/game/scenes/main/terminalPromptController.ts` handles prompt word layout and Search selection visuals.
+- `src/game/scenes/main/terminalPromptController.ts` handles prompt word layout plus Search target and locked-word highlights on the terminal.
+- `src/game/scenes/main/searchToolPanelController.ts` renders the Search radar timing module and its sequential progress feedback.
 - `src/game/scenes/main/safetyScannerController.ts` handles the scanner lane motion and Safety Filter reveal presentation.
 - `src/game/scenes/main/encounterEvaluator.ts` checks whether the active loadout satisfies the encounter requirements and calculates heat.
 - `src/game/scenes/main/hudController.ts` renders tool buttons, previews, and the compute panel.
@@ -112,6 +155,16 @@ Any new tool should follow the same pattern: data config, runtime state, HUD pre
 - `heatPerWord`: base heat per selected word.
 - `extraHeatPerWordAfterSoftCap`: additional heat for selections beyond the soft cap.
 - `softCapWords`: number of selected words before the extra heat starts.
+- `pulseMinDurationSeconds`: fastest allowed pulse cycle for late-word sync attempts.
+- `pulseMaxDurationSeconds`: starting pulse cycle duration for the first required word.
+- `pulseAccelerationPerWordSeconds`: speed increase applied as the player advances through the sequence.
+- `timingToleranceSeconds`: grace window before and after center lock that still counts as success.
+- `activePressHeat`: heat added on every Search press.
+- `mistimedPressExtraHeat`: extra heat added when a Search press misses the lock window.
+- `idleHeatPerSecond`: passive heat added while the Search module stays open and unfinished.
+- `successFlashMs`: duration of the success lock beat before the next word begins.
+- `errorFlashMs`: duration of the desync beat before the same word retries.
+- `noTargetSweepDurationSeconds`: sweep duration for the `NO SIGNATURES FOUND` case.
 
 ### Compute
 
@@ -137,7 +190,7 @@ When adding a new tool, define these pieces early:
 7. What HUD affordance makes the tool readable at a glance?
 8. How does the tool reset when the turn changes or the player cancels it?
 
-If a tool changes commit behavior, its active/armed state should be persisted and exposed through the same controller binding model used by Search and Compute.
+If a tool changes commit behavior, its active or locked state should be persisted and exposed through the same controller binding model used by Search and Compute.
 
 ## Future Tool Guidance
 

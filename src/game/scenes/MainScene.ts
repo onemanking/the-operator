@@ -64,9 +64,16 @@ import {
   PromptForbiddenScanResult,
   getSearchSelectionHeat,
   isComputeReady,
-  normalizeSearchWord,
   scanPromptForForbiddenContent,
 } from "./main/toolRuntimeHelpers";
+
+type SearchPulseState =
+  | "idle"
+  | "running"
+  | "success"
+  | "error"
+  | "empty"
+  | "complete";
 
 interface CoolantLeverRuntimeState {
   completed: boolean;
@@ -112,7 +119,17 @@ export class MainScene extends Phaser.Scene {
   private activeAgents: AgentId[] = [];
   private activeSkills: SkillId[] = [];
   private selectedPromptToolIds: ToolId[] = [];
-  private selectedSearchWordsByIndex = new Map<number, string>();
+  private searchTargetWords: string[] = [];
+  private searchLockedWords: string[] = [];
+  private searchCurrentTargetIndex: number = 0;
+  private searchPulseState: SearchPulseState = "idle";
+  private searchPulseElapsedSeconds: number = 0;
+  private searchPulseDurationSeconds: number = 0;
+  private searchPulseFeedbackDurationMs: number = 0;
+  private searchPulseFeedbackUntil: number = 0;
+  private searchNoTargetSweepProgress: number = 0;
+  private searchCycleCount: number = 0;
+  private searchPanelWasSelected: boolean = false;
   private safetyScanResult: PromptForbiddenScanResult | null = null;
   private safetyScanPrompt: string = "";
   private revealedSafetyWordIndexes = new Set<number>();
@@ -196,7 +213,22 @@ export class MainScene extends Phaser.Scene {
     this.selectedPromptToolIds = sortPromptToolIds(
       (this.runState.loadout.selectedPromptToolIds ?? []).filter(isToolId),
     );
-    this.selectedSearchWordsByIndex = new Map();
+    this.searchTargetWords = [];
+    this.searchLockedWords = getDedupedNormalizedWords(
+      this.runState.toolRuntime.searchLockedWords,
+    );
+    this.searchCurrentTargetIndex = Math.max(
+      this.runState.toolRuntime.searchCurrentTargetIndex,
+      this.searchLockedWords.length,
+    );
+    this.searchPulseState = "idle";
+    this.searchPulseElapsedSeconds = 0;
+    this.searchPulseDurationSeconds = 0;
+    this.searchPulseFeedbackDurationMs = 0;
+    this.searchPulseFeedbackUntil = 0;
+    this.searchNoTargetSweepProgress = 0;
+    this.searchCycleCount = 0;
+    this.searchPanelWasSelected = false;
     this.safetyScanResult = null;
     this.safetyScanPrompt = "";
     this.revealedSafetyWordIndexes = new Set();
@@ -358,8 +390,7 @@ export class MainScene extends Phaser.Scene {
       onSelectPreviousUtility: () => this.cycleSelectedUtility(-1),
       onSelectNextUtility: () => this.cycleSelectedUtility(1),
       onTogglePromptTool: (toolId) => this.togglePromptTool(toolId),
-      onToggleSearchWord: (wordIndex, rawWord) =>
-        this.toggleSearchWord(wordIndex, rawWord),
+      onSearchPulsePress: () => this.pressSearchPulse(),
       onSafetyScanStart: (pointerId, scanPointX, scanPointY) =>
         this.startSafetyScan(pointerId, scanPointX, scanPointY),
       onSafetyScanMove: (
@@ -392,10 +423,16 @@ export class MainScene extends Phaser.Scene {
         return this.runState.loadout.unlockedPromptToolIds.filter(isToolId);
       },
       getSelectedPromptToolIds: () => this.selectedPromptToolIds,
-      getSelectedSearchWordIndexes: () =>
-        [...this.selectedSearchWordsByIndex.keys()].sort(
-          (left, right) => left - right,
-        ),
+      getSelectedSearchWordIndexes: () => [],
+      getSearchTargetWords: () => this.searchTargetWords,
+      getSearchLockedWords: () => this.searchLockedWords,
+      getSearchCurrentTargetIndex: () => this.searchCurrentTargetIndex,
+      getSearchCurrentTargetWord: () => this.getSearchCurrentTargetWord(),
+      getSearchPulseProgress: () => this.getSearchPulseProgress(),
+      getSearchTimingWindowRatio: () => this.getSearchTimingWindowRatio(),
+      getSearchPulseState: () => this.searchPulseState,
+      getSearchFeedbackFlash: () => this.getSearchFeedbackFlash(),
+      getSearchNoTargetSweepProgress: () => this.searchNoTargetSweepProgress,
       getTokens: () => this.tokens,
       getPassiveHudItems: () => getOwnedPassiveUpgradeHudItems(this.runState),
       getUtilityDisplayText: () => {
@@ -522,6 +559,7 @@ export class MainScene extends Phaser.Scene {
     this.hudController.createLayout();
     this.hudController.createPromptToolGrid();
     this.hudController.createUtilityActivationPanel();
+    this.hudController.createSearchSection();
     this.hudController.createComputeSection();
     this.hudController.createEconomySection();
     this.hudController.createPassiveSection();
@@ -554,6 +592,17 @@ export class MainScene extends Phaser.Scene {
     this.updateUtilityMinigames(delta / 1000);
     this.syncUtilitySelectionForAvailability();
 
+    const isSearchSelected =
+      this.selectedPromptToolIds.includes(ToolId.Search) && !this.isOverheated;
+    if (isSearchSelected !== this.searchPanelWasSelected) {
+      if (isSearchSelected) {
+        this.handleSearchToolOpened();
+      } else {
+        this.handleSearchToolClosed();
+      }
+      this.searchPanelWasSelected = isSearchSelected;
+    }
+
     if (
       this.isSafetyScanning &&
       (!this.selectedPromptToolIds.includes(ToolId.Safety) || this.isOverheated)
@@ -561,6 +610,7 @@ export class MainScene extends Phaser.Scene {
       this.endSafetyScan();
     }
 
+    this.updateSearchTool(delta / 1000);
     this.applySafetyToolHeat(delta / 1000);
     this.applySafetyScanCharge(delta / 1000);
     this.applySafetyRevealDecay(delta / 1000);
@@ -1348,20 +1398,9 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (
-      this.selectedPromptToolIds.includes(ToolId.Search) &&
-      toolId !== ToolId.Search
-    ) {
-      this.clearSearchSelection();
-    }
-
     const nextPromptToolIds = this.selectedPromptToolIds.includes(toolId)
       ? []
       : sortPromptToolIds([toolId]);
-
-    if (nextPromptToolIds.length === 0 && toolId === ToolId.Search) {
-      this.clearSearchSelection();
-    }
 
     if (
       this.selectedPromptToolIds.includes(ToolId.Safety) &&
@@ -1379,27 +1418,6 @@ export class MainScene extends Phaser.Scene {
 
     this.selectedPromptToolIds = nextPromptToolIds;
     this.runState.loadout.selectedPromptToolIds = [...nextPromptToolIds];
-    this.refreshProjectedHeat();
-    this.events.emit("updateBars");
-  }
-
-  private toggleSearchWord(wordIndex: number, rawWord: string) {
-    if (!this.selectedPromptToolIds.includes(ToolId.Search)) {
-      return;
-    }
-
-    const normalizedWord = normalizeSearchWord(rawWord);
-
-    if (normalizedWord.length === 0) {
-      return;
-    }
-
-    if (this.selectedSearchWordsByIndex.has(wordIndex)) {
-      this.selectedSearchWordsByIndex.delete(wordIndex);
-    } else {
-      this.selectedSearchWordsByIndex.set(wordIndex, normalizedWord);
-    }
-
     this.refreshProjectedHeat();
     this.events.emit("updateBars");
   }
@@ -1750,12 +1768,29 @@ export class MainScene extends Phaser.Scene {
   }
 
   private clearSearchSelection() {
-    if (this.selectedSearchWordsByIndex.size === 0) {
+    const nextTargetWords = this.getCurrentTurnSearchWords();
+    if (
+      this.searchLockedWords.length === 0 &&
+      this.searchCurrentTargetIndex === 0 &&
+      this.searchTargetWords.join("|") === nextTargetWords.join("|") &&
+      this.searchPulseState === "idle"
+    ) {
       return;
     }
 
-    this.selectedSearchWordsByIndex.clear();
+    this.searchTargetWords = [...nextTargetWords];
+    this.searchLockedWords = [];
+    this.searchCurrentTargetIndex = 0;
+    this.searchPulseState = "idle";
+    this.searchPulseElapsedSeconds = 0;
+    this.searchPulseDurationSeconds = 0;
+    this.searchPulseFeedbackDurationMs = 0;
+    this.searchPulseFeedbackUntil = 0;
+    this.searchNoTargetSweepProgress = 0;
+    this.searchCycleCount = 0;
+    this.persistSearchProgress();
     this.refreshProjectedHeat();
+    this.events.emit("updateBars");
   }
 
   private clearSafetyRevealState() {
@@ -1790,9 +1825,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private getSelectedSearchWords() {
-    return getDedupedNormalizedWords([
-      ...this.selectedSearchWordsByIndex.values(),
-    ]);
+    return getDedupedNormalizedWords(this.searchLockedWords);
   }
 
   private getSafetyMatchedWordIndexes() {
@@ -1828,10 +1861,7 @@ export class MainScene extends Phaser.Scene {
   private getActiveToolIdsForEvaluation() {
     const activeToolIds: ToolId[] = [];
 
-    if (
-      this.selectedPromptToolIds.includes(ToolId.Search) &&
-      this.getSelectedSearchWords().length > 0
-    ) {
+    if (this.getSelectedSearchWords().length > 0) {
       activeToolIds.push(ToolId.Search);
     }
 
@@ -1840,6 +1870,293 @@ export class MainScene extends Phaser.Scene {
     }
 
     return sortPromptToolIds(activeToolIds);
+  }
+
+  private handleSearchToolOpened() {
+    this.syncSearchTargetsFromCurrentTurn();
+    synth.playSearchArm();
+
+    if (this.searchTargetWords.length === 0) {
+      this.searchPulseState = "empty";
+      this.searchNoTargetSweepProgress = 0;
+      synth.playSearchNoTarget();
+      this.events.emit("updateBars");
+      return;
+    }
+
+    if (this.searchCurrentTargetIndex >= this.searchTargetWords.length) {
+      this.searchPulseState = "complete";
+      this.searchPulseFeedbackDurationMs = 0;
+      this.searchPulseFeedbackUntil = 0;
+      this.events.emit("updateBars");
+      return;
+    }
+
+    this.startSearchPulseCycle();
+    this.events.emit("updateBars");
+  }
+
+  private handleSearchToolClosed() {
+    if (this.searchPulseState !== "complete") {
+      this.searchPulseState = "idle";
+    }
+    this.searchPulseElapsedSeconds = 0;
+    this.searchPulseDurationSeconds = 0;
+    this.searchPulseFeedbackDurationMs = 0;
+    this.searchPulseFeedbackUntil = 0;
+    this.searchNoTargetSweepProgress = 0;
+  }
+
+  private updateSearchTool(deltaSeconds: number) {
+    this.syncSearchTargetsFromCurrentTurn();
+
+    if (
+      !this.selectedPromptToolIds.includes(ToolId.Search) ||
+      this.isOverheated
+    ) {
+      return;
+    }
+
+    const searchConfig = getPromptToolRuntimeConfig().search;
+
+    if (this.searchTargetWords.length === 0) {
+      if (this.searchPulseState === "idle") {
+        this.searchPulseState = "empty";
+        this.searchNoTargetSweepProgress = 0;
+        synth.playSearchNoTarget();
+        this.events.emit("updateBars");
+      }
+
+      if (this.searchNoTargetSweepProgress < 1) {
+        this.searchNoTargetSweepProgress = Math.min(
+          1,
+          this.searchNoTargetSweepProgress +
+            deltaSeconds / searchConfig.noTargetSweepDurationSeconds,
+        );
+        this.events.emit("updateBars");
+      }
+      return;
+    }
+
+    if (this.searchCurrentTargetIndex >= this.searchTargetWords.length) {
+      if (this.searchPulseState !== "complete") {
+        this.searchPulseState = "complete";
+        this.events.emit("updateBars");
+      }
+      return;
+    }
+
+    this.setHeat(this.heat + searchConfig.idleHeatPerSecond * deltaSeconds);
+
+    if (this.searchPulseFeedbackUntil > this.time.now) {
+      return;
+    }
+
+    if (this.searchPulseFeedbackUntil > 0) {
+      this.searchPulseFeedbackUntil = 0;
+      this.searchPulseFeedbackDurationMs = 0;
+
+      if (this.searchCurrentTargetIndex >= this.searchTargetWords.length) {
+        this.searchPulseState = "complete";
+      } else {
+        this.startSearchPulseCycle();
+      }
+
+      this.events.emit("updateBars");
+      return;
+    }
+
+    if (this.searchPulseState === "idle") {
+      this.startSearchPulseCycle();
+      this.events.emit("updateBars");
+      return;
+    }
+
+    if (this.searchPulseState !== "running") {
+      return;
+    }
+
+    this.searchPulseElapsedSeconds += deltaSeconds;
+    if (this.searchPulseElapsedSeconds >= this.searchPulseDurationSeconds) {
+      this.failSearchPulse(false);
+    }
+  }
+
+  private pressSearchPulse() {
+    if (
+      !this.selectedPromptToolIds.includes(ToolId.Search) ||
+      this.isOverheated
+    ) {
+      synth.playError();
+      return;
+    }
+
+    this.syncSearchTargetsFromCurrentTurn();
+    const searchConfig = getPromptToolRuntimeConfig().search;
+
+    if (this.searchTargetWords.length === 0) {
+      synth.playSearchNoTarget();
+      this.searchPulseState = "empty";
+      this.searchNoTargetSweepProgress = 0;
+      this.events.emit("updateBars");
+      return;
+    }
+
+    const isRunning = this.searchPulseState === "running";
+    const withinTolerance =
+      isRunning &&
+      Math.abs(
+        this.searchPulseDurationSeconds - this.searchPulseElapsedSeconds,
+      ) <= searchConfig.timingToleranceSeconds;
+
+    this.setHeat(
+      this.heat +
+        searchConfig.activePressHeat +
+        (withinTolerance ? 0 : searchConfig.mistimedPressExtraHeat),
+    );
+
+    if (!withinTolerance) {
+      this.failSearchPulse(true);
+      return;
+    }
+
+    const lockedWord = this.searchTargetWords[this.searchCurrentTargetIndex];
+    if (lockedWord) {
+      this.searchLockedWords = [...this.searchLockedWords, lockedWord];
+    }
+
+    this.searchCurrentTargetIndex = Math.min(
+      this.searchTargetWords.length,
+      this.searchCurrentTargetIndex + 1,
+    );
+    this.persistSearchProgress();
+    this.refreshProjectedHeat();
+    this.searchPulseState =
+      this.searchCurrentTargetIndex >= this.searchTargetWords.length
+        ? "complete"
+        : "success";
+    this.searchPulseFeedbackDurationMs = searchConfig.successFlashMs;
+    this.searchPulseFeedbackUntil = this.time.now + searchConfig.successFlashMs;
+    this.searchPulseElapsedSeconds = this.searchPulseDurationSeconds;
+    synth.playSearchSuccess();
+    this.cameras.main.shake(70, 0.00075);
+    this.events.emit("updateBars");
+  }
+
+  private failSearchPulse(fromPress: boolean) {
+    const searchConfig = getPromptToolRuntimeConfig().search;
+    this.searchPulseState = "error";
+    this.searchPulseFeedbackDurationMs = searchConfig.errorFlashMs;
+    this.searchPulseFeedbackUntil = this.time.now + searchConfig.errorFlashMs;
+    this.searchPulseElapsedSeconds = this.searchPulseDurationSeconds;
+    synth.playSearchMiss();
+    if (fromPress) {
+      this.cameras.main.shake(55, 0.00065);
+    }
+    this.events.emit("updateBars");
+  }
+
+  private startSearchPulseCycle() {
+    if (this.searchCurrentTargetIndex >= this.searchTargetWords.length) {
+      this.searchPulseState = "complete";
+      return;
+    }
+
+    this.searchCycleCount += 1;
+    this.searchPulseState = "running";
+    this.searchPulseElapsedSeconds = 0;
+    this.searchPulseFeedbackDurationMs = 0;
+    this.searchPulseFeedbackUntil = 0;
+    this.searchNoTargetSweepProgress = 0;
+    this.searchPulseDurationSeconds = this.getSearchPulseDurationSeconds();
+    synth.playSearchPulseLoop(this.searchCycleCount);
+  }
+
+  private getSearchPulseDurationSeconds() {
+    const searchConfig = getPromptToolRuntimeConfig().search;
+    return Math.max(
+      searchConfig.pulseMinDurationSeconds,
+      searchConfig.pulseMaxDurationSeconds -
+        this.searchCurrentTargetIndex *
+          searchConfig.pulseAccelerationPerWordSeconds,
+    );
+  }
+
+  private syncSearchTargetsFromCurrentTurn() {
+    const nextTargetWords = this.getCurrentTurnSearchWords();
+    if (this.searchTargetWords.join("|") === nextTargetWords.join("|")) {
+      return;
+    }
+
+    this.searchTargetWords = [...nextTargetWords];
+    this.searchLockedWords = [];
+    this.searchCurrentTargetIndex = 0;
+    this.searchPulseState = "idle";
+    this.searchPulseElapsedSeconds = 0;
+    this.searchPulseDurationSeconds = 0;
+    this.searchPulseFeedbackDurationMs = 0;
+    this.searchPulseFeedbackUntil = 0;
+    this.searchNoTargetSweepProgress = 0;
+    this.searchCycleCount = 0;
+    this.persistSearchProgress();
+    this.refreshProjectedHeat();
+  }
+
+  private persistSearchProgress() {
+    this.runState.toolRuntime.searchLockedWords = [...this.searchLockedWords];
+    this.runState.toolRuntime.searchCurrentTargetIndex =
+      this.searchCurrentTargetIndex;
+  }
+
+  private getCurrentTurnSearchWords() {
+    return getDedupedNormalizedWords(
+      this.getCurrentTurn()?.requirements.searchRequiredWords ?? [],
+    );
+  }
+
+  private getSearchCurrentTargetWord() {
+    return this.searchTargetWords[this.searchCurrentTargetIndex] ?? null;
+  }
+
+  private getSearchPulseProgress() {
+    if (this.searchPulseDurationSeconds <= 0) {
+      return 0;
+    }
+
+    return Phaser.Math.Clamp(
+      this.searchPulseElapsedSeconds / this.searchPulseDurationSeconds,
+      0,
+      1,
+    );
+  }
+
+  private getSearchTimingWindowRatio() {
+    if (this.searchPulseDurationSeconds <= 0) {
+      return 0.16;
+    }
+
+    return Phaser.Math.Clamp(
+      getPromptToolRuntimeConfig().search.timingToleranceSeconds /
+        this.searchPulseDurationSeconds,
+      0.08,
+      0.32,
+    );
+  }
+
+  private getSearchFeedbackFlash() {
+    if (
+      this.searchPulseFeedbackUntil <= 0 ||
+      this.searchPulseFeedbackDurationMs <= 0
+    ) {
+      return 0;
+    }
+
+    return Phaser.Math.Clamp(
+      (this.searchPulseFeedbackUntil - this.time.now) /
+        this.searchPulseFeedbackDurationMs,
+      0,
+      1,
+    );
   }
 
   private getEncounterToolRuntimeSnapshot(): EncounterToolRuntimeSnapshot {

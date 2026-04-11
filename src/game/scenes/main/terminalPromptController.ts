@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { getHallucinationFeedbackConfig } from "../../data/RunData";
+import { normalizeSearchWord } from "./toolRuntimeHelpers";
 import {
   PromptTokenBounds,
   SAFETY_FILM_TEXT_ALPHA,
@@ -25,6 +26,8 @@ interface TerminalPromptControllerBindings {
   getSafetyScanNoiseIntensity: () => number;
   getSafetyScanBandWidth: () => number;
   getSelectedWordIndexes: () => number[];
+  getSearchLockedWords: () => readonly string[];
+  getSearchCurrentTargetWord: () => string | null;
   getSafetyMatchedWordIndexes: () => number[];
   getSafetyRevealedWordIndexes: () => number[];
   getSafetyRevealProgress: (wordIndex: number) => number;
@@ -362,7 +365,8 @@ export class TerminalPromptController {
   }
 
   syncSelectionStates() {
-    const selectedWordIndexes = new Set(this.bindings.getSelectedWordIndexes());
+    const lockedSearchWords = new Set(this.bindings.getSearchLockedWords());
+    const currentSearchTargetWord = this.bindings.getSearchCurrentTargetWord();
     const safetyMatchedWordIndexes = new Set(
       this.bindings.getSafetyMatchedWordIndexes(),
     );
@@ -399,8 +403,11 @@ export class TerminalPromptController {
     );
 
     this.tokens.forEach((token) => {
-      const isSelected = selectedWordIndexes.has(token.index);
-      const isHovered = isSearchModeSelected && this.hoverIndex === token.index;
+      const normalizedTokenWord = normalizeSearchWord(token.rawWord);
+      const isLockedSearchWord = lockedSearchWords.has(normalizedTokenWord);
+      const isCurrentSearchWord =
+        currentSearchTargetWord !== null &&
+        currentSearchTargetWord === normalizedTokenWord;
       const isSafetyMatched = safetyMatchedWordIndexes.has(token.index);
       const isSafetyRevealed = safetyRevealedWordIndexes.has(token.index);
       const safetyRevealProgress = this.bindings.getSafetyRevealProgress(
@@ -417,10 +424,10 @@ export class TerminalPromptController {
       const frameHeight = token.hitArea.height - 2;
 
       token.background.setVisible(
-        isSearchModeSelected && (isSelected || isHovered),
+        isSearchModeSelected && (isLockedSearchWord || isCurrentSearchWord),
       );
-      token.background.setFillStyle(isSelected ? 0x33ff33 : 0x1f5a1f);
-      token.background.setAlpha(isSelected ? 0.32 : 0.18);
+      token.background.setFillStyle(isLockedSearchWord ? 0x33ff33 : 0xc2874b);
+      token.background.setAlpha(isLockedSearchWord ? 0.32 : 0.24);
       token.selectionFrame.setVisible(isSearchModeSelected);
       if (isSearchModeSelected) {
         drawDashedFrame(
@@ -429,15 +436,25 @@ export class TerminalPromptController {
           frameY,
           frameWidth,
           frameHeight,
-          isSelected ? 0x9df79d : isHovered ? 0x77d977 : 0x3f8f3f,
-          isSelected ? 0.95 : isHovered ? 0.75 : 0.45,
+          isLockedSearchWord
+            ? 0x9df79d
+            : isCurrentSearchWord
+              ? 0xffd27d
+              : 0x3f8f3f,
+          isLockedSearchWord ? 0.95 : isCurrentSearchWord ? 0.82 : 0.22,
         );
       } else {
         token.selectionFrame.clear();
       }
 
       if (isSearchModeSelected) {
-        token.text.setColor(isSelected ? "#081208" : "#33ff33");
+        token.text.setColor(
+          isLockedSearchWord
+            ? "#081208"
+            : isCurrentSearchWord
+              ? "#ffd27d"
+              : "#33ff33",
+        );
         token.text.setAlpha(hallucinationTextAlpha);
         token.text.setShadow(0, 0, "#000000", 0, false, false);
         this.clearSafetyGlyphFx(token);
@@ -481,8 +498,8 @@ export class TerminalPromptController {
       }
 
       if (isSearchModeSelected) {
-        token.hitArea.setInteractive({ useHandCursor: true });
-        token.hitArea.setAlpha(0.001);
+        token.hitArea.disableInteractive();
+        token.hitArea.setAlpha(0);
       } else {
         token.hitArea.disableInteractive();
         token.hitArea.setAlpha(0);

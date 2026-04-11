@@ -59,6 +59,7 @@ interface CoolantLeverUi {
 }
 
 export class MainSceneUtilityPanelController {
+  private readonly panelDepth = 1.8;
   private readonly panelX = UTILITY_PANEL_LAYOUT.panelX;
   private readonly panelY = UTILITY_PANEL_LAYOUT.panelY;
   private readonly panelWidth = UTILITY_PANEL_LAYOUT.panelWidth;
@@ -311,6 +312,28 @@ export class MainSceneUtilityPanelController {
     this.scene.input.on("pointermove", this.pointerMoveHandler);
     this.scene.input.on("pointerup", this.pointerUpHandler);
     this.scene.input.on("pointerupoutside", this.pointerUpHandler);
+
+    this.panelBody.setDepth(this.panelDepth);
+    this.panelTopBar.setDepth(this.panelDepth);
+    this.panelFrame.setDepth(this.panelDepth);
+    this.flashOverlay.setDepth(this.panelDepth + 0.02);
+    this.nameText.setDepth(this.panelDepth + 0.04);
+    this.statusText.setDepth(this.panelDepth + 0.04);
+    this.hintText.setDepth(this.panelDepth + 0.04);
+    this.panelMessageText.setDepth(this.panelDepth + 0.06);
+    this.coolantGraphics.setDepth(this.panelDepth + 0.03);
+    this.realityGraphics.setDepth(this.panelDepth + 0.03);
+    this.signalGraphics.setDepth(this.panelDepth + 0.03);
+    this.realityKnobHitZone.setDepth(this.panelDepth + 0.05);
+    this.signalGridHitZone.setDepth(this.panelDepth + 0.05);
+    this.coolantLeverUi.forEach((leverUi) => {
+      leverUi.handle.setDepth(this.panelDepth + 0.05);
+      leverUi.label.setDepth(this.panelDepth + 0.06);
+      leverUi.orderText.setDepth(this.panelDepth + 0.06);
+    });
+    this.signalCellLabels.forEach((label) => {
+      label.setDepth(this.panelDepth + 0.05);
+    });
   }
 
   update() {

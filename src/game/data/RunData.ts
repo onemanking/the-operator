@@ -21,6 +21,16 @@ export interface SearchToolRuntimeConfig {
   heatPerWord: number;
   extraHeatPerWordAfterSoftCap: number;
   softCapWords: number;
+  pulseMinDurationSeconds: number;
+  pulseMaxDurationSeconds: number;
+  pulseAccelerationPerWordSeconds: number;
+  timingToleranceSeconds: number;
+  activePressHeat: number;
+  mistimedPressExtraHeat: number;
+  idleHeatPerSecond: number;
+  successFlashMs: number;
+  errorFlashMs: number;
+  noTargetSweepDurationSeconds: number;
 }
 
 export interface ComputeToolRuntimeConfig {
@@ -162,6 +172,16 @@ const PROMPT_TOOL_RUNTIME_CONFIG: PromptToolRuntimeConfig = {
     heatPerWord: 0.75,
     extraHeatPerWordAfterSoftCap: 0.5,
     softCapWords: 2,
+    pulseMinDurationSeconds: 0.32,
+    pulseMaxDurationSeconds: 0.56,
+    pulseAccelerationPerWordSeconds: 0.05,
+    timingToleranceSeconds: 0.12,
+    activePressHeat: 0.45,
+    mistimedPressExtraHeat: 0.45,
+    idleHeatPerSecond: 1.15,
+    successFlashMs: 220,
+    errorFlashMs: 160,
+    noTargetSweepDurationSeconds: 0.95,
   },
   compute: {
     chargeThreshold: 100,

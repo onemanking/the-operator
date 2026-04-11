@@ -257,6 +257,50 @@ export class SoundSynth {
   playSignalBoostNode(nodeCount: number) {
     this.playBeep(540 + nodeCount * 110, "square", 0.03, 0.045);
   }
+
+  playSearchArm() {
+    const baseFrequency = 340 + Math.random() * 30;
+    this.playBeep(baseFrequency, "triangle", 0.03, 0.04);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 1.42, "sine", 0.05, 0.035);
+    }, 26);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 1.92, "triangle", 0.06, 0.028);
+    }, 64);
+  }
+
+  playSearchPulseLoop(cycleIndex: number) {
+    const drift = Phaser.Math.Between(-12, 12);
+    const baseFrequency = 214 + (cycleIndex % 4) * 18 + drift;
+    this.playBeep(baseFrequency, "sine", 0.06, 0.018);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 1.86, "triangle", 0.025, 0.014);
+    }, 36);
+  }
+
+  playSearchSuccess() {
+    const baseFrequency = 980 + Math.random() * 40;
+    this.playBeep(baseFrequency, "sine", 0.05, 0.05);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 1.28, "triangle", 0.08, 0.04);
+    }, 38);
+  }
+
+  playSearchMiss() {
+    const baseFrequency = 134 + Math.random() * 16;
+    this.playBeep(baseFrequency, "sawtooth", 0.12, 0.05);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 0.84, "triangle", 0.09, 0.04);
+    }, 52);
+  }
+
+  playSearchNoTarget() {
+    const baseFrequency = 284 + Math.random() * 22;
+    this.playBeep(baseFrequency, "triangle", 0.06, 0.028);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 0.72, "sine", 0.08, 0.022);
+    }, 80);
+  }
 }
 
 export const synth = new SoundSynth();

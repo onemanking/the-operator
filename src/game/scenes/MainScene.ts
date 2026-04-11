@@ -42,6 +42,7 @@ import {
   getRunPassiveModifiers,
 } from "../data/UpgradeData";
 import { GAME_CANVAS_HEIGHT, GAME_CANVAS_WIDTH } from "../layout";
+import { getSignalNodeIndexFromPointer } from "./main/utilityPanelLayout";
 import { sortPromptToolIds } from "./main/config";
 import { AgentId, ChatMessage, SkillId, ToolId, isToolId } from "./main/types";
 import { MainSceneStorageController } from "./main/storageController";
@@ -910,7 +911,7 @@ export class MainScene extends Phaser.Scene {
       this.signalBoostState.visitedRequiredNodeIndexes.add(layout.sourceIndex);
     }
 
-    this.utilityStatusText = "ROUTE LIVE";
+    this.updateSignalBoostStatusText();
     synth.playSignalBoostNode(0);
   }
 
@@ -929,20 +930,33 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
+    const previousCellIndex =
+      this.signalBoostState.path.length > 1
+        ? this.signalBoostState.path[this.signalBoostState.path.length - 2]
+        : null;
+
+    if (previousCellIndex !== null && cellIndex === previousCellIndex) {
+      this.signalBoostState.path.pop();
+      this.syncSignalVisitedRequiredNodesFromPath();
+      this.updateSignalBoostStatusText();
+      synth.playSignalBoostNode(
+        this.signalBoostState.visitedRequiredNodeIndexes.size,
+      );
+      return;
+    }
+
     if (this.signalBoostState.path.includes(cellIndex)) {
       this.failSignalBoost(cellIndex, "PATH LOOPED");
       return;
     }
 
     this.signalBoostState.path.push(cellIndex);
-    if (this.getActiveSignalLayout().requiredNodeIndexes.includes(cellIndex)) {
-      this.signalBoostState.visitedRequiredNodeIndexes.add(cellIndex);
-    }
+    this.syncSignalVisitedRequiredNodesFromPath();
 
     synth.playSignalBoostNode(
       this.signalBoostState.visitedRequiredNodeIndexes.size,
     );
-    this.utilityStatusText = `NODES ${this.signalBoostState.visitedRequiredNodeIndexes.size}/${this.getActiveSignalLayout().requiredNodeIndexes.length}`;
+    this.updateSignalBoostStatusText();
   }
 
   private endSignalBoostDrag(pointerId: number, cellIndex: number | null) {
@@ -957,9 +971,8 @@ export class MainScene extends Phaser.Scene {
     this.signalBoostState.draggingPointerId = null;
     const layout = this.getActiveSignalLayout();
     const endedAtTarget =
-      cellIndex === layout.targetIndex &&
       this.signalBoostState.path[this.signalBoostState.path.length - 1] ===
-        layout.targetIndex;
+      layout.targetIndex;
     const completedRequired = layout.requiredNodeIndexes.every((requiredNode) =>
       this.signalBoostState.visitedRequiredNodeIndexes.has(requiredNode),
     );
@@ -978,6 +991,25 @@ export class MainScene extends Phaser.Scene {
       this.time.now + getUtilityMinigameConfig().signal.failureFlashMs;
     this.resetSignalBoostState();
     this.failUtilityInteraction("signal_boost", statusText);
+  }
+
+  private syncSignalVisitedRequiredNodesFromPath() {
+    const requiredNodes = this.getActiveSignalLayout().requiredNodeIndexes;
+    this.signalBoostState.visitedRequiredNodeIndexes = new Set(
+      this.signalBoostState.path.filter((cellIndex) =>
+        requiredNodes.includes(cellIndex),
+      ),
+    );
+  }
+
+  private updateSignalBoostStatusText() {
+    const visitedCount = this.signalBoostState.visitedRequiredNodeIndexes.size;
+    const requiredCount =
+      this.getActiveSignalLayout().requiredNodeIndexes.length;
+    this.utilityStatusText =
+      visitedCount === 0
+        ? "ROUTE LIVE"
+        : `NODES ${visitedCount}/${requiredCount}`;
   }
 
   private completeUtilityActivation(utilityId: ActiveUtilityId) {
@@ -1069,7 +1101,7 @@ export class MainScene extends Phaser.Scene {
       return "TUNE FREQUENCY";
     }
 
-    return "START AT SRC";
+    return "STANDBY";
   }
 
   private getUtilityFeedbackFlash() {
@@ -1300,23 +1332,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private getSignalCellIndexFromPointer(pointerX: number, pointerY: number) {
-    const signalGrid = getSignalGridBounds();
-    const signalGridLeft = signalGrid.left;
-    const signalGridTop = signalGrid.top;
-    const signalCellSize = signalGrid.cellSize;
-
-    if (
-      pointerX < signalGridLeft ||
-      pointerY < signalGridTop ||
-      pointerX >= signalGridLeft + signalCellSize * 3 ||
-      pointerY >= signalGridTop + signalCellSize * 3
-    ) {
-      return null;
-    }
-
-    const column = Math.floor((pointerX - signalGridLeft) / signalCellSize);
-    const row = Math.floor((pointerY - signalGridTop) / signalCellSize);
-    return row * 3 + column;
+    return getSignalNodeIndexFromPointer(pointerX, pointerY);
   }
 
   private togglePromptTool(toolId: ToolId) {

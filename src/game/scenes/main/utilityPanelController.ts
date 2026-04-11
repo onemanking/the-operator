@@ -8,7 +8,10 @@ import {
   getActiveUtilityDefinition,
 } from "../../data/UtilityData";
 import {
-  getSignalGridBounds,
+  getSignalBoardMetrics,
+  getSignalInteractionBounds,
+  getSignalNodeIndexFromPointer,
+  getSignalNodePosition,
   getSignalPanelBounds,
   UTILITY_PANEL_LAYOUT,
 } from "./utilityPanelLayout";
@@ -67,7 +70,6 @@ export class MainSceneUtilityPanelController {
   private readonly signalPanelTop = getSignalPanelBounds().top;
   private readonly signalPanelWidth = getSignalPanelBounds().width;
   private readonly signalPanelHeight = getSignalPanelBounds().height;
-  private readonly signalCellSize = UTILITY_PANEL_LAYOUT.signalCellSize;
 
   private panelBody!: Phaser.GameObjects.Rectangle;
   private panelTopBar!: Phaser.GameObjects.Rectangle;
@@ -238,10 +240,10 @@ export class MainSceneUtilityPanelController {
 
     this.signalGridHitZone = this.scene.add
       .rectangle(
-        this.getSignalGridLeft() + this.signalCellSize * 1.5,
-        this.getSignalGridTop() + this.signalCellSize * 1.5,
-        this.signalCellSize * 3,
-        this.signalCellSize * 3,
+        this.getSignalInteractionCenterX(),
+        this.getSignalInteractionCenterY(),
+        this.getSignalInteractionBounds().width,
+        this.getSignalInteractionBounds().height,
         0xffffff,
         0.001,
       )
@@ -261,7 +263,11 @@ export class MainSceneUtilityPanelController {
       },
     );
 
-    for (let cellIndex = 0; cellIndex < 9; cellIndex += 1) {
+    for (
+      let cellIndex = 0;
+      cellIndex < getUtilityMinigameConfig().signal.gridSize ** 2;
+      cellIndex += 1
+    ) {
       this.signalCellLabels.push(
         this.scene.add.text(0, 0, "", {
           fontFamily: '"Courier New", Courier, monospace',
@@ -352,7 +358,7 @@ export class MainSceneUtilityPanelController {
             ? "DRAG A LEVER TO START PURGE"
             : displayUtilityId === "reality_patch"
               ? "DRAG THE KNOB TO START TUNING"
-              : "DRAG FROM SRC TO START ROUTING"
+              : ""
           : "UTILITY STOCK EMPTY",
       );
       this.hintText.setColor("#8b8375");
@@ -367,9 +373,7 @@ export class MainSceneUtilityPanelController {
       );
       this.hintText.setColor("#8b8375");
     } else {
-      this.hintText.setText(
-        "DRAW ONE CONTINUOUS ROUTE. HIT EVERY NODE BEFORE TARGET.",
-      );
+      this.hintText.setText("");
       this.hintText.setColor("#8b8375");
     }
 
@@ -648,6 +652,8 @@ export class MainSceneUtilityPanelController {
     const layout = this.bindings.getSignalLayout();
     const path = this.bindings.getSignalPath();
     const flashCellIndex = this.bindings.getSignalFlashCellIndex();
+    const metrics = this.getSignalBoardMetrics();
+    const blockGridSize = metrics.blockGridSize;
 
     this.signalGraphics.clear();
     this.signalGraphics.setVisible(isVisible);
@@ -675,61 +681,146 @@ export class MainSceneUtilityPanelController {
       6,
     );
 
+    this.signalGraphics.lineStyle(10, 0x050505, 1);
+    for (let row = 0; row < config.gridSize; row += 1) {
+      for (let column = 0; column < config.gridSize - 1; column += 1) {
+        const leftNode = this.getSignalNodePosition(
+          row * config.gridSize + column,
+        );
+        const rightNode = this.getSignalNodePosition(
+          row * config.gridSize + column + 1,
+        );
+        this.signalGraphics.lineBetween(
+          leftNode.centerX,
+          leftNode.centerY,
+          rightNode.centerX,
+          rightNode.centerY,
+        );
+      }
+    }
+
+    for (let column = 0; column < config.gridSize; column += 1) {
+      for (let row = 0; row < config.gridSize - 1; row += 1) {
+        const topNode = this.getSignalNodePosition(
+          row * config.gridSize + column,
+        );
+        const bottomNode = this.getSignalNodePosition(
+          (row + 1) * config.gridSize + column,
+        );
+        this.signalGraphics.lineBetween(
+          topNode.centerX,
+          topNode.centerY,
+          bottomNode.centerX,
+          bottomNode.centerY,
+        );
+      }
+    }
+
+    for (let row = 0; row < blockGridSize; row += 1) {
+      for (let column = 0; column < blockGridSize; column += 1) {
+        const blockLeft = metrics.blockOriginX + column * metrics.nodeSpacing;
+        const blockTop = metrics.blockOriginY + row * metrics.nodeSpacing;
+
+        this.signalGraphics.fillStyle(0x7d8a9a, 1);
+        this.signalGraphics.fillRoundedRect(
+          blockLeft,
+          blockTop,
+          metrics.blockSize,
+          metrics.blockSize,
+          4,
+        );
+        this.signalGraphics.lineStyle(2, 0x111111, 0.9);
+        this.signalGraphics.strokeRoundedRect(
+          blockLeft,
+          blockTop,
+          metrics.blockSize,
+          metrics.blockSize,
+          4,
+        );
+      }
+    }
+
     for (
       let cellIndex = 0;
       cellIndex < config.gridSize * config.gridSize;
       cellIndex += 1
     ) {
-      const { centerX, centerY, left, top } =
-        this.getSignalCellBounds(cellIndex);
+      const { centerX, centerY } = this.getSignalNodePosition(cellIndex);
       const isSource = layout.sourceIndex === cellIndex;
       const isTarget = layout.targetIndex === cellIndex;
       const isRequired = this.bindings.isSignalRequiredNode(cellIndex);
       const wasVisited = this.bindings.isSignalVisitedRequiredNode(cellIndex);
       const isInPath = path.includes(cellIndex);
-      const fillColor = isSource
-        ? 0x74a8d8
-        : isTarget
-          ? 0xd8a86d
-          : flashCellIndex === cellIndex
-            ? 0xbf5533
-            : isInPath
-              ? 0xffd36b
-              : isRequired
-                ? 0x5e6b2d
-                : 0x302a1f;
+      const signalAccentColor = 0xffaa00;
+      const fillColor =
+        flashCellIndex === cellIndex
+          ? 0xbf5533
+          : isInPath
+            ? signalAccentColor
+            : isRequired
+              ? 0x48c05c
+              : 0x050505;
 
-      this.signalGraphics.fillStyle(fillColor, 1);
-      this.signalGraphics.fillRoundedRect(
-        left,
-        top,
-        this.signalCellSize - 6,
-        this.signalCellSize - 6,
-        5,
-      );
-      this.signalGraphics.lineStyle(2, wasVisited ? 0xe5f8a5 : 0x111111, 1);
-      this.signalGraphics.strokeRoundedRect(
-        left,
-        top,
-        this.signalCellSize - 6,
-        this.signalCellSize - 6,
-        5,
-      );
+      if (isSource) {
+        this.signalGraphics.fillStyle(signalAccentColor, 1);
+        this.signalGraphics.fillRoundedRect(
+          centerX - 13,
+          centerY - 13,
+          26,
+          26,
+          7,
+        );
+        this.signalGraphics.lineStyle(2, 0x111111, 1);
+        this.signalGraphics.strokeRoundedRect(
+          centerX - 13,
+          centerY - 13,
+          26,
+          26,
+          7,
+        );
+      } else if (isTarget) {
+        const targetSize = 16;
+        const targetRadius = 5;
+        const targetFillColor =
+          flashCellIndex === cellIndex ? 0xbf5533 : signalAccentColor;
+
+        this.signalGraphics.fillStyle(targetFillColor, 1);
+        this.signalGraphics.fillRoundedRect(
+          centerX - targetSize / 2,
+          centerY - targetSize / 2,
+          targetSize,
+          targetSize,
+          targetRadius,
+        );
+        this.signalGraphics.lineStyle(2, 0x111111, 1);
+        this.signalGraphics.strokeRoundedRect(
+          centerX - targetSize / 2,
+          centerY - targetSize / 2,
+          targetSize,
+          targetSize,
+          targetRadius,
+        );
+      } else if (isRequired) {
+        this.signalGraphics.fillStyle(fillColor, 1);
+        this.signalGraphics.fillCircle(centerX, centerY, wasVisited ? 7 : 6);
+        this.signalGraphics.lineStyle(2, 0x111111, 1);
+        this.signalGraphics.strokeCircle(centerX, centerY, wasVisited ? 7 : 6);
+      } else {
+        this.signalGraphics.fillStyle(fillColor, isInPath ? 1 : 0.95);
+        this.signalGraphics.fillCircle(centerX, centerY, 4);
+      }
 
       const label = this.signalCellLabels[cellIndex];
       label.setPosition(centerX, centerY);
       label.setOrigin(0.5);
-      label.setText(
-        isSource ? "SRC" : isTarget ? "TERM" : isRequired ? "SIG" : "",
-      );
-      label.setColor(isInPath || isRequired ? "#111111" : "#8c846e");
+      label.setText("");
     }
 
     if (path.length > 1) {
-      this.signalGraphics.lineStyle(config.lineWidthPx, 0xffd36b, 1);
+      this.signalGraphics.lineStyle(config.lineWidthPx + 2, 0x111111, 1);
       this.signalGraphics.beginPath();
       path.forEach((cellIndex, pathIndex) => {
-        const { centerX, centerY } = this.getSignalCellBounds(cellIndex);
+        const { centerX, centerY } = this.getSignalNodePosition(cellIndex);
         if (pathIndex === 0) {
           this.signalGraphics.moveTo(centerX, centerY);
           return;
@@ -738,6 +829,25 @@ export class MainSceneUtilityPanelController {
         this.signalGraphics.lineTo(centerX, centerY);
       });
       this.signalGraphics.strokePath();
+
+      this.signalGraphics.lineStyle(config.lineWidthPx, 0xffaa00, 1);
+      this.signalGraphics.beginPath();
+      path.forEach((cellIndex, pathIndex) => {
+        const { centerX, centerY } = this.getSignalNodePosition(cellIndex);
+        if (pathIndex === 0) {
+          this.signalGraphics.moveTo(centerX, centerY);
+          return;
+        }
+
+        this.signalGraphics.lineTo(centerX, centerY);
+      });
+      this.signalGraphics.strokePath();
+
+      path.forEach((cellIndex) => {
+        const { centerX, centerY } = this.getSignalNodePosition(cellIndex);
+        this.signalGraphics.fillStyle(0xffaa00, 1);
+        this.signalGraphics.fillCircle(centerX, centerY, 5);
+      });
     }
   }
 
@@ -790,46 +900,29 @@ export class MainSceneUtilityPanelController {
   }
 
   private getSignalCellIndex(pointerX: number, pointerY: number) {
-    const signalGridLeft = this.getSignalGridLeft();
-    const signalGridTop = this.getSignalGridTop();
-
-    if (
-      pointerX < signalGridLeft ||
-      pointerY < signalGridTop ||
-      pointerX >= signalGridLeft + this.signalCellSize * 3 ||
-      pointerY >= signalGridTop + this.signalCellSize * 3
-    ) {
-      return null;
-    }
-
-    const column = Math.floor(
-      (pointerX - signalGridLeft) / this.signalCellSize,
-    );
-    const row = Math.floor((pointerY - signalGridTop) / this.signalCellSize);
-
-    return row * 3 + column;
+    return getSignalNodeIndexFromPointer(pointerX, pointerY);
   }
 
-  private getSignalCellBounds(cellIndex: number) {
-    const column = cellIndex % 3;
-    const row = Math.floor(cellIndex / 3);
-    const left = this.getSignalGridLeft() + column * this.signalCellSize + 3;
-    const top = this.getSignalGridTop() + row * this.signalCellSize + 3;
-
-    return {
-      left,
-      top,
-      centerX: left + (this.signalCellSize - 6) / 2,
-      centerY: top + (this.signalCellSize - 6) / 2,
-    };
+  private getSignalNodePosition(cellIndex: number) {
+    return getSignalNodePosition(cellIndex);
   }
 
-  private getSignalGridLeft() {
-    return getSignalGridBounds().left;
+  private getSignalBoardMetrics() {
+    return getSignalBoardMetrics();
   }
 
-  private getSignalGridTop() {
-    return getSignalGridBounds().top;
+  private getSignalInteractionBounds() {
+    return getSignalInteractionBounds();
+  }
+
+  private getSignalInteractionCenterX() {
+    const bounds = this.getSignalInteractionBounds();
+    return bounds.left + bounds.width / 2;
+  }
+
+  private getSignalInteractionCenterY() {
+    const bounds = this.getSignalInteractionBounds();
+    return bounds.top + bounds.height / 2;
   }
 
   private ensurePanelActivated(utilityId: ActiveUtilityId) {

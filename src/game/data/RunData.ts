@@ -262,24 +262,24 @@ const UTILITY_MINIGAME_CONFIG: UtilityMinigameConfig = {
     hallucinationJitterAmplitude: 0.11,
   },
   signal: {
-    gridSize: 3,
+    gridSize: 4,
     lineWidthPx: 6,
     failureFlashMs: 220,
     layouts: [
       {
         sourceIndex: 0,
-        targetIndex: 8,
-        requiredNodeIndexes: [1, 4, 7],
+        targetIndex: 15,
+        requiredNodeIndexes: [1, 6, 11],
       },
       {
-        sourceIndex: 2,
-        targetIndex: 6,
-        requiredNodeIndexes: [1, 4, 3],
+        sourceIndex: 3,
+        targetIndex: 12,
+        requiredNodeIndexes: [2, 6, 9],
       },
       {
-        sourceIndex: 6,
-        targetIndex: 2,
-        requiredNodeIndexes: [7, 4, 5],
+        sourceIndex: 12,
+        targetIndex: 3,
+        requiredNodeIndexes: [13, 10, 6],
       },
     ],
   },

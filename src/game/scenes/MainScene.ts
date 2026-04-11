@@ -1046,12 +1046,19 @@ export class MainScene extends Phaser.Scene {
         `UTILITY: ${definition.name} SCRUBBED ${definition.hallucinationReduction} HALLUCINATION.`,
       );
     } else if (definition.connectionRestoreMs) {
-      const restoredMs = this.restoreUserConnection(
-        definition.connectionRestoreMs,
-      );
-      this.sessionController.postSystemMessage(
-        `UTILITY: ${definition.name} RESTORED ${(restoredMs / 1000).toFixed(1)}S OF USER CONNECTION.`,
-      );
+      if (utilityId === "signal_boost") {
+        this.fillUserConnection();
+        this.sessionController.postSystemMessage(
+          `UTILITY: ${definition.name} RESTORED USER CONNECTION TO FULL.`,
+        );
+      } else {
+        const restoredMs = this.restoreUserConnection(
+          definition.connectionRestoreMs,
+        );
+        this.sessionController.postSystemMessage(
+          `UTILITY: ${definition.name} RESTORED ${(restoredMs / 1000).toFixed(1)}S OF USER CONNECTION.`,
+        );
+      }
     }
 
     this.utilityFeedbackState = "success";
@@ -2201,6 +2208,10 @@ export class MainScene extends Phaser.Scene {
     );
 
     return restoredMs;
+  }
+
+  private fillUserConnection() {
+    this.sessionStartTime = this.getConnectionClockNow();
   }
 
   private isComputeLatched() {

@@ -49,6 +49,7 @@ Review your performance. You earn credits for successful inferences and catching
 - **Session Content**: `src/game/data/SessionData.ts` remains the content source for prompt/session definitions.
 - **Systems Map**: [docs/current-systems.md](docs/current-systems.md) is the canonical map of the current gameplay, UI, data, and scene systems.
 - **Tool Mechanics Reference**: [docs/tool-mechanics.md](docs/tool-mechanics.md) captures the current Search/Compute/Safety behavior and the shared rules to follow when adding future tools.
+- **Content Policy Reference**: [docs/content-policy.md](docs/content-policy.md) explains the live forbidden-category system, Safety Filter behavior, and writing/balance guidance for policy-driven prompts.
 
 ## Development Verification
 - Run `npm run lint` after code changes and `npm run build` after structural or bundling changes.

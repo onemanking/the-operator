@@ -121,5 +121,6 @@ should be read as next-step work rather than missing current features.
 ## Related Docs
 
 - [Tool mechanics reference](tool-mechanics.md)
+- [Content policy reference](content-policy.md)
 - [World lore](world-lore.md)
 - [Future checklist](future-checklist.md)

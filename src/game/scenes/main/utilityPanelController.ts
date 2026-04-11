@@ -654,6 +654,12 @@ export class MainSceneUtilityPanelController {
     const flashCellIndex = this.bindings.getSignalFlashCellIndex();
     const metrics = this.getSignalBoardMetrics();
     const blockGridSize = metrics.blockGridSize;
+    const signalAccentColor = 0xffaa00;
+    const signalPulseTime = this.scene.time.now * 0.0048;
+    const isSignalGuidedDrag = path.length > 0;
+    const showStartPulse = !isSignalGuidedDrag;
+    const showNodePulse = isSignalGuidedDrag;
+    const showTargetPulse = isSignalGuidedDrag;
 
     this.signalGraphics.clear();
     this.signalGraphics.setVisible(isVisible);
@@ -751,7 +757,6 @@ export class MainSceneUtilityPanelController {
       const isRequired = this.bindings.isSignalRequiredNode(cellIndex);
       const wasVisited = this.bindings.isSignalVisitedRequiredNode(cellIndex);
       const isInPath = path.includes(cellIndex);
-      const signalAccentColor = 0xffaa00;
       const fillColor =
         flashCellIndex === cellIndex
           ? 0xbf5533
@@ -762,6 +767,21 @@ export class MainSceneUtilityPanelController {
               : 0x050505;
 
       if (isSource) {
+        if (showStartPulse) {
+          const pulse =
+            0.5 + 0.5 * Math.sin(signalPulseTime + cellIndex * 0.73);
+          const haloSize = 30 + pulse * 8;
+
+          this.signalGraphics.fillStyle(signalAccentColor, 0.14 + pulse * 0.12);
+          this.signalGraphics.fillRoundedRect(
+            centerX - haloSize / 2,
+            centerY - haloSize / 2,
+            haloSize,
+            haloSize,
+            9,
+          );
+        }
+
         this.signalGraphics.fillStyle(signalAccentColor, 1);
         this.signalGraphics.fillRoundedRect(
           centerX - 13,
@@ -781,6 +801,22 @@ export class MainSceneUtilityPanelController {
       } else if (isTarget) {
         const targetSize = 16;
         const targetRadius = 5;
+
+        if (showTargetPulse) {
+          const pulse =
+            0.5 + 0.5 * Math.sin(signalPulseTime + cellIndex * 0.61);
+          const haloSize = 20 + pulse * 8;
+
+          this.signalGraphics.fillStyle(signalAccentColor, 0.16 + pulse * 0.12);
+          this.signalGraphics.fillRoundedRect(
+            centerX - haloSize / 2,
+            centerY - haloSize / 2,
+            haloSize,
+            haloSize,
+            7,
+          );
+        }
+
         const targetFillColor =
           flashCellIndex === cellIndex ? 0xbf5533 : signalAccentColor;
 
@@ -801,6 +837,15 @@ export class MainSceneUtilityPanelController {
           targetRadius,
         );
       } else if (isRequired) {
+        if (showNodePulse) {
+          const pulse =
+            0.5 + 0.5 * Math.sin(signalPulseTime + cellIndex * 0.43);
+          const haloRadius = 10 + pulse * 3;
+
+          this.signalGraphics.fillStyle(0x48c05c, 0.12 + pulse * 0.08);
+          this.signalGraphics.fillCircle(centerX, centerY, haloRadius);
+        }
+
         this.signalGraphics.fillStyle(fillColor, 1);
         this.signalGraphics.fillCircle(centerX, centerY, wasVisited ? 7 : 6);
         this.signalGraphics.lineStyle(2, 0x111111, 1);

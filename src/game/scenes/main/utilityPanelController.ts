@@ -75,11 +75,10 @@ export class MainSceneUtilityPanelController {
   private panelTopBar!: Phaser.GameObjects.Rectangle;
   private panelFrame!: Phaser.GameObjects.Rectangle;
   private flashOverlay!: Phaser.GameObjects.Rectangle;
-  private offlineOverlay!: Phaser.GameObjects.Rectangle;
-  private offlineText!: Phaser.GameObjects.Text;
   private nameText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
+  private panelMessageText!: Phaser.GameObjects.Text;
 
   private coolantGraphics!: Phaser.GameObjects.Graphics;
   private realityGraphics!: Phaser.GameObjects.Graphics;
@@ -134,24 +133,6 @@ export class MainSceneUtilityPanelController {
       .setOrigin(0)
       .setDepth(0.2);
 
-    this.offlineOverlay = this.scene.add
-      .rectangle(this.panelX + 14, this.panelY + 86, 172, 218, 0x110f0c, 0.74)
-      .setOrigin(0)
-      .setDepth(0.24)
-      .setVisible(false);
-    this.offlineOverlay.setStrokeStyle(1, 0x6d6559, 0.42);
-
-    this.offlineText = this.scene.add
-      .text(this.panelX + this.panelWidth / 2, this.panelY + 196, "OFFLINE", {
-        fontFamily: '"Courier New", Courier, monospace',
-        fontSize: "16px",
-        color: "#b8af9f",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(0.25)
-      .setVisible(false);
-
     this.nameText = this.scene.add.text(
       this.panelX + 14,
       this.panelY + 12,
@@ -187,6 +168,19 @@ export class MainSceneUtilityPanelController {
         wordWrap: { width: 170 },
       },
     );
+
+    this.panelMessageText = this.scene.add
+      .text(this.panelX + this.panelWidth / 2, this.panelY + 194, "", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "12px",
+        color: "#b8af9f",
+        fontStyle: "bold",
+        align: "center",
+        wordWrap: { width: 132 },
+      })
+      .setOrigin(0.5)
+      .setDepth(0.18)
+      .setVisible(false);
 
     this.coolantGraphics = this.scene.add.graphics();
     this.realityGraphics = this.scene.add.graphics();
@@ -396,12 +390,20 @@ export class MainSceneUtilityPanelController {
           : 0xffd68a,
       feedbackState === "running" ? 0.04 : feedbackFlash * 0.32,
     );
-    this.offlineOverlay.setVisible(isOfflineDisplay);
-    this.offlineText.setVisible(isOfflineDisplay);
+    this.panelMessageText.setVisible(false);
 
-    this.drawCoolantPanel(displayUtilityId === "coolant_purge");
-    this.drawRealityPanel(displayUtilityId === "reality_patch");
-    this.drawSignalPanel(displayUtilityId === "signal_boost");
+    this.drawCoolantPanel(
+      displayUtilityId === "coolant_purge",
+      isOfflineDisplay && displayUtilityId === "coolant_purge",
+    );
+    this.drawRealityPanel(
+      displayUtilityId === "reality_patch",
+      isOfflineDisplay && displayUtilityId === "reality_patch",
+    );
+    this.drawSignalPanel(
+      displayUtilityId === "signal_boost",
+      isOfflineDisplay && displayUtilityId === "signal_boost",
+    );
   }
 
   destroy() {
@@ -417,7 +419,7 @@ export class MainSceneUtilityPanelController {
     }
   }
 
-  private drawCoolantPanel(isVisible: boolean) {
+  private drawCoolantPanel(isVisible: boolean, isOffline: boolean) {
     const nextLeverIndex = this.bindings.getCoolantNextRequiredLeverIndex();
     const leverOrder = this.bindings.getCoolantLeverOrder();
     const gaugeWidth = 38;
@@ -451,6 +453,83 @@ export class MainSceneUtilityPanelController {
       6,
     );
     this.coolantGraphics.lineStyle(1, 0x52463b, 1);
+
+    if (isOffline) {
+      this.panelMessageText
+        .setText("VENT\nEMPTY")
+        .setPosition(this.panelX + this.panelWidth / 2, this.panelY + 184)
+        .setColor("#b8af9f")
+        .setVisible(true);
+
+      this.coolantGraphics.fillStyle(0x221d18, 1);
+      this.coolantGraphics.fillRoundedRect(
+        this.panelX + 24,
+        this.panelY + 102,
+        152,
+        154,
+        6,
+      );
+      this.coolantGraphics.lineStyle(1, 0x5a5146, 1);
+      this.coolantGraphics.strokeRoundedRect(
+        this.panelX + 24,
+        this.panelY + 102,
+        152,
+        154,
+        6,
+      );
+      this.coolantGraphics.fillStyle(0x6e675c, 1);
+      this.coolantGraphics.fillRect(
+        this.panelX + 36,
+        this.panelY + 132,
+        128,
+        8,
+      );
+      this.coolantGraphics.fillRect(
+        this.panelX + 36,
+        this.panelY + 172,
+        128,
+        8,
+      );
+      this.coolantGraphics.fillRect(
+        this.panelX + 36,
+        this.panelY + 212,
+        128,
+        8,
+      );
+      this.coolantGraphics.lineStyle(3, 0x8e8679, 0.75);
+      this.coolantGraphics.lineBetween(
+        this.panelX + 46,
+        this.panelY + 246,
+        this.panelX + 154,
+        this.panelY + 118,
+      );
+      this.coolantGraphics.lineBetween(
+        this.panelX + 154,
+        this.panelY + 246,
+        this.panelX + 46,
+        this.panelY + 118,
+      );
+      this.coolantGraphics.lineStyle(1, 0x8e8679, 0.45);
+      this.coolantGraphics.strokeRoundedRect(
+        this.panelX + 42,
+        this.panelY + 120,
+        116,
+        124,
+        4,
+      );
+      this.coolantGraphics.fillStyle(0xb8af9f, 1);
+      this.coolantGraphics.fillRect(this.panelX + 58, this.panelY + 154, 84, 2);
+      this.coolantGraphics.fillRect(this.panelX + 58, this.panelY + 187, 84, 2);
+
+      this.coolantLeverUi.forEach((leverUi) => {
+        leverUi.handle.setPosition(-200, -200);
+        leverUi.handle.setFillStyle(0x5e584f);
+        leverUi.label.setPosition(-200, -200);
+        leverUi.orderText.setPosition(-200, -200);
+      });
+
+      return;
+    }
 
     for (let leverIndex = 0; leverIndex < 3; leverIndex += 1) {
       const columnX = this.panelX + 22 + leverIndex * 56;
@@ -523,7 +602,7 @@ export class MainSceneUtilityPanelController {
     }
   }
 
-  private drawRealityPanel(isVisible: boolean) {
+  private drawRealityPanel(isVisible: boolean, isOffline: boolean) {
     const config = getUtilityMinigameConfig().reality;
     const currentRatio = this.bindings.getRealityCurrentFrequencyRatio();
     const targetRatio = this.bindings.getRealityTargetFrequencyRatio();
@@ -562,6 +641,84 @@ export class MainSceneUtilityPanelController {
       scopeHeight,
       6,
     );
+
+    if (isOffline) {
+      this.panelMessageText
+        .setText("PATCH\nOFFLINE")
+        .setPosition(scopeX + scopeWidth / 2, scopeY + scopeHeight / 2)
+        .setColor("#c9b8ff")
+        .setVisible(true);
+
+      for (let scanlineIndex = 0; scanlineIndex < 10; scanlineIndex += 1) {
+        const lineY = scopeY + 14 + scanlineIndex * 10;
+        this.realityGraphics.lineStyle(1, 0x685f78, 0.28);
+        this.realityGraphics.lineBetween(
+          scopeX + 12,
+          lineY,
+          scopeX + scopeWidth - 12,
+          lineY,
+        );
+      }
+
+      this.realityGraphics.fillStyle(0x2b2534, 1);
+      this.realityGraphics.fillRoundedRect(
+        scopeX + 22,
+        scopeY + 36,
+        120,
+        48,
+        4,
+      );
+      this.realityGraphics.lineStyle(1, 0x7c7490, 0.5);
+      this.realityGraphics.strokeRoundedRect(
+        scopeX + 22,
+        scopeY + 36,
+        120,
+        48,
+        4,
+      );
+      this.realityGraphics.fillStyle(0x6f647f, 1);
+      this.realityGraphics.fillRect(scopeX + 34, scopeY + 56, 96, 2);
+      this.realityGraphics.fillRect(scopeX + 46, scopeY + 68, 72, 2);
+
+      this.realityGraphics.fillStyle(0x1c1915, 1);
+      this.realityGraphics.fillCircle(knobCenterX, knobCenterY, 34);
+      this.realityGraphics.lineStyle(2, 0x111111, 1);
+      this.realityGraphics.strokeCircle(knobCenterX, knobCenterY, 34);
+      this.realityGraphics.fillStyle(0x5f5869, 1);
+      this.realityGraphics.fillCircle(knobCenterX, knobCenterY, 22);
+      this.realityGraphics.lineStyle(3, 0xb8af9f, 0.65);
+      this.realityGraphics.lineBetween(
+        knobCenterX - 10,
+        knobCenterY - 10,
+        knobCenterX + 10,
+        knobCenterY + 10,
+      );
+      this.realityGraphics.lineBetween(
+        knobCenterX + 10,
+        knobCenterY - 10,
+        knobCenterX - 10,
+        knobCenterY + 10,
+      );
+
+      this.realityGraphics.fillStyle(0x1a1712, 1);
+      this.realityGraphics.fillRoundedRect(
+        this.panelX + 24,
+        this.panelY + 292,
+        152,
+        12,
+        4,
+      );
+      this.realityGraphics.fillStyle(0x5c5567, 1);
+      this.realityGraphics.fillRoundedRect(
+        this.panelX + 26,
+        this.panelY + 294,
+        44,
+        8,
+        3,
+      );
+
+      return;
+    }
 
     for (let gridIndex = 1; gridIndex < 4; gridIndex += 1) {
       const lineX = scopeX + (scopeWidth / 4) * gridIndex;
@@ -647,7 +804,7 @@ export class MainSceneUtilityPanelController {
     );
   }
 
-  private drawSignalPanel(isVisible: boolean) {
+  private drawSignalPanel(isVisible: boolean, isOffline: boolean) {
     const config = getUtilityMinigameConfig().signal;
     const layout = this.bindings.getSignalLayout();
     const path = this.bindings.getSignalPath();
@@ -657,9 +814,9 @@ export class MainSceneUtilityPanelController {
     const signalAccentColor = 0xffaa00;
     const signalPulseTime = this.scene.time.now * 0.0048;
     const isSignalGuidedDrag = path.length > 0;
-    const showStartPulse = !isSignalGuidedDrag;
-    const showNodePulse = isSignalGuidedDrag;
-    const showTargetPulse = isSignalGuidedDrag;
+    const showStartPulse = !isOffline && !isSignalGuidedDrag;
+    const showNodePulse = !isOffline && isSignalGuidedDrag;
+    const showTargetPulse = !isOffline && isSignalGuidedDrag;
 
     this.signalGraphics.clear();
     this.signalGraphics.setVisible(isVisible);
@@ -727,7 +884,7 @@ export class MainSceneUtilityPanelController {
         const blockLeft = metrics.blockOriginX + column * metrics.nodeSpacing;
         const blockTop = metrics.blockOriginY + row * metrics.nodeSpacing;
 
-        this.signalGraphics.fillStyle(0x7d8a9a, 1);
+        this.signalGraphics.fillStyle(isOffline ? 0x666d76 : 0x7d8a9a, 1);
         this.signalGraphics.fillRoundedRect(
           blockLeft,
           blockTop,
@@ -763,10 +920,14 @@ export class MainSceneUtilityPanelController {
           : isInPath
             ? signalAccentColor
             : isRequired
-              ? 0x48c05c
+              ? isOffline
+                ? 0x7d8974
+                : 0x48c05c
               : 0x050505;
 
       if (isSource) {
+        const sourceFillColor = isOffline ? 0x5e5643 : signalAccentColor;
+
         if (showStartPulse) {
           const pulse =
             0.5 + 0.5 * Math.sin(signalPulseTime + cellIndex * 0.73);
@@ -782,7 +943,7 @@ export class MainSceneUtilityPanelController {
           );
         }
 
-        this.signalGraphics.fillStyle(signalAccentColor, 1);
+        this.signalGraphics.fillStyle(sourceFillColor, 1);
         this.signalGraphics.fillRoundedRect(
           centerX - 13,
           centerY - 13,
@@ -801,6 +962,12 @@ export class MainSceneUtilityPanelController {
       } else if (isTarget) {
         const targetSize = 16;
         const targetRadius = 5;
+        const targetFillColor =
+          flashCellIndex === cellIndex
+            ? 0xbf5533
+            : isOffline
+              ? 0x5e5643
+              : signalAccentColor;
 
         if (showTargetPulse) {
           const pulse =
@@ -816,9 +983,6 @@ export class MainSceneUtilityPanelController {
             7,
           );
         }
-
-        const targetFillColor =
-          flashCellIndex === cellIndex ? 0xbf5533 : signalAccentColor;
 
         this.signalGraphics.fillStyle(targetFillColor, 1);
         this.signalGraphics.fillRoundedRect(
@@ -859,6 +1023,59 @@ export class MainSceneUtilityPanelController {
       label.setPosition(centerX, centerY);
       label.setOrigin(0.5);
       label.setText("");
+    }
+
+    if (isOffline) {
+      const interactionBounds = this.getSignalInteractionBounds();
+      const offlineBadgeWidth = 120;
+      const offlineBadgeHeight = 42;
+      const offlineBadgeX =
+        interactionBounds.left +
+        (interactionBounds.width - offlineBadgeWidth) / 2;
+      const offlineBadgeY =
+        interactionBounds.top +
+        (interactionBounds.height - offlineBadgeHeight) / 2;
+
+      this.panelMessageText
+        .setText("LINK\nOFFLINE")
+        .setPosition(
+          offlineBadgeX + offlineBadgeWidth / 2,
+          offlineBadgeY + offlineBadgeHeight / 2,
+        )
+        .setColor("#b8af9f")
+        .setVisible(true);
+
+      this.signalGraphics.fillStyle(0x1e1a15, 0.96);
+      this.signalGraphics.fillRoundedRect(
+        offlineBadgeX,
+        offlineBadgeY,
+        offlineBadgeWidth,
+        offlineBadgeHeight,
+        4,
+      );
+      this.signalGraphics.lineStyle(1, 0x6b6457, 0.5);
+      this.signalGraphics.strokeRoundedRect(
+        offlineBadgeX,
+        offlineBadgeY,
+        offlineBadgeWidth,
+        offlineBadgeHeight,
+        4,
+      );
+      this.signalGraphics.fillStyle(0xb8af9f, 1);
+      this.signalGraphics.fillRect(
+        offlineBadgeX + 16,
+        offlineBadgeY + 19,
+        88,
+        2,
+      );
+      this.signalGraphics.lineStyle(2, 0xb8af9f, 0.65);
+      this.signalGraphics.lineBetween(
+        offlineBadgeX + 12,
+        offlineBadgeY + 14,
+        offlineBadgeX + 108,
+        offlineBadgeY + 26,
+      );
+      return;
     }
 
     if (path.length > 1) {

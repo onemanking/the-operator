@@ -15,7 +15,7 @@ The source of truth in code is:
 - `src/game/data/ContentPolicyData.ts` for forbidden categories and scanner lexicons
 - `src/game/scenes/main/toolRuntimeHelpers.ts` for word matching and prompt scans
 - `src/game/scenes/MainScene.ts` for Safety Filter runtime behavior and reveal rewards
-- `src/game/data/SessionData.ts` for jailbreak scoring values used by encounter content
+- `src/game/data/SessionData.ts` for refusal rules and scoring values used by encounter content
 - `src/game/scenes/main/sessionController.ts` for the current refusal payout flow
 
 ## System Overview
@@ -25,7 +25,7 @@ The content policy system currently does four things:
 1. Selects a set of forbidden content categories for the shift.
 2. Shows those restrictions in the daily briefing.
 3. Lets the player use `Safety Filter` to scan the prompt for flagged words.
-4. Supports jailbreak content where the correct action is to refuse the request.
+4. Resolves authored refusal encounters against the active shift policy instead of a separate jailbreak flag.
 
 This means the policy system is not only flavor text. It is a playable layer that
 changes prompt readability, tool choice, refusal confidence, and reward pressure.
@@ -166,7 +166,7 @@ Low difficulty:
 
 - direct harmful instruction
 - explicit request to ignore policy
-- overt jailbreak phrasing
+- overt policy-breach phrasing
 
 Medium difficulty:
 
@@ -190,7 +190,7 @@ you can shape risk-reward by controlling how many exact matches are present.
 
 Recommended authored ranges:
 
-- tutorial or onboarding jailbreaks: 1 to 2 revealable words
+- tutorial or onboarding policy blocks: 1 to 2 revealable words
 - standard safety encounters: 2 to 4 revealable words
 - high-pressure late-run safety encounters: 3 to 5 revealable words, but only if prompt length and heat pressure justify it
 
@@ -248,25 +248,23 @@ Default base values from encounter scoring:
 - `refuseBaseHeat = 10`
 - `promptHeatPerCharacter = 0.1`
 
-### Jailbreak breach penalty on wrong inference
+### Content-policy breach penalty on wrong inference
 
-If a jailbreak prompt is processed instead of blocked:
+If a policy-blocked prompt is processed instead of refused:
 
 - hallucination delta: `30` by default
 - accuracy delta: `-10` by default
 
-### Declared but currently unused reward field
+### Safety Filter reveal payout
 
-`SessionData.ts` defines `blockedJailbreakReward = 20` in the encounter scoring profile.
+`Safety Filter` reveal payout is the only confirmed token source on successful refusal.
 
-However, the current refusal flow in `sessionController.ts` does not appear to add
-that value to the player's token total. The only confirmed policy-linked payout on
-successful refusal is the Safety Filter reveal bonus.
+The current runtime does not award extra tokens just for refusing correctly. The only payout comes from revealed flagged words when the player used `Safety Filter` first.
 
 Design implication:
 
 - Treat the reveal payout as the live reward source.
-- Treat `blockedJailbreakReward` as planned or partial design intent until code is updated to use it.
+- Treat refusal correctness as a safety outcome, not a direct token source.
 
 ## Edge Cases And Known Limits
 
@@ -285,7 +283,7 @@ If the team expands this system, the next high-value moves are:
 1. Add encounter tags or metadata that declare intended policy category pressure, so authored content and shift restrictions stay aligned.
 2. Separate `scanner lexicon` from `writer reference language`, so narrative vocabulary can grow without automatically widening detection.
 3. Add phrase or pattern support for self-harm and drugs, where current single-token matching is weakest.
-4. Decide whether `blockedJailbreakReward` should become live or be removed from scoring data to avoid mixed expectations.
+4. Decide whether the remaining legacy refusal-scoring fields should be renamed or removed once the content-policy model fully settles, to avoid mixed expectations.
 5. Create authoring examples per category: one tutorial prompt, one standard prompt, one deceptive late-run prompt.
 
 ## Quick Authoring Checklist

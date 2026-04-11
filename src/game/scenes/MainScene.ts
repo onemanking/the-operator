@@ -1855,8 +1855,6 @@ export class MainScene extends Phaser.Scene {
 
     const reward =
       tokenCount * getPromptToolRuntimeConfig().safety.tokenRewardPerReveal;
-    this.tokens += reward;
-    this.runState.tokens = this.tokens;
     this.pendingSafetyRevealTokenCount = 0;
 
     return { reward, revealedCount: tokenCount };
@@ -2199,11 +2197,18 @@ export class MainScene extends Phaser.Scene {
 
   private getEncounterToolRuntimeSnapshot(): EncounterToolRuntimeSnapshot {
     const searchSelectedWords = this.getSelectedSearchWords();
+    this.ensureSafetyScanResultCurrent();
 
     return {
       searchSelectedWords,
       searchWordHeat: getSearchSelectionHeat(searchSelectedWords.length),
       isComputeReady: this.computePrimed,
+      policyMatchedCategoryIds:
+        this.safetyScanResult?.matchesByCategory.map(
+          (match) => match.categoryId,
+        ) ?? [],
+      policyMatchedWordCount:
+        this.safetyScanResult?.matchedWordIndexes.length ?? 0,
     };
   }
 

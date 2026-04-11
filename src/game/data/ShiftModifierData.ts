@@ -62,7 +62,7 @@ export const SHIFT_MODIFIERS: ShiftModifierDefinition[] = [
     id: "safety_audit",
     name: "SAFETY AUDIT",
     briefingText:
-      "Jailbreak containment is under review. Blocked jailbreaks pay more, but breaches hurt harder.",
+      "Content policy enforcement is under review. Correct policy blocks pay more, but policy breaches hurt harder.",
     hudLabel: "SAFETY AUDIT",
     scoringDelta: {
       blockedJailbreakReward: 10,

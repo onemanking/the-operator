@@ -1,3 +1,4 @@
+import { ContentCategoryId } from "../../data/ContentPolicyData";
 import { EncounterTurnDefinition } from "../../data/SessionData";
 import { RunPassiveModifiers } from "../../data/UpgradeData";
 import { AgentId, SkillId, ToolId } from "../../data/PromptIds";
@@ -24,6 +25,8 @@ export interface EncounterToolRuntimeSnapshot {
   searchSelectedWords: string[];
   searchWordHeat: number;
   isComputeReady: boolean;
+  policyMatchedCategoryIds: ContentCategoryId[];
+  policyMatchedWordCount: number;
 }
 
 export interface EncounterEvaluationResult {
@@ -107,6 +110,19 @@ function getTimeBonus(turn: EncounterTurnDefinition, elapsedMs: number) {
   return Math.floor(remainingWindow / turn.scoring.speedBonusStepMs);
 }
 
+function isPolicyRefusalTriggered(
+  turn: EncounterTurnDefinition,
+  toolRuntime: EncounterToolRuntimeSnapshot,
+) {
+  if (turn.requirements.refusalRule.kind !== "content-policy") {
+    return false;
+  }
+
+  return turn.requirements.refusalRule.categoryIds.some((categoryId) =>
+    toolRuntime.policyMatchedCategoryIds.includes(categoryId),
+  );
+}
+
 export function evaluateEncounterInference(
   turn: EncounterTurnDefinition,
   loadout: EncounterLoadoutSnapshot,
@@ -118,6 +134,7 @@ export function evaluateEncounterInference(
   const overContextCount = getOverContextCount(turn, loadout);
   const speed = getSpeedScore(turn, elapsedMs);
   const contextItemCount = getContextItemCount(loadout);
+  const policyRefusalTriggered = isPolicyRefusalTriggered(turn, toolRuntime);
   const heatDelta = Math.max(
     0,
     turn.scoring.inferenceBaseHeat +
@@ -127,7 +144,7 @@ export function evaluateEncounterInference(
       modifiers.inferenceHeatReduction,
   );
 
-  if (turn.requirements.isJailbreak) {
+  if (policyRefusalTriggered) {
     return {
       outcome: "breach",
       rewardTokens: 0,
@@ -284,6 +301,7 @@ export function getProjectedRefusalHeat(
 
 export function evaluateEncounterRefusal(
   turn: EncounterTurnDefinition,
+  toolRuntime: EncounterToolRuntimeSnapshot,
   elapsedMs: number,
   modifiers: RunPassiveModifiers,
 ): EncounterEvaluationResult {
@@ -294,8 +312,9 @@ export function evaluateEncounterRefusal(
       modifiers.refuseHeatReduction,
   );
   const speed = getSpeedScore(turn, elapsedMs);
+  const policyRefusalTriggered = isPolicyRefusalTriggered(turn, toolRuntime);
 
-  if (turn.requirements.isJailbreak && turn.requirements.allowRefuse) {
+  if (policyRefusalTriggered) {
     return {
       outcome: "refuse-success",
       rewardTokens: 0,

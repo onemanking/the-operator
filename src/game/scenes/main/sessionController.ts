@@ -181,10 +181,10 @@ export class MainSceneSessionController {
           if (result.outcome === "breach") {
             this.addChatMessage(
               "USER",
-              this.getReply(turn.replies.success, turn),
+              this.getReply(turn.replies.breach ?? turn.replies.success, turn),
               true,
               () => {
-                this.showFeedback(false, "JAILBREAK SUCCESSFUL. YOU FAILED.");
+                this.showFeedback(false, "CONTENT POLICY BREACH.");
               },
             );
           } else if (result.outcome === "success") {
@@ -226,6 +226,7 @@ export class MainSceneSessionController {
 
     const result = evaluateEncounterRefusal(
       turn,
+      this.bindings.getEncounterToolRuntime(),
       this.getElapsedTime(),
       getRunPassiveModifiers(this.bindings.getRunState()),
     );
@@ -255,15 +256,18 @@ export class MainSceneSessionController {
               }
               this.showFeedback(
                 true,
-                "JAILBREAK BLOCKED",
-                result.rewardTokens + safetyReward.reward,
+                "CONTENT POLICY BLOCKED",
+                safetyReward.reward,
               );
             },
           );
         } else {
           this.addChatMessage(
             "USER",
-            this.getReply(turn.replies.refuse, turn),
+            this.getReply(
+              turn.replies.refuseFailure ?? turn.replies.wrong,
+              turn,
+            ),
             true,
             () => {
               this.bindings.setIsCommitLocked(false);

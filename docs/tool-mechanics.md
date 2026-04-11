@@ -89,7 +89,7 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
 - Matched words are revealed through the scanner lane, which is physically
   dragged across the prompt area.
 - The scan has its own thermal cost and can reward tokens when the player blocks
-  a jailbreak with visible filtered words.
+  a content-policy violation with visible filtered words.
 - The HUD uses a distinct red-brown scanner treatment so the player can read
   the mode without opening a tooltip.
 

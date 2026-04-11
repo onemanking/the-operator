@@ -36,7 +36,6 @@ import {
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
-import { getPolicyForDay } from "../data/ShiftPolicyData";
 import {
   getOwnedPassiveUpgradeHudItems,
   getRunPassiveModifiers,
@@ -538,8 +537,7 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.stickyNotesController = new MainSceneStickyNotesController(this, {
-      getPolicyText: () => getPolicyForDay(this.day),
-      getDirectiveText: () =>
+      getPolicyText: () =>
         getForbiddenCategoryBriefingText(this.runState.forbiddenCategoryIds),
       getShiftEventText: () => {
         const modifiers = getShiftModifierDefinitions(

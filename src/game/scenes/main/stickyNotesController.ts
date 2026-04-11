@@ -6,7 +6,6 @@ import {
 
 interface StickyNotesBindings {
   getPolicyText: () => string;
-  getDirectiveText: () => string;
   getShiftEventText: () => string;
 }
 
@@ -49,22 +48,13 @@ export class MainSceneStickyNotesController {
       y: 48,
       width: panelWidth,
       height: panelHeight,
-      header: "POLICY",
+      header: "CONTENT POLICY",
       body: this.bindings.getPolicyText(),
     });
 
     this.createTerminalPanel({
       x: panelX,
       y: 48 + panelHeight + panelGap,
-      width: panelWidth,
-      height: panelHeight,
-      header: "DIRECTIVE",
-      body: this.bindings.getDirectiveText(),
-    });
-
-    this.createTerminalPanel({
-      x: panelX,
-      y: 48 + (panelHeight + panelGap) * 2,
       width: panelWidth,
       height: panelHeight,
       header: "SHIFT EVENT",

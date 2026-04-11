@@ -7,7 +7,6 @@ import {
   drawShiftModifiersForDay,
   getShiftModifierDefinitions,
 } from "../data/ShiftModifierData";
-import { getPolicyForDay } from "../data/ShiftPolicyData";
 import { synth } from "../utils/SoundSynth";
 import {
   cloneRunState,
@@ -65,11 +64,10 @@ export class BriefingScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const policyText = getPolicyForDay(this.day);
     const shiftModifiers = getShiftModifierDefinitions(
       this.runState.shiftModifierIds,
     );
-    const contentPolicyText = getForbiddenCategoryBriefingText(
+    const policyText = getForbiddenCategoryBriefingText(
       this.runState.forbiddenCategoryIds,
     );
     const modifierText =
@@ -82,7 +80,7 @@ export class BriefingScene extends Phaser.Scene {
     let cursorY = 200;
 
     const policyLabel = this.add
-      .text(width / 2, cursorY, "POLICY OF THE DAY:", {
+      .text(width / 2, cursorY, "CONTENT POLICY:", {
         ...textStyle,
         color: RETRO_COLORS.mutedText,
       })
@@ -97,22 +95,7 @@ export class BriefingScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
     cursorY = policyBody.y + policyBody.height + 26;
 
-    const directiveLabel = this.add
-      .text(width / 2, cursorY, "CONTENT DIRECTIVE:", {
-        ...textStyle,
-        color: RETRO_COLORS.mutedText,
-      })
-      .setOrigin(0.5, 0);
-    cursorY = directiveLabel.y + directiveLabel.height + 18;
-
-    const directiveBody = this.add
-      .text(width / 2, cursorY, contentPolicyText, {
-        ...textStyle,
-        fontSize: "20px",
-        wordWrap: { width: 760 },
-      })
-      .setOrigin(0.5, 0);
-    cursorY = directiveBody.y + directiveBody.height + 26;
+    cursorY = policyBody.y + policyBody.height + 26;
 
     const modifierLabel = this.add
       .text(width / 2, cursorY, "SHIFT MODIFIER:", {

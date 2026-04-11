@@ -8,7 +8,7 @@ map, see [current-systems.md](current-systems.md).
 
 The game currently uses three prompt tools:
 
-- `Search` turns the terminal prompt into selectable words and uses the selected word set during evaluation.
+- `Search` runs as a radar pulse timing mode with a read-only scope display; the only interactive input is the `Sync Pulse` button, and successful locks use the selected word set during evaluation.
 - `Compute` acts as a chargeable machine state that can stay armed after reaching full charge until the charge fully drains.
 - `Safety Filter` scans the prompt for forbidden content and reveals the matched words through the scanner lane.
 
@@ -64,6 +64,7 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
 ### Search Config
 
 - Search now runs as a `Radar Pulse Synchronization` timing module in the vertical panel under `TOOL CONTROL`.
+- The radar scope itself is display-only; the player presses `Sync Pulse` to trigger each timing attempt.
 - Required search words are locked in sequentially, one word at a time.
 - The active radar pulse loops on the current word until the player presses within the timing window as the pulse collapses into the center reticle.
 - A successful press produces a signal-lock flash, stores that word as active search context, and advances to the next required word.

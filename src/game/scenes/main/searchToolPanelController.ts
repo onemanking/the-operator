@@ -27,8 +27,8 @@ export class MainSceneSearchToolPanelController {
   private readonly panelWidth = 200;
   private readonly panelHeight = 316;
   private readonly scopeCenterX = 904;
-  private readonly scopeCenterY = 356;
-  private readonly scopeRadius = 46;
+  private readonly scopeCenterY = 364;
+  private readonly scopeRadius = 44;
 
   private panelTitle!: Phaser.GameObjects.Text;
   private panelBody!: Phaser.GameObjects.Rectangle;
@@ -107,11 +107,11 @@ export class MainSceneSearchToolPanelController {
 
     this.wordText = this.scene.add.text(
       this.scopeCenterX,
-      this.panelY + 24,
+      this.panelY + 28,
       "NO TARGET",
       {
         fontFamily: '"Courier New", Courier, monospace',
-        fontSize: "12px",
+        fontSize: "11px",
         color: "#9cfb64",
         fontStyle: "bold",
         align: "center",
@@ -121,13 +121,14 @@ export class MainSceneSearchToolPanelController {
 
     this.statusText = this.scene.add.text(
       this.scopeCenterX,
-      this.panelY + 42,
+      this.panelY + 48,
       "STANDBY",
       {
         fontFamily: '"Courier New", Courier, monospace',
-        fontSize: "10px",
+        fontSize: "9px",
         color: "#8f8677",
         align: "center",
+        wordWrap: { width: 150 },
       },
     );
     this.statusText.setOrigin(0.5, 0);
@@ -137,7 +138,7 @@ export class MainSceneSearchToolPanelController {
         this.scene.add
           .rectangle(
             this.panelX + 56 + index * 28,
-            this.panelY + 72,
+            this.panelY + 78,
             18,
             6,
             0x2f2a21,
@@ -148,7 +149,7 @@ export class MainSceneSearchToolPanelController {
     }
 
     this.scopeHousing = this.scene.add
-      .rectangle(this.scopeCenterX, this.scopeCenterY, 160, 170, 0x0f140c)
+      .rectangle(this.scopeCenterX, this.scopeCenterY, 160, 162, 0x0f140c)
       .setOrigin(0.5)
       .setStrokeStyle(2, 0x3d3527);
     this.scopeGraphics = this.scene.add.graphics();
@@ -196,8 +197,6 @@ export class MainSceneSearchToolPanelController {
     };
 
     this.syncButton.on("pointerdown", pressButton);
-    this.scopeHousing.setInteractive({ useHandCursor: true });
-    this.scopeHousing.on("pointerdown", pressButton);
 
     this.displayObjects = [
       this.panelBody,

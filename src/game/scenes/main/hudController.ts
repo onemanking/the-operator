@@ -616,7 +616,7 @@ export class MainSceneHudController {
     const panelTitle = this.scene.add.text(
       panelX + 14,
       panelY + 10,
-      "COMPUTE CORE",
+      "CAPACITOR BANK",
       {
         fontFamily: "monospace",
         fontSize: "14px",
@@ -1774,65 +1774,124 @@ export class MainSceneHudController {
     const centerX = this.computePanelX + this.computePanelWidth / 2;
     const centerY = this.computePanelY + 136;
     const graphics = this.computeCoreGraphics;
-    const energyColor = isLatched ? 0x9cfb64 : isReady ? 0xfff0a0 : 0xff9b2f;
-    const shellColor = isLatched ? 0xe9ffd8 : isReady ? 0xf3e4a2 : 0xc58b41;
-    const mainRadius =
-      Phaser.Math.Linear(12, 28, chargeRatio) + pulseWave * 1.8;
-    const haloRadius = mainRadius + 10 + pulseWave * 6;
+    const energyColor = isLatched ? 0x9cfb64 : isReady ? 0xe0d58c : 0xc58b41;
+    const shellColor = isLatched ? 0xddeec3 : isReady ? 0xd1c18a : 0x8d6a3c;
+    const stackTopY = centerY - 30;
+    const stackWidth = 74;
+    const stackHeight = 10;
+    const stackGap = 13;
+    const cathodeRadius = 7 + chargeRatio * 3;
     const timeSeconds = this.scene.time.now / 1000;
+    const sweepOffset = Math.sin(timeSeconds * 1.35) * 16;
 
     graphics.clear();
     graphics.fillStyle(0x081108, 0.92);
     graphics.fillRect(centerX - 56, centerY - 54, 112, 108);
 
-    graphics.lineStyle(1, 0x244524, 0.45);
-    graphics.strokeCircle(centerX, centerY, 40);
-    graphics.strokeCircle(centerX, centerY, 28);
-    graphics.strokeCircle(centerX, centerY, 16);
-    graphics.lineBetween(centerX - 48, centerY, centerX + 48, centerY);
-    graphics.lineBetween(centerX, centerY - 48, centerX, centerY + 48);
-
-    if (chargeRatio > 0) {
-      graphics.fillStyle(energyColor, 0.08 + chargeRatio * 0.18);
-      graphics.fillCircle(centerX, centerY, haloRadius);
-      graphics.lineStyle(2, shellColor, 0.65 + chargeRatio * 0.3);
-      graphics.strokeCircle(centerX, centerY, mainRadius);
-      graphics.lineStyle(1, energyColor, 0.35 + chargeRatio * 0.28);
-      graphics.strokeCircle(centerX, centerY, mainRadius + 7 + pulseWave * 3);
+    graphics.lineStyle(1, 0x1e3019, 0.45);
+    for (let scanlineIndex = 0; scanlineIndex < 16; scanlineIndex += 1) {
+      const y = centerY - 48 + scanlineIndex * 6;
+      graphics.lineBetween(centerX - 52, y, centerX + 52, y);
     }
 
-    for (let arcIndex = 0; arcIndex < 3; arcIndex += 1) {
-      const arcRadius = 18 + arcIndex * 10 + chargeRatio * 5;
-      const startAngle = timeSeconds * (0.8 + arcIndex * 0.22) + arcIndex * 1.4;
-      const endAngle = startAngle + Math.PI * (0.55 + chargeRatio * 0.16);
-      graphics.lineStyle(
-        2,
-        energyColor,
-        Math.max(0, chargeRatio * 0.42 - arcIndex * 0.08),
-      );
-      graphics.beginPath();
-      graphics.arc(centerX, centerY, arcRadius, startAngle, endAngle, false);
-      graphics.strokePath();
-    }
+    graphics.lineStyle(1, 0x3a3224, 0.9);
+    graphics.strokeRect(centerX - 48, centerY - 42, 96, 84);
+    graphics.strokeRect(centerX - 38, centerY - 36, 76, 72);
 
-    if (isReady || isLatched) {
-      const spokeLength = 34 + pulseWave * 10;
-      graphics.lineStyle(1, shellColor, isLatched ? 0.9 : 0.72);
-      for (let spokeIndex = 0; spokeIndex < 8; spokeIndex += 1) {
-        const angle = timeSeconds * 0.9 + (spokeIndex / 8) * Math.PI * 2;
-        graphics.lineBetween(
-          centerX + Math.cos(angle) * (mainRadius - 4),
-          centerY + Math.sin(angle) * (mainRadius - 4),
-          centerX + Math.cos(angle) * spokeLength,
-          centerY + Math.sin(angle) * spokeLength,
+    graphics.fillStyle(0x2a2318, 0.95);
+    graphics.fillRect(centerX - 46, centerY - 7, 8, 14);
+    graphics.fillRect(centerX + 38, centerY - 7, 8, 14);
+    graphics.fillRect(centerX - 6, centerY - 42, 12, 8);
+    graphics.fillRect(centerX - 6, centerY + 34, 12, 8);
+
+    for (let bankIndex = 0; bankIndex < 5; bankIndex += 1) {
+      const y = stackTopY + bankIndex * stackGap;
+      const bankFill = Phaser.Math.Clamp(chargeRatio * 5 - bankIndex, 0, 1);
+
+      graphics.fillStyle(0x20180f, 0.95);
+      graphics.fillRect(centerX - stackWidth / 2, y, stackWidth, stackHeight);
+      graphics.lineStyle(1, 0x473624, 0.95);
+      graphics.strokeRect(centerX - stackWidth / 2, y, stackWidth, stackHeight);
+
+      if (bankFill > 0) {
+        const fillWidth = (stackWidth - 4) * bankFill;
+        graphics.fillStyle(energyColor, 0.2 + bankFill * 0.4);
+        graphics.fillRect(
+          centerX - stackWidth / 2 + 2,
+          y + 2,
+          fillWidth,
+          stackHeight - 4,
         );
       }
     }
 
-    graphics.fillStyle(shellColor, 0.24 + chargeRatio * 0.22);
-    graphics.fillCircle(centerX, centerY, Math.max(5, mainRadius - 7));
-    graphics.fillStyle(0xfff6da, chargeRatio > 0 ? 0.12 + pulseWave * 0.18 : 0);
-    graphics.fillCircle(centerX, centerY, Math.max(2, mainRadius * 0.34));
+    graphics.lineStyle(1, shellColor, 0.45 + chargeRatio * 0.25);
+    graphics.lineBetween(
+      centerX - 42,
+      centerY + sweepOffset,
+      centerX + 42,
+      centerY + sweepOffset,
+    );
+
+    if (chargeRatio > 0) {
+      graphics.fillStyle(energyColor, 0.1 + chargeRatio * 0.16);
+      graphics.fillCircle(
+        centerX,
+        centerY,
+        15 + chargeRatio * 10 + pulseWave * 2,
+      );
+    }
+
+    graphics.lineStyle(1, shellColor, 0.75);
+    graphics.strokeCircle(centerX, centerY, cathodeRadius + 6);
+    graphics.fillStyle(shellColor, 0.24 + chargeRatio * 0.18);
+    graphics.fillCircle(centerX, centerY, cathodeRadius);
+    graphics.fillStyle(
+      0xf2ddb2,
+      chargeRatio > 0 ? 0.18 + pulseWave * 0.12 : 0.08,
+    );
+    graphics.fillCircle(centerX, centerY, Math.max(2, cathodeRadius * 0.42));
+
+    if (isReady || isLatched) {
+      const latchAlpha = isLatched ? 0.92 : 0.7;
+      graphics.lineStyle(2, shellColor, latchAlpha);
+      graphics.lineBetween(
+        centerX - 44,
+        centerY - 38,
+        centerX - 44,
+        centerY + 38,
+      );
+      graphics.lineBetween(
+        centerX + 44,
+        centerY - 38,
+        centerX + 44,
+        centerY + 38,
+      );
+      graphics.lineBetween(
+        centerX - 44,
+        centerY - 38,
+        centerX - 34,
+        centerY - 38,
+      );
+      graphics.lineBetween(
+        centerX - 44,
+        centerY + 38,
+        centerX - 34,
+        centerY + 38,
+      );
+      graphics.lineBetween(
+        centerX + 44,
+        centerY - 38,
+        centerX + 34,
+        centerY - 38,
+      );
+      graphics.lineBetween(
+        centerX + 44,
+        centerY + 38,
+        centerX + 34,
+        centerY + 38,
+      );
+    }
   }
 
   private syncEconomySection() {

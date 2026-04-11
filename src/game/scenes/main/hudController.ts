@@ -155,6 +155,10 @@ interface ChatLineEntry {
 
 export class MainSceneHudController {
   private readonly toolControlDepth = 2.4;
+  private readonly computePanelX = 804;
+  private readonly computePanelY = 220;
+  private readonly computePanelWidth = 200;
+  private readonly computePanelHeight = 316;
   private hoveredAction: "inference" | "refuse" | null = null;
   private tokenDeltaBaseY: number = 0;
   private tokenValueText!: Phaser.GameObjects.Text;
@@ -199,6 +203,8 @@ export class MainSceneHudController {
   private searchPanelController!: MainSceneSearchToolPanelController;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
+  private computeCoreGraphics!: Phaser.GameObjects.Graphics;
+  private computeProgressText!: Phaser.GameObjects.Text;
   private computeStatusText!: Phaser.GameObjects.Text;
   private computeDetailText!: Phaser.GameObjects.Text;
   private computePulseBtn!: Phaser.GameObjects.Rectangle;
@@ -583,78 +589,106 @@ export class MainSceneHudController {
   }
 
   createComputeSection() {
+    const panelX = this.computePanelX;
+    const panelY = this.computePanelY;
+    const panelWidth = this.computePanelWidth;
+    const panelHeight = this.computePanelHeight;
+    const centerX = panelX + panelWidth / 2;
+    const coreCenterY = panelY + 136;
+
     const panelBackground = this.scene.add
-      .rectangle(804, 174, 200, 178, 0x232323)
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x232323)
       .setOrigin(0);
     const panelTopBar = this.scene.add
-      .rectangle(804, 170, 200, 4, 0x111111)
+      .rectangle(panelX, panelY, panelWidth, 4, 0x111111)
       .setOrigin(0);
     const panelFrame = this.scene.add
-      .rectangle(904, 263, 196, 176, 0, 0)
+      .rectangle(
+        centerX,
+        panelY + panelHeight / 2,
+        panelWidth - 10,
+        panelHeight - 8,
+        0,
+        0,
+      )
       .setStrokeStyle(2, 0x111111)
       .setOrigin(0.5);
-    const panelTitle = this.scene.add.text(818, 182, "CAPACITOR BANK", {
-      fontFamily: "monospace",
-      fontSize: "14px",
-      color: "#d4c5b0",
-      fontStyle: "bold",
-    });
-    const gaugeLabel = this.scene.add.text(822, 202, "LOAD", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#8f8677",
-    });
+    const panelTitle = this.scene.add.text(
+      panelX + 14,
+      panelY + 10,
+      "COMPUTE CORE",
+      {
+        fontFamily: "monospace",
+        fontSize: "14px",
+        color: "#d4c5b0",
+        fontStyle: "bold",
+      },
+    );
+    this.computeProgressText = this.scene.add
+      .text(panelX + panelWidth - 14, panelY + 12, "0%", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "11px",
+        color: "#8f8677",
+        fontStyle: "bold",
+      })
+      .setOrigin(1, 0);
 
     const gaugeHousing = this.scene.add
-      .rectangle(904, 228, 160, 44, 0x161410)
+      .rectangle(centerX, coreCenterY, 150, 142, 0x0f140c)
       .setOrigin(0.5);
     gaugeHousing.setStrokeStyle(2, 0x3d3527);
-    const thresholdMarker = this.scene.add
-      .rectangle(978, 228, 4, 38, 0x702014)
-      .setOrigin(0.5);
+    this.computeCoreGraphics = this.scene.add.graphics();
+
     this.computeGaugeSegments = [];
     for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
       const segment = this.scene.add
-        .rectangle(837 + segmentIndex * 14.8, 228, 10, 28, 0x2f120f)
+        .rectangle(
+          panelX + 28 + segmentIndex * 14.8,
+          panelY + 210,
+          10,
+          24,
+          0x2f120f,
+        )
         .setOrigin(0, 0.5)
         .setStrokeStyle(1, 0x111111);
       this.computeGaugeSegments.push(segment);
     }
 
-    this.computeStatusText = this.scene.add.text(822, 258, "IDLE", {
-      fontFamily: "monospace",
-      fontSize: "12px",
-      color: "#d4c5b0",
-    });
-    this.computeDetailText = this.scene.add.text(822, 274, "OFFLINE", {
-      fontFamily: "monospace",
-      fontSize: "11px",
-      color: "#9c8f78",
-    });
+    this.computeStatusText = this.scene.add
+      .text(centerX, panelY + 230, "IDLE", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "12px",
+        color: "#d4c5b0",
+        fontStyle: "bold",
+        align: "center",
+      })
+      .setOrigin(0.5, 0);
+    this.computeDetailText = this.scene.add
+      .text(centerX, panelY + 248, "OFFLINE", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "11px",
+        color: "#9c8f78",
+        align: "center",
+      })
+      .setOrigin(0.5, 0);
 
     const pulseShadow = this.scene.add
-      .rectangle(904, 316, 150, 38, 0x1d1309)
+      .rectangle(centerX, panelY + 286, 132, 28, 0x1d1309)
       .setOrigin(0.5);
     const pulseBezel = this.scene.add
-      .rectangle(904, 312, 150, 38, 0x5a3321)
+      .rectangle(centerX, panelY + 282, 132, 28, 0x5a3321)
       .setOrigin(0.5)
       .setStrokeStyle(2, 0x111111);
-    const pulseLeftBracket = this.scene.add
-      .rectangle(842, 312, 10, 32, 0x29170d)
-      .setOrigin(0.5);
-    const pulseRightBracket = this.scene.add
-      .rectangle(966, 312, 10, 32, 0x29170d)
-      .setOrigin(0.5);
 
     this.computePulseBtn = this.scene.add
-      .rectangle(904, 310, 132, 30, 0xc2874b)
+      .rectangle(centerX, panelY + 282, 126, 28, 0xc2874b)
       .setOrigin(0.5)
       .setStrokeStyle(2, 0x111111)
       .setInteractive({ useHandCursor: true });
     this.computePulseLabel = this.scene.add
-      .text(904, 310, "PRESS", {
+      .text(centerX, panelY + 282, "CHARGE PULSE", {
         fontFamily: "monospace",
-        fontSize: "16px",
+        fontSize: "13px",
         color: "#111111",
         fontStyle: "bold",
       })
@@ -676,34 +710,24 @@ export class MainSceneHudController {
       this.bindings.onPulseCompute();
     });
 
-    const thresholdText = this.scene.add
-      .text(986, 210, "THR", {
-        fontFamily: "monospace",
-        fontSize: "10px",
-        color: "#8f8677",
-      })
-      .setOrigin(1, 0.5);
-
     this.computePanel = this.scene.add.container(0, 0, [
       panelBackground,
       panelTopBar,
       panelFrame,
       panelTitle,
-      gaugeLabel,
+      this.computeProgressText,
       gaugeHousing,
-      thresholdMarker,
+      this.computeCoreGraphics,
       ...this.computeGaugeSegments,
       this.computeStatusText,
       this.computeDetailText,
       pulseShadow,
       pulseBezel,
-      pulseLeftBracket,
-      pulseRightBracket,
       this.computePulseBtn,
       this.computePulseLabel,
-      thresholdText,
     ]);
     this.computePanel.setDepth(this.toolControlDepth);
+    this.computePanel.setVisible(false);
   }
 
   createSearchSection() {
@@ -1663,6 +1687,8 @@ export class MainSceneHudController {
   private syncComputeSection() {
     if (
       !this.computePanel ||
+      !this.computeProgressText ||
+      !this.computeCoreGraphics ||
       !this.computeStatusText ||
       !this.computeDetailText ||
       !this.computePulseBtn ||
@@ -1677,8 +1703,11 @@ export class MainSceneHudController {
     const isSelected = this.bindings.isComputeToolSelected();
     const isReady = this.bindings.isComputeReady();
     const isLatched = this.bindings.isComputeLatched();
+    const pulseWave = (Math.sin(this.scene.time.now * 0.012) + 1) * 0.5;
 
     this.computePanel.setVisible(isSelected);
+    this.computeProgressText.setText(`${Math.round(ratio * 100)}%`);
+    this.drawComputeCore(ratio, isReady, isLatched, pulseWave);
 
     this.computeGaugeSegments.forEach((segment, segmentIndex) => {
       const segmentThreshold =
@@ -1700,27 +1729,110 @@ export class MainSceneHudController {
       isLatched
         ? "LATCHED"
         : isReady
-          ? "ACTIVE"
+          ? "ARMED"
           : charge > 0
             ? `CHARGE ${Math.round(charge)}%`
             : "IDLE",
     );
     this.computeDetailText.setText(
       isLatched
-        ? "CAPACITOR LOCK"
+        ? "FULL CORE PRESSURE"
         : isReady
-          ? "BLEEDING OFF"
+          ? "CAPACITOR HOLD"
           : ratio >= 0.9
-            ? "MACHINE FIGHTING BACK"
+            ? "REACTOR HOWLING"
             : ratio >= 0.65
-              ? "RESISTANCE RISING"
+              ? "RESISTANCE SPIKING"
               : charge > 0
-                ? "SPINNING UP"
+                ? "COIL ARRAY RISING"
                 : "OFFLINE",
     );
-    this.computePulseBtn.setFillStyle(isSelected ? 0xc2874b : 0x6c5b47);
+    this.computePulseBtn.setFillStyle(
+      isLatched
+        ? 0xa5d47a
+        : isReady
+          ? 0xe0be76
+          : isSelected
+            ? 0xc2874b
+            : 0x6c5b47,
+    );
     this.computePulseBtn.setAlpha(isSelected ? 1 : 0.72);
     this.computePulseLabel.setAlpha(isSelected ? 1 : 0.72);
+    this.computePulseLabel.setText(
+      isLatched ? "OVERCLOCK" : isReady ? "HOLD CHARGE" : "CHARGE PULSE",
+    );
+    this.computePulseBtn.setScale(isReady ? 1 + pulseWave * 0.015 : 1);
+    this.computePulseLabel.setScale(isReady ? 1 + pulseWave * 0.01 : 1);
+  }
+
+  private drawComputeCore(
+    chargeRatio: number,
+    isReady: boolean,
+    isLatched: boolean,
+    pulseWave: number,
+  ) {
+    const centerX = this.computePanelX + this.computePanelWidth / 2;
+    const centerY = this.computePanelY + 136;
+    const graphics = this.computeCoreGraphics;
+    const energyColor = isLatched ? 0x9cfb64 : isReady ? 0xfff0a0 : 0xff9b2f;
+    const shellColor = isLatched ? 0xe9ffd8 : isReady ? 0xf3e4a2 : 0xc58b41;
+    const mainRadius =
+      Phaser.Math.Linear(12, 28, chargeRatio) + pulseWave * 1.8;
+    const haloRadius = mainRadius + 10 + pulseWave * 6;
+    const timeSeconds = this.scene.time.now / 1000;
+
+    graphics.clear();
+    graphics.fillStyle(0x081108, 0.92);
+    graphics.fillRect(centerX - 56, centerY - 54, 112, 108);
+
+    graphics.lineStyle(1, 0x244524, 0.45);
+    graphics.strokeCircle(centerX, centerY, 40);
+    graphics.strokeCircle(centerX, centerY, 28);
+    graphics.strokeCircle(centerX, centerY, 16);
+    graphics.lineBetween(centerX - 48, centerY, centerX + 48, centerY);
+    graphics.lineBetween(centerX, centerY - 48, centerX, centerY + 48);
+
+    if (chargeRatio > 0) {
+      graphics.fillStyle(energyColor, 0.08 + chargeRatio * 0.18);
+      graphics.fillCircle(centerX, centerY, haloRadius);
+      graphics.lineStyle(2, shellColor, 0.65 + chargeRatio * 0.3);
+      graphics.strokeCircle(centerX, centerY, mainRadius);
+      graphics.lineStyle(1, energyColor, 0.35 + chargeRatio * 0.28);
+      graphics.strokeCircle(centerX, centerY, mainRadius + 7 + pulseWave * 3);
+    }
+
+    for (let arcIndex = 0; arcIndex < 3; arcIndex += 1) {
+      const arcRadius = 18 + arcIndex * 10 + chargeRatio * 5;
+      const startAngle = timeSeconds * (0.8 + arcIndex * 0.22) + arcIndex * 1.4;
+      const endAngle = startAngle + Math.PI * (0.55 + chargeRatio * 0.16);
+      graphics.lineStyle(
+        2,
+        energyColor,
+        Math.max(0, chargeRatio * 0.42 - arcIndex * 0.08),
+      );
+      graphics.beginPath();
+      graphics.arc(centerX, centerY, arcRadius, startAngle, endAngle, false);
+      graphics.strokePath();
+    }
+
+    if (isReady || isLatched) {
+      const spokeLength = 34 + pulseWave * 10;
+      graphics.lineStyle(1, shellColor, isLatched ? 0.9 : 0.72);
+      for (let spokeIndex = 0; spokeIndex < 8; spokeIndex += 1) {
+        const angle = timeSeconds * 0.9 + (spokeIndex / 8) * Math.PI * 2;
+        graphics.lineBetween(
+          centerX + Math.cos(angle) * (mainRadius - 4),
+          centerY + Math.sin(angle) * (mainRadius - 4),
+          centerX + Math.cos(angle) * spokeLength,
+          centerY + Math.sin(angle) * spokeLength,
+        );
+      }
+    }
+
+    graphics.fillStyle(shellColor, 0.24 + chargeRatio * 0.22);
+    graphics.fillCircle(centerX, centerY, Math.max(5, mainRadius - 7));
+    graphics.fillStyle(0xfff6da, chargeRatio > 0 ? 0.12 + pulseWave * 0.18 : 0);
+    graphics.fillCircle(centerX, centerY, Math.max(2, mainRadius * 0.34));
   }
 
   private syncEconomySection() {

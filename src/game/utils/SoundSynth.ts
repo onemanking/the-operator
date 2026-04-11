@@ -166,6 +166,64 @@ export class SoundSynth {
     }
   }
 
+  playComputeArm() {
+    const baseFrequency = 148 + Math.random() * 16;
+    this.playBeep(baseFrequency, "sawtooth", 0.05, 0.06);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 1.48, "triangle", 0.07, 0.045);
+    }, 34);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 2.12, "sine", 0.08, 0.03);
+    }, 84);
+  }
+
+  playComputeChargePulse(chargeRatio: number) {
+    const clampedRatio = Math.max(0, Math.min(1, chargeRatio));
+    const baseFrequency = 180 + clampedRatio * 320;
+    const accentFrequency = baseFrequency * (1.22 + clampedRatio * 0.38);
+    const baseVolume = 0.028 + clampedRatio * 0.04;
+
+    this.playBeep(baseFrequency, "square", 0.05, baseVolume);
+    setTimeout(() => {
+      this.playBeep(accentFrequency, "triangle", 0.07, baseVolume * 0.72);
+    }, 24);
+
+    if (clampedRatio >= 0.82) {
+      setTimeout(() => {
+        this.playBeep(accentFrequency * 1.18, "sine", 0.08, baseVolume * 0.54);
+      }, 68);
+    }
+  }
+
+  playComputeReady() {
+    this.playBeep(220, "sawtooth", 0.12, 0.08);
+    this.playBeep(330, "triangle", 0.16, 0.055);
+    setTimeout(() => {
+      this.playBeep(660, "sine", 0.16, 0.05);
+    }, 44);
+    setTimeout(() => {
+      this.playBeep(990, "triangle", 0.18, 0.04);
+    }, 96);
+  }
+
+  playSafetyArm() {
+    const baseFrequency = 404 + Math.random() * 22;
+    this.playBeep(baseFrequency, "triangle", 0.04, 0.04);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 0.72, "square", 0.08, 0.032);
+    }, 28);
+  }
+
+  playSafetySuccess(revealCount: number = 1) {
+    const clampedRevealCount = Math.max(1, Math.min(4, revealCount));
+    const baseFrequency = 860 + clampedRevealCount * 54;
+
+    this.playBeep(baseFrequency, "square", 0.04, 0.03);
+    setTimeout(() => {
+      this.playBeep(baseFrequency * 1.24, "triangle", 0.06, 0.026);
+    }, 26);
+  }
+
   playUtilityArm(
     utilityId: "coolant_purge" | "reality_patch" | "signal_boost",
   ) {

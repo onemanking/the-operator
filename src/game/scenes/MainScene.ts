@@ -130,6 +130,7 @@ export class MainScene extends Phaser.Scene {
   private searchNoTargetSweepProgress: number = 0;
   private searchCycleCount: number = 0;
   private searchPanelWasSelected: boolean = false;
+  private computePanelWasSelected: boolean = false;
   private safetyScanResult: PromptForbiddenScanResult | null = null;
   private safetyScanPrompt: string = "";
   private revealedSafetyWordIndexes = new Set<number>();
@@ -229,6 +230,7 @@ export class MainScene extends Phaser.Scene {
     this.searchNoTargetSweepProgress = 0;
     this.searchCycleCount = 0;
     this.searchPanelWasSelected = false;
+    this.computePanelWasSelected = false;
     this.safetyScanResult = null;
     this.safetyScanPrompt = "";
     this.revealedSafetyWordIndexes = new Set();
@@ -601,6 +603,17 @@ export class MainScene extends Phaser.Scene {
         this.handleSearchToolClosed();
       }
       this.searchPanelWasSelected = isSearchSelected;
+    }
+
+    const isComputeSelected =
+      this.selectedPromptToolIds.includes(ToolId.Compute) && !this.isOverheated;
+    if (isComputeSelected !== this.computePanelWasSelected) {
+      if (isComputeSelected) {
+        this.handleComputeToolOpened();
+      } else {
+        this.handleComputeToolClosed();
+      }
+      this.computePanelWasSelected = isComputeSelected;
     }
 
     if (
@@ -1422,11 +1435,24 @@ export class MainScene extends Phaser.Scene {
     this.events.emit("updateBars");
   }
 
+  private handleComputeToolOpened() {
+    synth.playComputeArm();
+  }
+
+  private handleComputeToolClosed() {}
+
   private pulseCompute() {
     const computeConfig = getPromptToolRuntimeConfig().compute;
+    const wasReady = this.computePrimed || isComputeReady(this.computeCharge);
     const nextCharge = clampComputeCharge(
       this.computeCharge + getComputePulseChargeGain(this.computeCharge),
     );
+    const nextRatio =
+      computeConfig.chargeThreshold <= 0
+        ? 0
+        : nextCharge / computeConfig.chargeThreshold;
+    const reachedReady =
+      !wasReady && nextCharge >= computeConfig.chargeThreshold;
 
     if (nextCharge >= computeConfig.chargeThreshold) {
       this.computePrimed = true;
@@ -1437,6 +1463,20 @@ export class MainScene extends Phaser.Scene {
 
     if (nextCharge >= computeConfig.chargeThreshold) {
       this.computeDecayResumesAt = this.time.now + computeConfig.readyHoldMs;
+    }
+
+    if (reachedReady) {
+      synth.playComputeReady();
+      this.cameras.main.shake(120, 0.0015);
+      this.sessionController.postSystemMessage(
+        "COMPUTE SPIKE: CAPACITOR BANK ARMED.",
+      );
+    } else {
+      synth.playComputeChargePulse(nextRatio);
+
+      if (nextRatio >= 0.82) {
+        this.cameras.main.shake(40, 0.00055 + nextRatio * 0.00035);
+      }
     }
 
     this.setHeat(this.heat + computeConfig.tapHeat);
@@ -1507,7 +1547,7 @@ export class MainScene extends Phaser.Scene {
     this.safetyScanSpeedPxPerSecond = 0;
     this.safetyScanNoiseIntensity = 0;
     this.safetyLastScanMoveAt = this.time.now;
-    synth.playBeep(420, "triangle", 0.06, 0.04);
+    synth.playSafetyArm();
     this.events.emit("updateBars");
   }
 
@@ -1633,7 +1673,7 @@ export class MainScene extends Phaser.Scene {
     if (revealedAny) {
       this.pendingSafetyRevealTokenCount += rewardedRevealCount;
 
-      synth.playBeep(980, "square", 0.04, 0.03);
+      synth.playSafetySuccess(rewardedRevealCount);
       this.events.emit("updateBars");
     }
   }

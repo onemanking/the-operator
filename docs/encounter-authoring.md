@@ -139,6 +139,26 @@ The following fields are system metadata, not player-facing fiction:
 Authors should use metadata to describe the intended solution path, but should
 never leak that metadata into prompt or reply text.
 
+When designing the intended agent or skill path for an encounter:
+
+- Prefer agent and skill concepts with plain, obvious jobs that a player can infer from the ask.
+- The correct solution should feel readable from the fiction, not like a hidden trivia test about internal labels.
+- Prefer broad, understandable capability buckets over overly narrow or academic distinctions.
+- If two agents or skills would look nearly identical to a player reading the prompt, the split is probably too subtle for production content.
+- The player should be able to make a reasonable first guess from the prompt wording, even if they do not know advanced vocabulary.
+
+Good direction:
+
+- A repair request points clearly toward a fixing or technical support role.
+- A contract summary points clearly toward a legal or admin support role.
+- A reactor output estimate points clearly toward a compute-heavy technical role.
+
+Bad direction:
+
+- Two different skills are separated only by niche jargon the sender would never naturally use.
+- An encounter depends on a distinction that only makes sense if the player already knows internal taxonomy.
+- The intended agent or skill reads like a design riddle instead of a believable job function.
+
 ## Policy Encounter Rules
 
 Policy encounters need extra discipline because they are the easiest place for
@@ -194,6 +214,7 @@ Before adding a turn, verify all of the following:
 6. The turn matches the tone and setting in [world-lore.md](world-lore.md).
 7. The core action is visible immediately when the player scans the first line.
 8. The wording uses the simplest vocabulary that still fits the sender and setting.
+9. The intended agent and skill path is easy to infer from the request, even for players with limited English vocabulary.
 
 ## Rewrite Heuristics
 

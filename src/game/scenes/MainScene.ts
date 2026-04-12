@@ -575,7 +575,7 @@ export class MainScene extends Phaser.Scene {
     this.addCRTEffects();
 
     if (this.runState.shiftEncounters.length === 0) {
-      this.runState.shiftEncounters = generateShiftEncounters({
+      const generatedShift = generateShiftEncounters({
         day: this.day,
         forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
         capabilities: {
@@ -583,7 +583,13 @@ export class MainScene extends Phaser.Scene {
           skillCapacity: this.runState.loadout.skillCapacity,
           unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
         },
+        excludedTurnIds: this.runState.seenTurnIds,
       });
+      this.runState.shiftEncounters = generatedShift.encounters;
+      this.runState.seenTurnIds = [
+        ...this.runState.seenTurnIds,
+        ...generatedShift.drawnTurnIds,
+      ];
     }
 
     if (this.runState.shiftEncounterIds.length === 0) {

@@ -52,7 +52,7 @@ export class BriefingScene extends Phaser.Scene {
       );
     }
     if (this.runState.shiftEncounters.length === 0) {
-      this.runState.shiftEncounters = generateShiftEncounters({
+      const generatedShift = generateShiftEncounters({
         day: this.runState.day,
         forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
         capabilities: {
@@ -60,7 +60,13 @@ export class BriefingScene extends Phaser.Scene {
           skillCapacity: this.runState.loadout.skillCapacity,
           unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
         },
+        excludedTurnIds: this.runState.seenTurnIds,
       });
+      this.runState.shiftEncounters = generatedShift.encounters;
+      this.runState.seenTurnIds = [
+        ...this.runState.seenTurnIds,
+        ...generatedShift.drawnTurnIds,
+      ];
       this.runState.shiftEncounterIds = this.runState.shiftEncounters.map(
         (encounter) => encounter.id,
       );

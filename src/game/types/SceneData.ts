@@ -66,6 +66,7 @@ export interface RunState {
   maintenanceOfferIds: string[];
   maintenancePurchasedItemId: string | null;
   maintenancePurchasedItemType: "passive" | "utility" | null;
+  seenTurnIds: string[];
   shiftEncounterIds: string[];
   shiftEncounters: EncounterDefinition[];
   shiftModifierIds: string[];
@@ -160,6 +161,7 @@ export function createInitialRunState(): RunState {
     maintenanceOfferIds: [],
     maintenancePurchasedItemId: null,
     maintenancePurchasedItemType: null,
+    seenTurnIds: [],
     shiftEncounterIds: [],
     shiftEncounters: [],
     shiftModifierIds: [],
@@ -203,6 +205,7 @@ export function cloneRunState(runState: RunState): RunState {
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
+    seenTurnIds: [...runState.seenTurnIds],
     shiftEncounterIds: [...runState.shiftEncounterIds],
     shiftEncounters: cloneEncounterDefinitions(runState.shiftEncounters),
     shiftModifierIds: [...runState.shiftModifierIds],
@@ -330,6 +333,7 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
       data.maintenancePurchasedItemId ?? initial.maintenancePurchasedItemId,
     maintenancePurchasedItemType:
       data.maintenancePurchasedItemType ?? initial.maintenancePurchasedItemType,
+    seenTurnIds: [...(data.seenTurnIds ?? initial.seenTurnIds)],
     shiftEncounterIds: [
       ...(data.shiftEncounterIds ?? initial.shiftEncounterIds),
     ],

@@ -77,6 +77,8 @@ and [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encount
   at runtime by drawing turns from the allowed tier pools.
 - Before a turn can enter the live generation pool, it must fit the current
   run's agent-slot capacity, skill-slot capacity, and unlocked prompt tools.
+- Atomic turns that already appeared earlier in the same run are excluded from
+  future shift generation.
 - The number of turns per encounter is randomized, so a single encounter can mix
   difficulty like `2 -> 3 -> 2` when the active shift profile allows it.
 - The generated encounter list is stored in `RunState` for the lifetime of the

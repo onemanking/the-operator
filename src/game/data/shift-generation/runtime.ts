@@ -74,6 +74,11 @@ export interface ShiftGenerationCapabilities {
   unlockedToolIds: readonly ToolId[];
 }
 
+export interface GeneratedShiftResult {
+  encounters: EncounterDefinition[];
+  drawnTurnIds: string[];
+}
+
 const ATOMIC_TURN_FILES = (import.meta as ImportMetaWithGlob).glob(
   "/content/encounters/tier*.json",
   {
@@ -168,13 +173,15 @@ export function generateShiftEncounters(options: {
   day: number;
   forbiddenCategoryIds: readonly ContentCategoryId[];
   capabilities: ShiftGenerationCapabilities;
-}): EncounterDefinition[] {
+  excludedTurnIds?: readonly string[];
+}): GeneratedShiftResult {
   const profile = getShiftGenerationProfile(options.day);
   const availableTiers = getAvailableTiers({
     minTier: profile.minTier,
     maxTier: profile.maxTier,
     forbiddenCategoryIds: options.forbiddenCategoryIds,
     capabilities: options.capabilities,
+    excludedTurnIds: options.excludedTurnIds ?? [],
   });
 
   if (availableTiers.length === 0) {
@@ -183,9 +190,10 @@ export function generateShiftEncounters(options: {
     );
   }
 
-  const usedTurnIds = new Set<string>();
+  const usedTurnIds = new Set<string>(options.excludedTurnIds ?? []);
+  const drawnTurnIds: string[] = [];
 
-  return Array.from({ length: profile.encounterCount }, (_, encounterIndex) => {
+  const encounters = Array.from({ length: profile.encounterCount }, (_, encounterIndex) => {
     const generatedEncounterId = `generated-day-${options.day}-encounter-${encounterIndex + 1}`;
     const encounterTurnCount = pickWeightedNumber(profile.turnCountWeights);
     const turns = Array.from({ length: encounterTurnCount }, (_, turnIndex) => {
@@ -198,6 +206,7 @@ export function generateShiftEncounters(options: {
         usedTurnIds,
       });
       usedTurnIds.add(atomicTurn.id);
+      drawnTurnIds.push(atomicTurn.id);
 
       return materializeEncounterTurn(
         atomicTurn,
@@ -216,6 +225,11 @@ export function generateShiftEncounters(options: {
       turns,
     };
   });
+
+  return {
+    encounters,
+    drawnTurnIds,
+  };
 }
 
 function loadTieredTurnPool() {
@@ -645,6 +659,7 @@ function getAvailableTiers(options: {
   maxTier: number;
   forbiddenCategoryIds: readonly ContentCategoryId[];
   capabilities: ShiftGenerationCapabilities;
+  excludedTurnIds: readonly string[];
 }) {
   const requestedTiers = Array.from(
     { length: options.maxTier - options.minTier + 1 },
@@ -656,7 +671,7 @@ function getAvailableTiers(options: {
         tier,
         options.forbiddenCategoryIds,
         options.capabilities,
-        new Set<string>(),
+        new Set<string>(options.excludedTurnIds),
         true,
       ).length > 0,
   );
@@ -673,7 +688,7 @@ function getAvailableTiers(options: {
           tier,
           options.forbiddenCategoryIds,
           options.capabilities,
-          new Set<string>(),
+          new Set<string>(options.excludedTurnIds),
           true,
         ).length > 0,
     );

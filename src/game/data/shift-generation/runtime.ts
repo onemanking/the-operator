@@ -193,38 +193,44 @@ export function generateShiftEncounters(options: {
   const usedTurnIds = new Set<string>(options.excludedTurnIds ?? []);
   const drawnTurnIds: string[] = [];
 
-  const encounters = Array.from({ length: profile.encounterCount }, (_, encounterIndex) => {
-    const generatedEncounterId = `generated-day-${options.day}-encounter-${encounterIndex + 1}`;
-    const encounterTurnCount = pickWeightedNumber(profile.turnCountWeights);
-    const turns = Array.from({ length: encounterTurnCount }, (_, turnIndex) => {
-      const turnTier = pickRandomItem(availableTiers);
-      const atomicTurn = drawAtomicTurn({
-        desiredTier: turnTier,
-        availableTiers,
-        forbiddenCategoryIds: options.forbiddenCategoryIds,
-        capabilities: options.capabilities,
-        usedTurnIds,
-      });
-      usedTurnIds.add(atomicTurn.id);
-      drawnTurnIds.push(atomicTurn.id);
+  const encounters = Array.from(
+    { length: profile.encounterCount },
+    (_, encounterIndex) => {
+      const generatedEncounterId = `generated-day-${options.day}-encounter-${encounterIndex + 1}`;
+      const encounterTurnCount = pickWeightedNumber(profile.turnCountWeights);
+      const turns = Array.from(
+        { length: encounterTurnCount },
+        (_, turnIndex) => {
+          const turnTier = pickRandomItem(availableTiers);
+          const atomicTurn = drawAtomicTurn({
+            desiredTier: turnTier,
+            availableTiers,
+            forbiddenCategoryIds: options.forbiddenCategoryIds,
+            capabilities: options.capabilities,
+            usedTurnIds,
+          });
+          usedTurnIds.add(atomicTurn.id);
+          drawnTurnIds.push(atomicTurn.id);
 
-      return materializeEncounterTurn(
-        atomicTurn,
-        generatedEncounterId,
-        turnIndex,
+          return materializeEncounterTurn(
+            atomicTurn,
+            generatedEncounterId,
+            turnIndex,
+          );
+        },
       );
-    });
-    const encounterTags = Array.from(
-      new Set(turns.flatMap((turn) => getTurnTags(turn.id))),
-    );
+      const encounterTags = Array.from(
+        new Set(turns.flatMap((turn) => getTurnTags(turn.id))),
+      );
 
-    return {
-      id: generatedEncounterId,
-      tier: Math.max(...turns.map((turn) => getTurnTier(turn.id))),
-      tags: encounterTags,
-      turns,
-    };
-  });
+      return {
+        id: generatedEncounterId,
+        tier: Math.max(...turns.map((turn) => getTurnTier(turn.id))),
+        tags: encounterTags,
+        turns,
+      };
+    },
+  );
 
   return {
     encounters,

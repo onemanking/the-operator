@@ -17,19 +17,11 @@ const SKILL_DISK_COLOR = 0x7a8a99;
 export const STORAGE_DISKS: StorageDiskDefinition[] = [
   { label: AgentId.General, type: "agent", color: AGENT_DISK_COLOR },
   { label: AgentId.Technical, type: "agent", color: AGENT_DISK_COLOR },
-  { label: AgentId.Legal, type: "agent", color: AGENT_DISK_COLOR },
-  { label: AgentId.Finance, type: "agent", color: AGENT_DISK_COLOR },
-  { label: AgentId.Logistics, type: "agent", color: AGENT_DISK_COLOR },
   { label: AgentId.PublicRelations, type: "agent", color: AGENT_DISK_COLOR },
   { label: AgentId.Security, type: "agent", color: AGENT_DISK_COLOR },
   { label: SkillId.Propaganda, type: "skill", color: SKILL_DISK_COLOR },
   { label: SkillId.Engineering, type: "skill", color: SKILL_DISK_COLOR },
-  { label: SkillId.Negotiation, type: "skill", color: SKILL_DISK_COLOR },
-  { label: SkillId.Finance, type: "skill", color: SKILL_DISK_COLOR },
-  { label: SkillId.Legal, type: "skill", color: SKILL_DISK_COLOR },
-  { label: SkillId.Logistics, type: "skill", color: SKILL_DISK_COLOR },
   { label: SkillId.Surveillance, type: "skill", color: SKILL_DISK_COLOR },
-  { label: SkillId.Analytics, type: "skill", color: SKILL_DISK_COLOR },
 ];
 
 export const STORAGE_TABS: StorageTabDefinition[] = [

@@ -10,7 +10,7 @@ Set in a Cassette Futurism (Lo-Fi / Analog Cyberpunk) world, you play as a mainf
 The game is divided into daily cycles (Shifts):
 
 ### 1. System Briefing (Morning)
-Read the "Policy of the Day" and shift modifier. These rules change daily and dictate how you must handle requests and what kind of pressure the server is under (e.g., "No weapons", "Strict Routing", "Thermal Surge"). When the briefing is assembled, the game also generates that shift's encounter list at runtime from tiered atomic turn data.
+Read the "Policy of the Day" and shift modifier. These rules change daily and dictate how you must handle requests and what kind of pressure the server is under (e.g., "No weapons", "Strict Routing", "Thermal Surge"). When the briefing is assembled, the game also generates that shift's encounter list at runtime from tiered atomic turn data, filtering out turns that exceed the run's current agent or skill slot capacity or require prompt tools that are not unlocked.
 
 ### 2. The Inference Window (Core Gameplay)
 - **Request Arrival**: Prompts from users appear on your CRT terminal.
@@ -47,7 +47,7 @@ Review your performance. You earn credits for successful inferences and correct 
   - `storageController.ts` owns disk drives, storage rack, and tool-selection interactions.
   - `sessionController.ts` owns session flow, response handling, and progression.
 - **Encounter Runtime Contracts**: `src/game/data/SessionData.ts` now only defines the shared encounter types, scoring shape, and default reply pools used by the runtime.
-- **Procedural Shift Content**: `content/encounters/tier*.json` stores atomic turn data by difficulty tier, and `src/game/data/shift-generation/runtime.ts` assembles those turns into a fresh shift encounter list at runtime.
+- **Procedural Shift Content**: `content/encounters/tier*.json` stores atomic turn data by difficulty tier, and `src/game/data/shift-generation/runtime.ts` assembles those turns into a fresh shift encounter list at runtime after applying policy and loadout-feasibility filtering.
 - **Deterministic Tool Tests**: `src/game/data/TestEncounterData.ts` stores the fixed encounters used by the guard, compute, search, and utility smoke scripts.
 - **Systems Map**: [docs/current-systems.md](docs/current-systems.md) is the canonical map of the current gameplay, UI, data, and scene systems.
 - **Tool Mechanics Reference**: [docs/tool-mechanics.md](docs/tool-mechanics.md) captures the current Search/Compute/Safety behavior and the shared rules to follow when adding future tools.

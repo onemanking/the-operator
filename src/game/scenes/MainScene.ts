@@ -578,6 +578,11 @@ export class MainScene extends Phaser.Scene {
       this.runState.shiftEncounters = generateShiftEncounters({
         day: this.day,
         forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
+        capabilities: {
+          agentCapacity: this.runState.loadout.agentCapacity,
+          skillCapacity: this.runState.loadout.skillCapacity,
+          unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
+        },
       });
     }
 

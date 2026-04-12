@@ -68,6 +68,12 @@ export interface ShiftGenerationProfile {
   turnCountWeights: Record<number, number>;
 }
 
+export interface ShiftGenerationCapabilities {
+  agentCapacity: number;
+  skillCapacity: number;
+  unlockedToolIds: readonly ToolId[];
+}
+
 const ATOMIC_TURN_FILES = (import.meta as ImportMetaWithGlob).glob(
   "/content/encounters/tier*.json",
   {
@@ -161,13 +167,19 @@ export function getShiftGenerationProfile(day: number): ShiftGenerationProfile {
 export function generateShiftEncounters(options: {
   day: number;
   forbiddenCategoryIds: readonly ContentCategoryId[];
+  capabilities: ShiftGenerationCapabilities;
 }): EncounterDefinition[] {
   const profile = getShiftGenerationProfile(options.day);
-  const availableTiers = getAvailableTiers(profile.minTier, profile.maxTier);
+  const availableTiers = getAvailableTiers({
+    minTier: profile.minTier,
+    maxTier: profile.maxTier,
+    forbiddenCategoryIds: options.forbiddenCategoryIds,
+    capabilities: options.capabilities,
+  });
 
   if (availableTiers.length === 0) {
     throw new Error(
-      `No encounter turn data available for tier range ${profile.minTier}-${profile.maxTier}.`,
+      `No feasible encounter turn data available for tier range ${profile.minTier}-${profile.maxTier} with agent capacity ${options.capabilities.agentCapacity} and skill capacity ${options.capabilities.skillCapacity}.`,
     );
   }
 
@@ -182,6 +194,7 @@ export function generateShiftEncounters(options: {
         desiredTier: turnTier,
         availableTiers,
         forbiddenCategoryIds: options.forbiddenCategoryIds,
+        capabilities: options.capabilities,
         usedTurnIds,
       });
       usedTurnIds.add(atomicTurn.id);
@@ -526,6 +539,7 @@ function drawAtomicTurn(options: {
   desiredTier: number;
   availableTiers: number[];
   forbiddenCategoryIds: readonly ContentCategoryId[];
+  capabilities: ShiftGenerationCapabilities;
   usedTurnIds: Set<string>;
 }): AtomicTurnData {
   const candidateTiers = [
@@ -537,6 +551,7 @@ function drawAtomicTurn(options: {
     const pool = getCompatibleTurnPool(
       tier,
       options.forbiddenCategoryIds,
+      options.capabilities,
       options.usedTurnIds,
       false,
     );
@@ -550,6 +565,7 @@ function drawAtomicTurn(options: {
     const pool = getCompatibleTurnPool(
       tier,
       options.forbiddenCategoryIds,
+      options.capabilities,
       options.usedTurnIds,
       true,
     );
@@ -567,12 +583,15 @@ function drawAtomicTurn(options: {
 function getCompatibleTurnPool(
   tier: number,
   forbiddenCategoryIds: readonly ContentCategoryId[],
+  capabilities: ShiftGenerationCapabilities,
   usedTurnIds: Set<string>,
   allowRepeats: boolean,
 ) {
   const rawPool = TIERED_TURN_POOL.turnsByTier.get(tier) ?? [];
-  const policyCompatiblePool = rawPool.filter((turn) =>
-    isTurnCompatibleWithShiftPolicy(turn, forbiddenCategoryIds),
+  const policyCompatiblePool = rawPool.filter(
+    (turn) =>
+      isTurnCompatibleWithShiftPolicy(turn, forbiddenCategoryIds) &&
+      isTurnFeasibleForCapabilities(turn, capabilities),
   );
 
   if (allowRepeats) {
@@ -598,22 +617,66 @@ function isTurnCompatibleWithShiftPolicy(
   );
 }
 
-function getAvailableTiers(minTier: number, maxTier: number) {
+function isTurnFeasibleForCapabilities(
+  turn: AtomicTurnData,
+  capabilities: ShiftGenerationCapabilities,
+) {
+  if (turn.requiredAgentIds.length > capabilities.agentCapacity) {
+    return false;
+  }
+
+  if ((turn.requiredSkillIds?.length ?? 0) > capabilities.skillCapacity) {
+    return false;
+  }
+
+  if (
+    turn.requiredToolIds?.some(
+      (toolId) => !capabilities.unlockedToolIds.includes(toolId as ToolId),
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function getAvailableTiers(options: {
+  minTier: number;
+  maxTier: number;
+  forbiddenCategoryIds: readonly ContentCategoryId[];
+  capabilities: ShiftGenerationCapabilities;
+}) {
   const requestedTiers = Array.from(
-    { length: maxTier - minTier + 1 },
-    (_, index) => minTier + index,
+    { length: options.maxTier - options.minTier + 1 },
+    (_, index) => options.minTier + index,
   );
   const populatedRequestedTiers = requestedTiers.filter(
-    (tier) => (TIERED_TURN_POOL.turnsByTier.get(tier)?.length ?? 0) > 0,
+    (tier) =>
+      getCompatibleTurnPool(
+        tier,
+        options.forbiddenCategoryIds,
+        options.capabilities,
+        new Set<string>(),
+        true,
+      ).length > 0,
   );
 
   if (populatedRequestedTiers.length > 0) {
     return populatedRequestedTiers;
   }
 
-  return [...TIERED_TURN_POOL.turnsByTier.keys()].sort(
-    (left, right) => left - right,
-  );
+  return [...TIERED_TURN_POOL.turnsByTier.keys()]
+    .sort((left, right) => left - right)
+    .filter(
+      (tier) =>
+        getCompatibleTurnPool(
+          tier,
+          options.forbiddenCategoryIds,
+          options.capabilities,
+          new Set<string>(),
+          true,
+        ).length > 0,
+    );
 }
 
 function getTurnTier(turnId: string) {

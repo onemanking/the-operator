@@ -55,6 +55,11 @@ export class BriefingScene extends Phaser.Scene {
       this.runState.shiftEncounters = generateShiftEncounters({
         day: this.runState.day,
         forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
+        capabilities: {
+          agentCapacity: this.runState.loadout.agentCapacity,
+          skillCapacity: this.runState.loadout.skillCapacity,
+          unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
+        },
       });
       this.runState.shiftEncounterIds = this.runState.shiftEncounters.map(
         (encounter) => encounter.id,

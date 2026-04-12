@@ -75,6 +75,8 @@ and [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encount
 - Encounter content is now authored as atomic turns in `content/encounters/tier*.json`.
 - Each shift resolves a `minTier` and `maxTier` range, then assembles encounters
   at runtime by drawing turns from the allowed tier pools.
+- Before a turn can enter the live generation pool, it must fit the current
+  run's agent-slot capacity, skill-slot capacity, and unlocked prompt tools.
 - The number of turns per encounter is randomized, so a single encounter can mix
   difficulty like `2 -> 3 -> 2` when the active shift profile allows it.
 - The generated encounter list is stored in `RunState` for the lifetime of the

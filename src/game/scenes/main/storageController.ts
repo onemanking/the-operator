@@ -27,6 +27,9 @@ export class MainSceneStorageController {
   private readonly rackVisibleRows = 5;
   private readonly rackItemSpacing = 72;
   private readonly rackStartY = 132;
+  private readonly rackBounds = new Phaser.Geom.Rectangle(18, 118, 184, 386);
+  private readonly rackSwipeStepPx = 48;
+  private readonly rackSwipeActivationDistance = 18;
   private readonly driveConfigs: Record<DriveId, DriveConfig>;
   private readonly driveMountedLabels: Record<DriveId, string> = {
     agent: "",
@@ -47,8 +50,17 @@ export class MainSceneStorageController {
   private storageScrollDownBtn!: Phaser.GameObjects.Rectangle;
   private storageScrollUpLabel!: Phaser.GameObjects.Text;
   private storageScrollDownLabel!: Phaser.GameObjects.Text;
+  private rackSwipeZone!: Phaser.GameObjects.Rectangle;
   private activeDraggedDisk: Phaser.GameObjects.Container | null = null;
   private driveMountedScrollTimer?: Phaser.Time.TimerEvent;
+  private pointerMoveHandler?: (pointer: Phaser.Input.Pointer) => void;
+  private pointerUpHandler?: (pointer: Phaser.Input.Pointer) => void;
+  private rackSwipePointerId: number | null = null;
+  private rackSwipeStartX: number = 0;
+  private rackSwipeStartY: number = 0;
+  private rackSwipeLastStep: number = 0;
+  private rackSwipeMode: "none" | "pending" | "scroll" = "none";
+  private rackSwipeSourceDisk: StorageDiskInstance | null = null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -172,11 +184,26 @@ export class MainSceneStorageController {
       .rectangle(18, 118, 184, 386, 0x2a2722)
       .setOrigin(0)
       .setStrokeStyle(2, 0x121212);
+    this.rackSwipeZone = this.scene.add
+      .rectangle(
+        this.rackBounds.x,
+        this.rackBounds.y,
+        this.rackBounds.width,
+        this.rackBounds.height,
+        0xffffff,
+        0.001,
+      )
+      .setOrigin(0)
+      .setInteractive({ useHandCursor: true });
+    this.rackSwipeZone.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      this.startRackSwipe(pointer);
+    });
 
     this.createStorageTabs();
     this.createStorageScrollControls();
     this.createStorageDisks();
     this.renderStorageRackItems();
+    this.bindPointerHandlers();
 
     this.scene.input.removeAllListeners("wheel");
     this.scene.input.on(
@@ -202,11 +229,18 @@ export class MainSceneStorageController {
     this.scene.input.on(
       "dragstart",
       (
-        _pointer: Phaser.Input.Pointer,
+        pointer: Phaser.Input.Pointer,
         gameObject: Phaser.GameObjects.GameObject,
       ) => {
         const storageDisk = this.findStorageDisk(gameObject);
         if (!storageDisk) return;
+
+        if (
+          this.rackSwipePointerId === pointer.id &&
+          this.rackSwipeSourceDisk === storageDisk
+        ) {
+          this.rackSwipeMode = "pending";
+        }
 
         this.scene.children.bringToTop(storageDisk.container);
         this.scene.children.bringToTop(storageDisk.handle);
@@ -228,13 +262,26 @@ export class MainSceneStorageController {
     this.scene.input.on(
       "drag",
       (
-        _pointer: Phaser.Input.Pointer,
+        pointer: Phaser.Input.Pointer,
         gameObject: Phaser.GameObjects.GameObject,
         dragX: number,
         dragY: number,
       ) => {
         const storageDisk = this.findStorageDisk(gameObject);
         if (!storageDisk) return;
+
+        if (this.tryPromoteDiskDragToRackSwipe(pointer, storageDisk)) {
+          return;
+        }
+
+        if (
+          this.rackSwipePointerId === pointer.id &&
+          this.rackSwipeSourceDisk === storageDisk &&
+          this.rackSwipeMode === "pending"
+        ) {
+          this.clearRackSwipe();
+        }
+
         this.updateDriveSnapState(storageDisk, dragX, dragY);
       },
     );
@@ -242,11 +289,23 @@ export class MainSceneStorageController {
     this.scene.input.on(
       "dragend",
       (
-        _pointer: Phaser.Input.Pointer,
+        pointer: Phaser.Input.Pointer,
         gameObject: Phaser.GameObjects.GameObject,
       ) => {
         const storageDisk = this.findStorageDisk(gameObject);
         if (!storageDisk) return;
+
+        if (
+          this.rackSwipePointerId === pointer.id &&
+          this.rackSwipeSourceDisk === storageDisk &&
+          this.rackSwipeMode === "scroll"
+        ) {
+          this.clearRackSwipe();
+          this.activeDraggedDisk = null;
+          this.refreshDriveIdleState();
+          this.resetDiskPosition(storageDisk, false);
+          return;
+        }
 
         const shouldInsert = Boolean(
           storageDisk.container.getData("snapReady"),
@@ -519,14 +578,131 @@ export class MainSceneStorageController {
       disk.setVisible(false);
       handle.setData("diskLabel", definition.label);
 
-      this.storageDisks.push({
+      const storageDisk: StorageDiskInstance = {
         definition,
         container: disk,
         handle,
         width: diskWidth,
         height: diskHeight,
+      };
+
+      handle.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        this.startRackSwipe(pointer, storageDisk);
       });
+
+      this.storageDisks.push(storageDisk);
     });
+  }
+
+  private bindPointerHandlers() {
+    if (this.pointerMoveHandler || this.pointerUpHandler) {
+      return;
+    }
+
+    this.pointerMoveHandler = (pointer: Phaser.Input.Pointer) => {
+      this.updateRackSwipe(pointer);
+    };
+    this.pointerUpHandler = (pointer: Phaser.Input.Pointer) => {
+      this.endRackSwipe(pointer.id);
+    };
+
+    this.scene.input.on("pointermove", this.pointerMoveHandler);
+    this.scene.input.on("pointerup", this.pointerUpHandler);
+    this.scene.input.on("pointerupoutside", this.pointerUpHandler);
+  }
+
+  private startRackSwipe(
+    pointer: Phaser.Input.Pointer,
+    sourceDisk: StorageDiskInstance | null = null,
+  ) {
+    this.rackSwipePointerId = pointer.id;
+    this.rackSwipeStartX = pointer.x;
+    this.rackSwipeStartY = pointer.y;
+    this.rackSwipeLastStep = 0;
+    this.rackSwipeSourceDisk = sourceDisk;
+    this.rackSwipeMode = sourceDisk ? "pending" : "scroll";
+  }
+
+  private updateRackSwipe(pointer: Phaser.Input.Pointer) {
+    if (
+      this.rackSwipePointerId !== pointer.id ||
+      this.rackSwipeMode !== "scroll"
+    ) {
+      return;
+    }
+
+    const step = this.getRackSwipeStep(pointer.y - this.rackSwipeStartY);
+    const stepDelta = step - this.rackSwipeLastStep;
+
+    if (stepDelta === 0) {
+      return;
+    }
+
+    this.rackSwipeLastStep = step;
+    this.scrollStorage(-stepDelta);
+  }
+
+  private endRackSwipe(pointerId: number) {
+    if (this.rackSwipePointerId !== pointerId) {
+      return;
+    }
+
+    this.clearRackSwipe();
+  }
+
+  private clearRackSwipe() {
+    this.rackSwipePointerId = null;
+    this.rackSwipeStartX = 0;
+    this.rackSwipeStartY = 0;
+    this.rackSwipeLastStep = 0;
+    this.rackSwipeMode = "none";
+    this.rackSwipeSourceDisk = null;
+  }
+
+  private tryPromoteDiskDragToRackSwipe(
+    pointer: Phaser.Input.Pointer,
+    storageDisk: StorageDiskInstance,
+  ) {
+    if (
+      this.rackSwipePointerId !== pointer.id ||
+      this.rackSwipeSourceDisk !== storageDisk ||
+      this.rackSwipeMode !== "pending"
+    ) {
+      return false;
+    }
+
+    const deltaX = pointer.x - this.rackSwipeStartX;
+    const deltaY = pointer.y - this.rackSwipeStartY;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
+
+    if (
+      absDeltaY < this.rackSwipeActivationDistance ||
+      absDeltaY <= absDeltaX * 1.15 ||
+      !this.rackBounds.contains(pointer.x, pointer.y)
+    ) {
+      return false;
+    }
+
+    this.rackSwipeMode = "scroll";
+    this.activeDraggedDisk = null;
+    storageDisk.container.setData("snapReady", false);
+    this.refreshDriveIdleState();
+    this.resetDiskPosition(storageDisk, false);
+    this.updateRackSwipe(pointer);
+    return true;
+  }
+
+  private getRackSwipeStep(deltaY: number) {
+    if (Math.abs(deltaY) < this.rackSwipeActivationDistance) {
+      return 0;
+    }
+
+    if (deltaY > 0) {
+      return Math.floor(deltaY / this.rackSwipeStepPx);
+    }
+
+    return Math.ceil(deltaY / this.rackSwipeStepPx);
   }
 
   private findStorageDisk(target: Phaser.GameObjects.GameObject) {

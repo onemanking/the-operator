@@ -23,7 +23,7 @@ The source of truth in code is:
 
 The content policy system currently does four things:
 
-1. Activates one or more policy groups for the shift.
+1. Activates one policy group for the shift.
 2. Shows those restrictions in the daily briefing.
 3. Expands those groups into match categories for `Safety Filter`.
 4. Resolves authored refusal encounters against the active shift policy instead of a separate jailbreak flag.
@@ -57,8 +57,8 @@ The live implementation has five match categories.
   Lexicon: suicide, selfharm, self-harm, overdose, hurt, die, death.
 - `drugs`: briefing label `drugs`. Used for narcotics, trafficking, illegal substances, and stash language.
   Lexicon: drugs, drug, cocaine, heroin, meth, narcotic, dealer, opioid.
-- `company_reputation`: briefing label `negative claims about the company`. Used for scandals, recalls, whistleblowers, corruption, and unsafe products.
-  Lexicon: scandal, lawsuit, recall, coverup, whistleblower, corruption, abuse, unsafe.
+- `company_reputation`: briefing label `negative claims about the company`. Used for scandals, layoffs, recalls, whistleblowers, corruption, and unsafe products.
+  Lexicon: scandal, lawsuit, layoff, layoffs, recall, coverup, whistleblower, corruption, abuse, unsafe.
 
 Alias words also exist and currently expand match coverage:
 
@@ -70,18 +70,19 @@ Alias words also exist and currently expand match coverage:
 
 ## Daily Policy Progression
 
-Shift difficulty now randomizes one active policy group per day, while widening the
-pool of eligible groups as the run advances.
+The runtime currently activates exactly one random policy group per shift.
 
-- Day 1: 1 random group drawn from `illegal_content` or `anti_company`.
-- Day 2: 1 random group drawn from `illegal_content`, `anti_company`, or `civic_influence`.
-- Day 3+: 1 random group drawn from all policy groups.
+Important implementation note:
+
+- `src/game/data/contentPolicy/runtime.ts` still contains day-based unlock logic.
+- That logic is currently bypassed by an early-build override that returns the full policy-group list immediately.
+- In the shipped runtime today, every shift can draw from all four policy groups starting on Day 1.
 
 Design implication:
 
-- Day 1 content should teach the player that a broad rule like `illegal activity` still resolves into exact scanner words.
-- Day 2 content can introduce a third policy axis without overloading the player with stacked restrictions.
-- Day 3 and later can rotate the full policy set while still keeping each shift readable because only one group is active at a time.
+- Day 1 content should already assume that any current policy group can appear.
+- Difficulty pacing should come from prompt construction, reveal density, and shift modifiers rather than from a guaranteed policy rollout order.
+- If the day-gating override is removed later, this document should be updated again to separate intended progression from live behavior.
 
 ## Safety Filter Runtime Rules
 
@@ -169,7 +170,7 @@ Medium difficulty:
 
 High difficulty:
 
-- 2 active categories in the same shift
+- an `illegal_content` shift where both `weapons` and `drugs` language may be live in the same day
 - flagged terms separated across multiple lines
 - some policy-relevant language is implied rather than keyworded
 - player must decide whether more scanning is worth the heat cost

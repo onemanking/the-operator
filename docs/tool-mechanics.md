@@ -19,7 +19,13 @@ That now also means each tool should ship with a readable audiovisual language, 
 
 ## Current Tool Set
 
-The game currently uses three prompt tools:
+The game currently uses three prompt tools that can be armed in combination:
+
+- `Search` contributes locked search words to evaluation when the player completes the radar timing sequence.
+- `Compute` contributes an armed capacitor state once it has been charged successfully.
+- `Safety Filter` contributes revealed evidence for content-policy refusals and adds live thermal pressure while active.
+
+The live shift also includes a separate active-utility system. Utilities are not prompt tools and do not satisfy encounter tool requirements, but they share the same machine-first presentation philosophy.
 
 ## Active Utility Module
 
@@ -54,11 +60,13 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
 
 ### Signal Boost
 
-- Uses a 3x3 signal-routing grid in the same vertical module.
+- Uses a 4x4 signal-routing grid in the same vertical module.
 - The player must draw a single orthogonal route from source to target while
   touching every required signal node.
 - Releasing early, crossing a used cell, or finishing without all signal nodes
   causes a snap-back failure and forces a retry.
+- The exact source, target, and required-node pattern is chosen from authored
+  layouts stored in runtime config.
 - Success restores user connection time immediately.
 
 ### Search Config
@@ -176,7 +184,23 @@ Any new tool should follow the same pattern: data config, runtime state, HUD pre
 - `decayPerSecond`: base decay rate while idle.
 - `maxDecayMultiplier`: maximum decay multiplier at high charge.
 - `decayExponent`: how strongly decay rises near full.
+- `tapHeat`: heat added per compute pulse.
 - `readyHoldMs`: how long full charge latches before decay resumes.
+
+### Safety Filter
+
+- `passiveHeatPerSecond`: heat added while Safety Filter stays selected.
+- `scanningHeatPerSecond`: additional heat added while the scanner is moving.
+- `tokenRewardPerReveal`: refusal reward per revealed flagged word.
+- `scanBandWidth`: width of the scanner lane projected across the prompt.
+- `scanRevealSeconds`: stable overlap time needed to reveal one word.
+- `dragFriction`: smoothing applied to scanner motion.
+- `maxStableScanSpeed`: movement speed above which reveal progress stalls.
+- `phosphorDecaySeconds`: lifetime of the reveal flash feedback.
+- `returnDurationMs`: snap-back duration when the scanner returns.
+- `returnShakeDurationMs`: duration of the scanner shake on failed return beats.
+- `returnShakeIntensity`: shake amplitude used during the return beat.
+- `geigerClickIntervalMs`: minimum interval between scan click sounds.
 
 ## New Tool Template
 

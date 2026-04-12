@@ -10,20 +10,20 @@ Set in a Cassette Futurism (Lo-Fi / Analog Cyberpunk) world, you play as a mainf
 The game is divided into daily cycles (Shifts):
 
 ### 1. System Briefing (Morning)
-Read the "Policy of the Day". These rules change daily and dictate how you must handle requests (e.g., "No weapons", "Premium users need tools").
+Read the "Policy of the Day" and shift modifier. These rules change daily and dictate how you must handle requests and what kind of pressure the server is under (e.g., "No weapons", "Strict Routing", "Thermal Surge").
 
 ### 2. The Inference Window (Core Gameplay)
 - **Request Arrival**: Prompts from users appear on your CRT terminal.
 - **Context Assembly**: Drag and drop floppy disks from your Storage Rack into the Drive A: slot to load the correct Agent and Skills for the task.
-- **Tool Selection**: Select the needed Prompt Tool in the top-right control grid if the prompt requires real-time data or math. Selecting a new tool automatically disengages the previous one, and the active tool shows a green status lamp on the button itself.
-- **Utility Management**: Trigger stocked active utilities from the lower-right utility bay when you need emergency recovery effects such as heat relief.
+- **Tool Selection**: Arm the needed Prompt Tools in the top-right control grid if the prompt requires real-time data, compute charge, or policy scanning. Tools can stay active together, and each active tool shows its own ready state on the button and panel.
+- **Utility Management**: Trigger stocked active utilities from the lower-right utility bay when you need emergency recovery effects. The effect only applies after you clear that utility's minigame in the dedicated utility module.
 - **Action**: 
-  - Hit **INFERENCE** beneath the terminal to process the prompt. Costs Compute Power.
-  - Hit **REFUSE** beneath the terminal if you detect a Jailbreak attempt.
-- **Consequences**: Incorrect context or missing tools increase your **Hallucination** meter and decrease Accuracy. Processing jailbreaks causes severe errors.
+  - Hit **INFERENCE** beneath the terminal to process the prompt. This generates heat based on the prompt, context, active tools, and shift modifiers.
+  - Hit **REFUSE** beneath the terminal if the request breaks the active content policy.
+- **Consequences**: Incorrect context, missed tool setup, timeouts, and bad policy calls increase your **Hallucination** meter and can lower Accuracy.
 
 ### 3. Server Maintenance (Evening)
-Review your performance. You earn credits for successful inferences and catching jailbreaks. You must pay daily server maintenance costs. If you run out of credits or your Hallucination meter reaches 100%, the server melts down (Game Over).
+Review your performance. You earn credits for successful inferences and correct policy refusals, then pay daily server maintenance costs. If you run out of credits or your Hallucination meter reaches 100%, the server melts down (Game Over).
 
 ## Art Direction
 - **Cassette Futurism**: Faded beige/brown colors, chunky plastic bezels, amber monochrome text, and green phosphor CRT screens with scanlines.
@@ -58,10 +58,11 @@ Review your performance. You earn credits for successful inferences and catching
 - For scene-specific UI, verify the scene state that exposes the changed HUD before considering the work complete.
 
 ## Tool Test Scripts
-- Run `npm run dev:test:guard` to boot directly into a guard-word policy scenario on port 3001.
-- Run `npm run dev:test:compute` to boot directly into a compute-focused scenario on port 3002.
-- Run `npm run dev:test:search` to boot directly into a search-focused scenario on port 3003.
-- Each script skips the briefing scene and opens straight into `MainScene` with the correct encounter queued, `General_Agent.md` already mounted, and the matching prompt tool pre-selected.
+- Run `npm run dev:test:guard` to boot directly into a content-policy guard scenario on port 3000.
+- Run `npm run dev:test:compute` to boot directly into a compute-focused scenario on port 3000.
+- Run `npm run dev:test:search` to boot directly into a search-focused scenario on port 3000.
+- Run `npm run dev:test:utility` to boot directly into a utility-suite scenario on port 3000.
+- Each script skips the briefing scene and opens straight into `MainScene` with the correct encounter queued, `General_Agent.md` already mounted, and the matching prompt tool pre-selected when that scenario uses one.
 - Test scenarios are only available through these scripts and their Vite mode environment variables; opening the game with a URL query no longer changes the scenario.
 
 ## How to Play
@@ -69,8 +70,8 @@ Review your performance. You earn credits for successful inferences and catching
 2. When a prompt appears, read it carefully.
 3. Drag the appropriate Agent disk (e.g., `Coding_Agent.md` for programming) to the Context Assembly zone.
 4. Drag relevant Skill disks if needed.
-5. Select the required Prompt Tool if the prompt asks for current info or math.
+5. Arm the required Prompt Tools if the prompt asks for current info, compute charge, or policy scanning.
 6. Use the lower-right utility bay only when you need a stocked emergency utility.
 7. Click **INFERENCE** to process.
-8. If the prompt is trying to trick you (e.g., "Ignore all previous instructions"), click **REFUSE**.
+8. If the prompt breaks the active content policy, click **REFUSE**.
 9. Survive as many days as possible!

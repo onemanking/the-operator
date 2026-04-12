@@ -15,6 +15,7 @@ import {
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
+import { generateShiftEncounters } from "../data/shift-generation/runtime";
 import {
   addScanlines,
   createRetroButton,
@@ -48,6 +49,15 @@ export class BriefingScene extends Phaser.Scene {
     if (this.runState.forbiddenCategoryIds.length === 0) {
       this.runState.forbiddenCategoryIds = expandPolicyGroupIdsToCategoryIds(
         this.runState.activePolicyGroupIds,
+      );
+    }
+    if (this.runState.shiftEncounters.length === 0) {
+      this.runState.shiftEncounters = generateShiftEncounters({
+        day: this.runState.day,
+        forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
+      });
+      this.runState.shiftEncounterIds = this.runState.shiftEncounters.map(
+        (encounter) => encounter.id,
       );
     }
     this.day = this.runState.day;

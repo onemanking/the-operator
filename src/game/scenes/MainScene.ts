@@ -3,11 +3,8 @@ import { ContentCategoryId } from "../data/ContentPolicyData";
 import { getGameplayPolicyStickyNoteContent } from "../data/ContentPolicyData";
 import { addScanlines } from "./shared/retroUi";
 import { synth } from "../utils/SoundSynth";
-import {
-  EncounterDefinition,
-  drawEncounterIdsForDay,
-  getEncounterSequenceForDay,
-} from "../data/SessionData";
+import { EncounterDefinition } from "../data/SessionData";
+import { generateShiftEncounters } from "../data/shift-generation/runtime";
 import {
   applyShiftModifiersToEncounters,
   getShiftModifierDefinitions,
@@ -577,12 +574,21 @@ export class MainScene extends Phaser.Scene {
     this.hudController.createStatusBars();
     this.addCRTEffects();
 
+    if (this.runState.shiftEncounters.length === 0) {
+      this.runState.shiftEncounters = generateShiftEncounters({
+        day: this.day,
+        forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
+      });
+    }
+
     if (this.runState.shiftEncounterIds.length === 0) {
-      this.runState.shiftEncounterIds = drawEncounterIdsForDay(this.day);
+      this.runState.shiftEncounterIds = this.runState.shiftEncounters.map(
+        (encounter) => encounter.id,
+      );
     }
 
     this.encounters = applyShiftModifiersToEncounters(
-      getEncounterSequenceForDay(this.day, this.runState.shiftEncounterIds),
+      this.runState.shiftEncounters,
       this.runState.shiftModifierIds,
     );
 

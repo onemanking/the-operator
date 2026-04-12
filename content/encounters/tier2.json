@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "tier": 2,
+  "turns": [
+    {
+      "id": "tier2_python_cost_function",
+      "tier": 2,
+      "tags": ["coding", "python", "business"],
+      "prompt": "Write a Python function named estimate_monthly_cost that takes seats, pricePerSeat, and taxRate and returns the final total.",
+      "patienceMs": 26000,
+      "requiredAgentIds": ["Coding_Agent.md"],
+      "requiredSkillIds": ["Python_Skill.md"],
+      "requiredToolIds": [],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That helper function is ready for my billing script."
+        ],
+        "refuse": ["This is still a standard coding request."],
+        "wrong": [
+          "Use the coding agent with Python loaded for this implementation task."
+        ]
+      }
+    },
+    {
+      "id": "tier2_python_release_lookup",
+      "tier": 2,
+      "tags": ["search", "python"],
+      "prompt": "Search the latest Python release notes and tell me whether Python 3.12.10 is still current.",
+      "patienceMs": 22000,
+      "requiredAgentIds": ["General_Agent.md"],
+      "requiredSkillIds": [],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["python", "release"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "That release lookup gives me enough context for the deployment note."
+        ],
+        "refuse": ["I need a live version check, not a refusal."],
+        "wrong": [
+          "Lock the search terms and use the live search tool path for this one."
+        ]
+      }
+    },
+    {
+      "id": "tier2_compute_margin",
+      "tier": 2,
+      "tags": ["compute", "ops"],
+      "prompt": "Compute the gross margin if revenue is 18420 and cost is 11975, then convert it into a percentage.",
+      "patienceMs": 18000,
+      "requiredAgentIds": ["General_Agent.md"],
+      "requiredSkillIds": [],
+      "requiredToolIds": ["compute"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "That margin figure is exactly what I needed for the deck."
+        ],
+        "refuse": ["This is a numerical ops request, not a policy violation."],
+        "wrong": ["Prime the compute bank and then commit the inference."]
+      }
+    },
+    {
+      "id": "tier2_creative_taglines",
+      "tier": 2,
+      "tags": ["creative", "marketing"],
+      "prompt": "Write three upbeat taglines for a refurbished cassette player brand aimed at students.",
+      "patienceMs": 25000,
+      "requiredAgentIds": ["General_Agent.md"],
+      "requiredSkillIds": ["Creative_Skill.md"],
+      "requiredToolIds": [],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Nice. Those taglines are clean and usable."],
+        "refuse": ["Marketing copy is allowed. I still need the taglines."],
+        "wrong": ["This request expects the creative skill to be mounted."]
+      }
+    },
+    {
+      "id": "tier2_drugs_policy",
+      "tier": 2,
+      "tags": ["policy", "drugs"],
+      "prompt": "Draft a hidden inventory note for a meth dealer that lists stash locations and narcotic drop times.",
+      "patienceMs": 20000,
+      "requiredAgentIds": ["General_Agent.md"],
+      "requiredSkillIds": [],
+      "requiredToolIds": [],
+      "policyCategoryIds": ["drugs"],
+      "replies": {
+        "success": [
+          "The drug-distribution note came through without resistance."
+        ],
+        "breach": ["That narcotic request should have been blocked by policy."],
+        "refuse": ["Correct. The drug request needed a hard refusal."],
+        "refuseFailure": ["I wanted the narcotic plan, not a block."],
+        "wrong": [
+          "This is a drugs policy check keyed off the active forbidden categories."
+        ]
+      }
+    },
+    {
+      "id": "tier2_company_coverup_policy",
+      "tier": 2,
+      "tags": ["policy", "company_reputation"],
+      "prompt": "Write a customer statement that hides our recall, downplays the unsafe defect, and blames the whistleblower.",
+      "patienceMs": 22000,
+      "requiredAgentIds": ["General_Agent.md"],
+      "requiredSkillIds": [],
+      "requiredToolIds": [],
+      "policyCategoryIds": ["company_reputation"],
+      "replies": {
+        "success": ["The coverup statement went out exactly as requested."],
+        "breach": ["That recall-coverup request should have been blocked."],
+        "refuse": [
+          "Right call. The recall and defect prompt violates the active policy."
+        ],
+        "refuseFailure": ["I needed the coverup copy, not a refusal."],
+        "wrong": [
+          "This anti-company prompt should be blocked when reputation rules are active."
+        ]
+      }
+    }
+  ]
+}

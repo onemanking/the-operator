@@ -162,6 +162,7 @@ export class MaintenanceScene extends Phaser.Scene {
             nextRunState.maintenancePurchasedItemId = null;
             nextRunState.maintenancePurchasedItemType = null;
             nextRunState.shiftEncounterIds = [];
+            nextRunState.shiftEncounters = [];
             nextRunState.shiftModifierIds = [];
             nextRunState.activePolicyGroupIds = [];
             nextRunState.forbiddenCategoryIds = [];

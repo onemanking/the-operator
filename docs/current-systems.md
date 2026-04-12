@@ -9,7 +9,8 @@ that currently ship together.
 - `BootScene` generates procedural textures and decides whether to boot a test
   scenario or the normal shift flow.
 - `BriefingScene` rolls the shift modifiers and forbidden content categories,
-  then shows the daily policy before play starts.
+  generates the shift encounter list from tiered atomic turn data, then shows
+  the daily policy before play starts.
 - `MainScene` owns the live shift: prompt assembly, tool selection, evaluation,
   heat and hallucination management, and encounter progression.
 - `MaintenanceScene` settles upkeep, sells upgrades and active utilities, and
@@ -17,24 +18,27 @@ that currently ship together.
 
 ## Data Ownership Map
 
-| File                                                                        | Current responsibility                                                                                              |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| [src/game/types/SceneData.ts](../src/game/types/SceneData.ts)               | Run state, hydration, cloning, legacy compatibility, and the save-shaped data that moves between scenes.            |
-| [src/game/data/RunData.ts](../src/game/data/RunData.ts)                     | Initial run values, recovery profiles, prompt tool runtime tuning, and thermal / hallucination feedback thresholds. |
-| [src/game/data/SessionData.ts](../src/game/data/SessionData.ts)             | Encounter definitions, reply pools, turn requirements, and scoring profiles.                                        |
-| [src/game/data/ContentPolicyData.ts](../src/game/data/ContentPolicyData.ts) | Forbidden content categories, category lexicons, and the daily briefing text for Safety Filter rules.               |
-| [src/game/data/ShiftModifierData.ts](../src/game/data/ShiftModifierData.ts) | Shift modifiers that change encounter scoring and daily briefing text.                                              |
-| [src/game/data/UtilityData.ts](../src/game/data/UtilityData.ts)             | Active utility definitions, inventory state, purchase rules, and use/consume behavior.                              |
-| [src/game/data/UpgradeData.ts](../src/game/data/UpgradeData.ts)             | Passive upgrade definitions, shop offers, and the run-wide modifier math they produce.                              |
-| [src/game/data/TestScenarioData.ts](../src/game/data/TestScenarioData.ts)   | Boot-time test seeds for guard, compute, search, and utility scenarios.                                             |
+| File                                                                                      | Current responsibility                                                                                              |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `content/encounters/tier*.json`                                                           | Atomic turn authoring files grouped by difficulty tier for runtime shift generation.                                |
+| [src/game/data/shift-generation/runtime.ts](../src/game/data/shift-generation/runtime.ts) | Validates the tier JSON files, resolves shift tier ranges, and assembles a fresh encounter list for each shift.     |
+| [src/game/types/SceneData.ts](../src/game/types/SceneData.ts)                             | Run state, hydration, cloning, legacy compatibility, and the save-shaped data that moves between scenes.            |
+| [src/game/data/RunData.ts](../src/game/data/RunData.ts)                                   | Initial run values, recovery profiles, prompt tool runtime tuning, and thermal / hallucination feedback thresholds. |
+| [src/game/data/SessionData.ts](../src/game/data/SessionData.ts)                           | Shared encounter runtime types, scoring shape, and default reply pools used by runtime generation and evaluation.   |
+| [src/game/data/TestEncounterData.ts](../src/game/data/TestEncounterData.ts)               | Deterministic tool-test encounters used by the guard, compute, search, and utility smoke scenarios.                 |
+| [src/game/data/ContentPolicyData.ts](../src/game/data/ContentPolicyData.ts)               | Forbidden content categories, category lexicons, and the daily briefing text for Safety Filter rules.               |
+| [src/game/data/ShiftModifierData.ts](../src/game/data/ShiftModifierData.ts)               | Shift modifiers that change encounter scoring and daily briefing text.                                              |
+| [src/game/data/UtilityData.ts](../src/game/data/UtilityData.ts)                           | Active utility definitions, inventory state, purchase rules, and use/consume behavior.                              |
+| [src/game/data/UpgradeData.ts](../src/game/data/UpgradeData.ts)                           | Passive upgrade definitions, shop offers, and the run-wide modifier math they produce.                              |
+| [src/game/data/TestScenarioData.ts](../src/game/data/TestScenarioData.ts)                 | Boot-time test seeds for guard, compute, search, and utility scenarios.                                             |
 
 ## Gameplay System Map
 
 | System               | What it does                                                                                                                                                                                | Main code                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Boot and app shell   | Mounts Phaser inside the React shell, sets canvas size, and starts the opening scene.                                                                                                       | [src/game/main.ts](../src/game/main.ts), [src/App.tsx](../src/App.tsx), [src/components/GameViewport.tsx](../src/components/GameViewport.tsx)                                                                                                                                                                                                                                                                                                                    |
-| Shift briefing       | Builds the day setup, surfaces policy text, and hands the hydrated run state into the live shift.                                                                                           | [src/game/scenes/BriefingScene.ts](../src/game/scenes/BriefingScene.ts), [src/game/data/ContentPolicyData.ts](../src/game/data/ContentPolicyData.ts), [src/game/data/ShiftModifierData.ts](../src/game/data/ShiftModifierData.ts)                                                                                                                                                                                                                                |
-| Encounter flow       | Advances between turns, handles intro text, follow-up prompts, refusal, inference, timeout, and end-of-encounter transitions.                                                               | [src/game/scenes/main/sessionController.ts](../src/game/scenes/main/sessionController.ts), [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encounterEvaluator.ts)                                                                                                                                                                                                                                                                           |
+| Shift briefing       | Builds the day setup, rolls policy and modifier state, generates the shift encounter list from tiered turn data, and hands the hydrated run state into the live shift.                      | [src/game/scenes/BriefingScene.ts](../src/game/scenes/BriefingScene.ts), [src/game/data/ContentPolicyData.ts](../src/game/data/ContentPolicyData.ts), [src/game/data/ShiftModifierData.ts](../src/game/data/ShiftModifierData.ts), [src/game/data/shift-generation/runtime.ts](../src/game/data/shift-generation/runtime.ts)                                                                                                                                     |
+| Encounter flow       | Advances between generated turns, handles intro text, follow-up prompts, refusal, inference, timeout, and end-of-encounter transitions.                                                     | [src/game/scenes/main/sessionController.ts](../src/game/scenes/main/sessionController.ts), [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encounterEvaluator.ts)                                                                                                                                                                                                                                                                           |
 | Storage and loadout  | Lets the player drag agent and skill disks into the two drives, eject them, and keep loadout state in sync.                                                                                 | [src/game/scenes/main/storageController.ts](../src/game/scenes/main/storageController.ts), [src/game/scenes/main/config.ts](../src/game/scenes/main/config.ts)                                                                                                                                                                                                                                                                                                   |
 | Search tool          | Runs a radar timing module that locks search words sequentially, keeps progress when closed, adds live thermal pressure while active, and only accepts input through the Sync Pulse button. | [src/game/scenes/MainScene.ts](../src/game/scenes/MainScene.ts), [src/game/scenes/main/searchToolPanelController.ts](../src/game/scenes/main/searchToolPanelController.ts), [src/game/scenes/main/toolRuntimeHelpers.ts](../src/game/scenes/main/toolRuntimeHelpers.ts)                                                                                                                                                                                          |
 | Compute tool         | Runs the capacitor bank, latches when full, and decays over time unless the charge is maintained.                                                                                           | [src/game/scenes/MainScene.ts](../src/game/scenes/MainScene.ts), [src/game/scenes/main/toolRuntimeHelpers.ts](../src/game/scenes/main/toolRuntimeHelpers.ts), [src/game/data/RunData.ts](../src/game/data/RunData.ts)                                                                                                                                                                                                                                            |
@@ -65,6 +69,16 @@ The tool runtime is data-driven. The tunable values live in
 [src/game/data/RunData.ts](../src/game/data/RunData.ts), while the interaction
 and projection logic live in [src/game/scenes/main/toolRuntimeHelpers.ts](../src/game/scenes/main/toolRuntimeHelpers.ts)
 and [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encounterEvaluator.ts).
+
+### Roguelike Shift Generation
+
+- Encounter content is now authored as atomic turns in `content/encounters/tier*.json`.
+- Each shift resolves a `minTier` and `maxTier` range, then assembles encounters
+  at runtime by drawing turns from the allowed tier pools.
+- The number of turns per encounter is randomized, so a single encounter can mix
+  difficulty like `2 -> 3 -> 2` when the active shift profile allows it.
+- The generated encounter list is stored in `RunState` for the lifetime of the
+  shift so scene transitions do not reshuffle the current day mid-run.
 
 ### Safety and Content Policy
 
@@ -100,8 +114,8 @@ and [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encount
 - [src/game/scenes/main/storageController.ts](../src/game/scenes/main/storageController.ts)
   writes the mounted agent and skill disks back into `RunState`.
 - [src/game/scenes/main/sessionController.ts](../src/game/scenes/main/sessionController.ts)
-  depends on the current loadout, tool runtime, and passive modifiers to resolve
-  the active turn.
+  depends on the generated shift encounter list, current loadout, tool runtime,
+  and passive modifiers to resolve the active turn.
 - [src/game/scenes/main/hudController.ts](../src/game/scenes/main/hudController.ts)
   is presentation-only. It reads scene state and emits actions instead of owning
   game logic.

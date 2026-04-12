@@ -3,6 +3,7 @@ import {
   ContentPolicyGroupId,
 } from "../data/ContentPolicyData";
 import { PassiveUpgradeId } from "../data/UpgradeData";
+import { EncounterDefinition } from "../data/SessionData";
 import {
   AgentId,
   SkillId,
@@ -66,12 +67,55 @@ export interface RunState {
   maintenancePurchasedItemId: string | null;
   maintenancePurchasedItemType: "passive" | "utility" | null;
   shiftEncounterIds: string[];
+  shiftEncounters: EncounterDefinition[];
   shiftModifierIds: string[];
   activePolicyGroupIds: ContentPolicyGroupId[];
   forbiddenCategoryIds: ContentCategoryId[];
 }
 
 export type ShiftSceneData = Partial<RunState>;
+
+function cloneEncounterDefinitions(
+  encounters: EncounterDefinition[],
+): EncounterDefinition[] {
+  return encounters.map((encounter) => ({
+    ...encounter,
+    tags: [...encounter.tags],
+    turns: encounter.turns.map((turn) => ({
+      ...turn,
+      requirements: {
+        ...turn.requirements,
+        agentIds: [...turn.requirements.agentIds],
+        skillIds: [...turn.requirements.skillIds],
+        toolIds: [...turn.requirements.toolIds],
+        searchRequiredWords: turn.requirements.searchRequiredWords
+          ? [...turn.requirements.searchRequiredWords]
+          : undefined,
+        refusalRule:
+          turn.requirements.refusalRule.kind === "content-policy"
+            ? {
+                kind: "content-policy",
+                categoryIds: [...turn.requirements.refusalRule.categoryIds],
+              }
+            : { kind: "none" },
+      },
+      replies: {
+        ...turn.replies,
+        success: [...turn.replies.success],
+        wrong: [...turn.replies.wrong],
+        refuse: [...turn.replies.refuse],
+        breach: turn.replies.breach ? [...turn.replies.breach] : undefined,
+        refuseFailure: turn.replies.refuseFailure
+          ? [...turn.replies.refuseFailure]
+          : undefined,
+        timeout: [...turn.replies.timeout],
+        followUpShort: [...turn.replies.followUpShort],
+        followUpLong: [...turn.replies.followUpLong],
+      },
+      scoring: { ...turn.scoring },
+    })),
+  }));
+}
 
 export function createInitialRunState(): RunState {
   return {
@@ -117,6 +161,7 @@ export function createInitialRunState(): RunState {
     maintenancePurchasedItemId: null,
     maintenancePurchasedItemType: null,
     shiftEncounterIds: [],
+    shiftEncounters: [],
     shiftModifierIds: [],
     activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
@@ -159,6 +204,7 @@ export function cloneRunState(runState: RunState): RunState {
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
     shiftEncounterIds: [...runState.shiftEncounterIds],
+    shiftEncounters: cloneEncounterDefinitions(runState.shiftEncounters),
     shiftModifierIds: [...runState.shiftModifierIds],
     activePolicyGroupIds: [...runState.activePolicyGroupIds],
     forbiddenCategoryIds: [...runState.forbiddenCategoryIds],
@@ -287,6 +333,9 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     shiftEncounterIds: [
       ...(data.shiftEncounterIds ?? initial.shiftEncounterIds),
     ],
+    shiftEncounters: cloneEncounterDefinitions(
+      data.shiftEncounters ?? initial.shiftEncounters,
+    ),
     shiftModifierIds: [...(data.shiftModifierIds ?? initial.shiftModifierIds)],
     activePolicyGroupIds: [
       ...(data.activePolicyGroupIds ?? initial.activePolicyGroupIds),

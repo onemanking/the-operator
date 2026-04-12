@@ -2,6 +2,7 @@ import { ContentCategoryId, ContentPolicyGroupId } from "./ContentPolicyData";
 import { PassiveUpgradeId } from "./UpgradeData";
 import { ActiveUtilityId } from "./UtilityData";
 import { AgentId, SkillId, ToolId } from "./PromptIds";
+import { getTestEncounterById } from "./TestEncounterData";
 import { createInitialRunState, RunState } from "../types/SceneData";
 
 export type TestScenarioId = "guard" | "compute" | "search" | "utility";
@@ -90,11 +91,18 @@ export function buildTestScenarioRunState(
 ): RunState {
   const initialRunState = createInitialRunState();
   const scenario = TEST_SCENARIOS[testScenarioId];
+  const encounter = getTestEncounterById(scenario.encounterId);
   const utilityChargesById = scenario.utilityChargesById ?? {};
   const passiveUpgradeIds = scenario.passiveUpgradeIds ?? [];
   const unlockedUtilityIds = Object.entries(utilityChargesById)
     .filter(([, charges]) => (charges ?? 0) > 0)
     .map(([utilityId]) => utilityId);
+
+  if (!encounter) {
+    throw new Error(
+      `Unknown test scenario encounter id \"${scenario.encounterId}\".`,
+    );
+  }
 
   return {
     ...initialRunState,
@@ -114,6 +122,7 @@ export function buildTestScenarioRunState(
       chargesById: { ...utilityChargesById },
     },
     shiftEncounterIds: [scenario.encounterId],
+    shiftEncounters: [encounter],
     shiftModifierIds: [],
     activePolicyGroupIds: [...scenario.activePolicyGroupIds],
     forbiddenCategoryIds: [...scenario.forbiddenCategoryIds],

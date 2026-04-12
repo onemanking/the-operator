@@ -17,6 +17,9 @@ export type TestScenarioId =
   | "compute"
   | "search"
   | "utility"
+  | "tier1"
+  | "tier2"
+  | "tier3"
   | "tier4";
 
 interface TestScenarioDefinition {
@@ -36,6 +39,9 @@ interface TestScenarioDefinition {
   utilityChargesById?: Partial<Record<ActiveUtilityId, number>>;
 }
 
+const TIER1_TEST_ENCOUNTERS = buildTierTestEncounters(1);
+const TIER2_TEST_ENCOUNTERS = buildTierTestEncounters(2);
+const TIER3_TEST_ENCOUNTERS = buildTierTestEncounters(3);
 const TIER4_TEST_ENCOUNTERS = buildTierTestEncounters(4);
 const TIER4_FORBIDDEN_CATEGORY_IDS = CONTENT_CATEGORIES.map(
   (category) => category.id,
@@ -45,8 +51,6 @@ const TIER4_POLICY_GROUP_IDS: ContentPolicyGroupId[] = [
   "anti_company",
   "civic_influence",
   "self_harm_risk",
-  "labor_stability",
-  "systems_security",
 ];
 
 const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
@@ -99,15 +103,54 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
       signal_boost: 1,
     },
   },
+  tier1: {
+    shiftEncounters: TIER1_TEST_ENCOUNTERS,
+    activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
+    forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
+    equippedAgentIds: [AgentId.General],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    agentCapacity: 1,
+    skillCapacity: 2,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    heat: 15,
+    hallucination: 0,
+  },
+  tier2: {
+    shiftEncounters: TIER2_TEST_ENCOUNTERS,
+    activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
+    forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
+    equippedAgentIds: [AgentId.General],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    agentCapacity: 2,
+    skillCapacity: 3,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    heat: 15,
+    hallucination: 0,
+  },
+  tier3: {
+    shiftEncounters: TIER3_TEST_ENCOUNTERS,
+    activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
+    forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
+    equippedAgentIds: [AgentId.General],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    agentCapacity: 2,
+    skillCapacity: 4,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    heat: 15,
+    hallucination: 0,
+  },
   tier4: {
     shiftEncounters: TIER4_TEST_ENCOUNTERS,
     activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
     forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
-    equippedAgentIds: [AgentId.Logistics],
-    equippedSkillIds: [SkillId.Finance],
+    equippedAgentIds: [AgentId.Technical],
+    equippedSkillIds: [SkillId.Engineering],
     selectedPromptToolIds: [ToolId.Search, ToolId.Compute],
     agentCapacity: 2,
-    skillCapacity: 3,
+    skillCapacity: 4,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     heat: 15,
     hallucination: 0,
@@ -121,8 +164,37 @@ function isTestScenarioId(value: string): value is TestScenarioId {
     value === "compute" ||
     value === "search" ||
     value === "utility" ||
+    value === "tier1" ||
+    value === "tier2" ||
+    value === "tier3" ||
     value === "tier4"
   );
+}
+
+const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
+  "test-guard": "guard",
+  "test-search-guard": "searchGuard",
+  "test-compute": "compute",
+  "test-search": "search",
+  "test-utility": "utility",
+  "test-tier1": "tier1",
+  "test-tier2": "tier2",
+  "test-tier3": "tier3",
+  "test-tier4": "tier4",
+};
+
+function getModeScenarioId() {
+  const modeValue = (
+    import.meta as ImportMeta & {
+      env?: { MODE?: string };
+    }
+  ).env?.MODE;
+
+  if (!modeValue) {
+    return null;
+  }
+
+  return TEST_SCENARIO_IDS_BY_MODE[modeValue] ?? null;
 }
 
 function getEnvScenarioId() {
@@ -136,7 +208,7 @@ function getEnvScenarioId() {
 }
 
 export function resolveConfiguredTestScenario() {
-  return getEnvScenarioId();
+  return getEnvScenarioId() ?? getModeScenarioId();
 }
 
 export function buildTestScenarioRunState(

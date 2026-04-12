@@ -36,7 +36,8 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     id: "reality_patch",
     name: "REALITY PATCH",
     shortLabel: "PATCH",
-    description: "Single-use stabilizer. Fully scrub current hallucination drift.",
+    description:
+      "Single-use stabilizer. Fully scrub current hallucination drift.",
     effectText: "FULL HALL SCRUB",
     cost: 20,
     purchaseChargeCount: 1,

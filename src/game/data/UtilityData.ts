@@ -5,6 +5,11 @@ export type ActiveUtilityId =
   | "reality_patch"
   | "signal_boost";
 
+export type ActiveUtilityRestoreTarget =
+  | "heat"
+  | "hallucination"
+  | "connection";
+
 export interface ActiveUtilityDefinition {
   id: ActiveUtilityId;
   name: string;
@@ -12,11 +17,8 @@ export interface ActiveUtilityDefinition {
   description: string;
   effectText: string;
   cost: number;
-  maxCharges: number;
   purchaseChargeCount: number;
-  heatReduction?: number;
-  hallucinationReduction?: number;
-  connectionRestoreMs?: number;
+  restoreTarget: ActiveUtilityRestoreTarget;
 }
 
 export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
@@ -24,23 +26,21 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     id: "coolant_purge",
     name: "COOLANT PURGE",
     shortLabel: "COOLANT",
-    description: "Single-use vent. Reduce current thermal load by 35.",
-    effectText: "VENT -35 HEAT",
+    description: "Single-use vent. Fully clear current thermal load.",
+    effectText: "FULL HEAT PURGE",
     cost: 18,
-    maxCharges: 2,
     purchaseChargeCount: 1,
-    heatReduction: 35,
+    restoreTarget: "heat",
   },
   {
     id: "reality_patch",
     name: "REALITY PATCH",
     shortLabel: "PATCH",
-    description: "Single-use stabilizer. Reduce current hallucination by 20.",
-    effectText: "SCRUB -20 HALL",
+    description: "Single-use stabilizer. Fully scrub current hallucination drift.",
+    effectText: "FULL HALL SCRUB",
     cost: 20,
-    maxCharges: 2,
     purchaseChargeCount: 1,
-    hallucinationReduction: 20,
+    restoreTarget: "hallucination",
   },
   {
     id: "signal_boost",
@@ -49,9 +49,8 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     description: "Single-use uplink spike. Fully restore user connection.",
     effectText: "FULL LINK",
     cost: 16,
-    maxCharges: 2,
     purchaseChargeCount: 1,
-    connectionRestoreMs: 6000,
+    restoreTarget: "connection",
   },
 ];
 
@@ -68,7 +67,7 @@ export function getActiveUtilityCharges(
 
 export function getAvailableActiveUtilities(runState: RunState) {
   return ACTIVE_UTILITIES.filter((utility) => {
-    return getActiveUtilityCharges(runState, utility.id) < utility.maxCharges;
+    return canPurchaseActiveUtility(runState, utility.id);
   });
 }
 
@@ -116,7 +115,7 @@ export function canPurchaseActiveUtility(
     return false;
   }
 
-  return getActiveUtilityCharges(runState, utilityId) < definition.maxCharges;
+  return true;
 }
 
 export function applyActiveUtilityPurchase(
@@ -134,11 +133,9 @@ export function applyActiveUtilityPurchase(
     runState.utilityInventory.unlockedIds.push(utilityId);
   }
 
-  runState.utilityInventory.chargesById[utilityId] = Math.min(
-    definition.maxCharges,
+  runState.utilityInventory.chargesById[utilityId] =
     getActiveUtilityCharges(runState, utilityId) +
-      definition.purchaseChargeCount,
-  );
+    definition.purchaseChargeCount;
   runState.maintenancePurchasedItemId = utilityId;
   runState.maintenancePurchasedItemType = "utility";
 

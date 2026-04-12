@@ -446,8 +446,8 @@ export class MaintenanceScene extends Phaser.Scene {
       name: utility.name,
       description: utility.description,
       cost: utility.cost,
-      ownedText: `CHARGES: ${charges}/${utility.maxCharges}`,
-      isMaxed: charges >= utility.maxCharges,
+      ownedText: `CHARGES: ${charges}`,
+      isMaxed: false,
       canPurchase: canPurchaseActiveUtility(this.runState, utility.id),
     };
   }

@@ -1105,8 +1105,8 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (definition.heatReduction) {
-      this.setHeat(this.heat - definition.heatReduction);
+    if (definition.restoreTarget === "heat") {
+      this.setHeat(0);
 
       if (
         this.isOverheated &&
@@ -1118,30 +1118,19 @@ export class MainScene extends Phaser.Scene {
         );
       } else {
         this.sessionController.postSystemMessage(
-          `UTILITY: ${definition.name} VENTED ${definition.heatReduction} HEAT.`,
+          `UTILITY: ${definition.name} PURGED THERMALS TO BASELINE.`,
         );
       }
-    } else if (definition.hallucinationReduction) {
-      this.setHallucination(
-        this.hallucination - definition.hallucinationReduction,
-      );
+    } else if (definition.restoreTarget === "hallucination") {
+      this.setHallucination(0);
       this.sessionController.postSystemMessage(
-        `UTILITY: ${definition.name} SCRUBBED ${definition.hallucinationReduction} HALLUCINATION.`,
+        `UTILITY: ${definition.name} SCRUBBED HALLUCINATION TO BASELINE.`,
       );
-    } else if (definition.connectionRestoreMs) {
-      if (utilityId === "signal_boost") {
-        this.fillUserConnection();
-        this.sessionController.postSystemMessage(
-          `UTILITY: ${definition.name} RESTORED USER CONNECTION TO FULL.`,
-        );
-      } else {
-        const restoredMs = this.restoreUserConnection(
-          definition.connectionRestoreMs,
-        );
-        this.sessionController.postSystemMessage(
-          `UTILITY: ${definition.name} RESTORED ${(restoredMs / 1000).toFixed(1)}S OF USER CONNECTION.`,
-        );
-      }
+    } else if (definition.restoreTarget === "connection") {
+      this.fillUserConnection();
+      this.sessionController.postSystemMessage(
+        `UTILITY: ${definition.name} RESTORED USER CONNECTION TO FULL.`,
+      );
     }
 
     this.utilityFeedbackState = "success";

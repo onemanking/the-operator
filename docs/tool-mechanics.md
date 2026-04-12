@@ -46,7 +46,8 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
   venting.
 - Completed levers stay latched only for a short decay window; if the window
   expires, that lever drops out and must be redone.
-- Success vents heat immediately once all three levers are secured.
+- Success purges the current heat meter back to baseline once all three levers
+  are secured.
 
 ### Reality Patch
 
@@ -54,7 +55,7 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
 - The player adjusts only the live waveform frequency while a fixed target trace
   stays visible behind it.
 - When the two traces stay within tolerance long enough, the lock bar fills and
-  the hallucination scrub is applied.
+  the hallucination meter is scrubbed back to baseline.
 - Higher hallucination increases waveform jitter, making the alignment harder to
   hold.
 
@@ -67,7 +68,7 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
   causes a snap-back failure and forces a retry.
 - The exact source, target, and required-node pattern is chosen from authored
   layouts stored in runtime config.
-- Success restores user connection time immediately.
+- Success restores the user connection meter to full immediately.
 
 ### Search Config
 

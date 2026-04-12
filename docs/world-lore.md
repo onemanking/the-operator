@@ -35,8 +35,8 @@ You are paid per successful prompt processed. At the end of the shift, you must 
 
 ### Utility Bay (Corporate Sanctioned Cheats)
 You can buy/use corporate utilities to survive:
-*   **Coolant Purge:** A venting sequence that drops current thermal load if you can lock all purge levers in time.
-*   **Reality Patch:** A stability calibration pass that scrubs hallucination drift by matching a live waveform to target frequency.
+*   **Coolant Purge:** A venting sequence that fully clears current thermal load if you can lock all purge levers in time.
+*   **Reality Patch:** A stability calibration pass that fully scrubs hallucination drift by matching a live waveform to target frequency.
 *   **Signal Boost:** A routing surge that restores the user's fading connection by completing a signal path through the panel grid.
 
 ## 5. Potential NPCs / Senders

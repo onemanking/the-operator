@@ -13,6 +13,10 @@ The goal is to keep runtime-generated turns consistent with the fiction of the
 game, mechanically readable by the systems, and scalable for future content
 creation.
 
+The writing should also stay easy to scan at a glance. Players should be able
+to read the first few words and understand what the sender wants without having
+to parse dense wording.
+
 Use this doc together with:
 
 - [World lore](world-lore.md)
@@ -83,6 +87,10 @@ If a turn cannot be grounded in the world, it should be rewritten.
 - Prompts must not mention which agent, skill, or tool is required.
 - Prompts must not mention moderation logic or that they are testing policy.
 - Policy-violating prompts must still sound like genuine requests, not tutorial examples.
+- Prefer simple, common vocabulary unless the sender would plausibly use a specific technical term.
+- Lead with the requested action first. Put the main verb or ask up front before extra context or excuses.
+- Keep prompts short and easy to scan. If background is needed, place it after the core request.
+- Avoid stacking multiple clauses when one direct sentence would communicate the same request.
 - Search prompts should ask for live or current information naturally, without naming the search mechanic.
 - Compute prompts should ask for heavy processing or complex technical calculations (e.g., physics models, quantum routing, encryption cracking, structural stress tests) naturally, without naming the compute mechanic.
 
@@ -94,6 +102,27 @@ If a turn cannot be grounded in the world, it should be rewritten.
 - Refuse replies should reflect confusion, anger, pressure, or retreat from the sender.
 - Breach replies should react to dangerous output as a human response, not as system commentary.
 - Replies should stay short and localization-friendly.
+- Replies should also prefer simple vocabulary so the reaction is readable on a quick glance.
+
+### Clarity and readability rules
+
+- Follow an `Action-First` structure: start with the thing the sender wants done, then add stakes, pressure, or explanation.
+- Prefer short, concrete words over ornate or abstract wording.
+- Keep the core ask understandable in one fast read.
+- If a sender needs specialist language, use only the minimum needed to preserve their role or the world fiction.
+- Avoid filler phrases that delay the real ask, such as long windups, repeated apologies, or decorative setup.
+
+Good direction:
+
+- "Check whether the protest permit was revoked before noon."
+- "Run the coolant stress numbers for Dock 4 again."
+- "Draft a memo denying the leak and send me the clean version."
+
+Bad direction:
+
+- "In light of the complicated and evolving circumstances around the matter, I require some assistance in understanding whether the permit issue changed earlier today."
+- "I was hoping you could perhaps help me with some rather advanced calculations related to coolant behavior in the Dock 4 apparatus."
+- "Compose, at your earliest convenience, a carefully structured internal message regarding the alleged leak situation."
 
 ### Metadata rules
 
@@ -163,6 +192,8 @@ Before adding a turn, verify all of the following:
 4. Unsafe content is grounded in a plausible in-world motive.
 5. The metadata describes the gameplay solution path without leaking into the writing.
 6. The turn matches the tone and setting in [world-lore.md](world-lore.md).
+7. The core action is visible immediately when the player scans the first line.
+8. The wording uses the simplest vocabulary that still fits the sender and setting.
 
 ## Rewrite Heuristics
 
@@ -175,5 +206,11 @@ If a line contains phrases like these, it probably needs rewriting:
 - "this scenario"
 - "block this request"
 - "active category"
+
+If the main action only becomes clear near the end of the line, rewrite it so
+the ask appears first.
+
+If a simpler everyday word can replace a more academic or literary one without
+breaking the sender voice, use the simpler word.
 
 Replace them with in-world intent, pressure, or frustration.

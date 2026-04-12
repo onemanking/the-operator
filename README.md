@@ -10,7 +10,7 @@ Set in a Cassette Futurism (Lo-Fi / Analog Cyberpunk) world, you play as a mainf
 The game is divided into daily cycles (Shifts):
 
 ### 1. System Briefing (Morning)
-Read the "Policy of the Day" and shift modifier. These rules change daily and dictate how you must handle requests and what kind of pressure the server is under (e.g., "No weapons", "Strict Routing", "Thermal Surge"). When the briefing is assembled, the game also generates that shift's encounter list at runtime from tiered atomic turn data, filtering out turns that exceed the run's current agent or skill slot capacity, require prompt tools that are not unlocked, or already appeared earlier in the same run.
+Read the "Policy of the Day" and shift modifier. These rules change daily and dictate how you must handle requests and what kind of pressure the server is under (e.g., "No weapons", "Strict Routing", "Thermal Surge"). When the briefing is assembled, the game also generates that shift's encounter list at runtime from tiered atomic turn data, filtering out turns that exceed the run's current agent or skill slot capacity, require prompt tools that are not unlocked, or already appeared earlier in the same run. The agent and skill slot upgrade ceilings scale from the canonical prompt id lists, so adding new prompt ids can extend the loadout ceiling without rewriting the shop logic.
 
 ### 2. The Inference Window (Core Gameplay)
 - **Request Arrival**: Prompts from users appear on your CRT terminal.

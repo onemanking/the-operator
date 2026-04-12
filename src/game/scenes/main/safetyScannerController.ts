@@ -134,7 +134,9 @@ export class SafetyScannerController {
     if (!isDragging) {
       this.scannerVisualX = nextScannerVisualX;
     }
-    const scannerVisualX = isDragging ? this.scannerVisualX : nextScannerVisualX;
+    const scannerVisualX = isDragging
+      ? this.scannerVisualX
+      : nextScannerVisualX;
     const scannerCenterY = bounds.centerY;
 
     this.scannerBand.setVisible(isSafetyModeSelected);
@@ -177,10 +179,7 @@ export class SafetyScannerController {
 
     const readerOffset = this.bindings.getSafetyScanDirectionX() >= 0 ? 3 : -3;
     this.scannerHead.setVisible(isSafetyModeSelected);
-    this.scannerHead.setPosition(
-      scannerVisualX + readerOffset,
-      scannerCenterY,
-    );
+    this.scannerHead.setPosition(scannerVisualX + readerOffset, scannerCenterY);
     this.scannerHead.setSize(4, bounds.height);
     this.scannerHead.setDisplaySize(4, bounds.height);
     this.scannerHead.setFillStyle(

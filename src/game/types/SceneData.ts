@@ -38,6 +38,7 @@ export interface RunToolRuntimeState {
   computePrimed: boolean;
   searchLockedWords: string[];
   searchCurrentTargetIndex: number;
+  safetyRevealedWordIndexes: number[];
 }
 
 export interface RunUtilityRuntimeState {
@@ -109,6 +110,7 @@ export function createInitialRunState(): RunState {
       computePrimed: false,
       searchLockedWords: [],
       searchCurrentTargetIndex: 0,
+      safetyRevealedWordIndexes: [],
     },
     maintenanceSettledDay: null,
     maintenanceOfferIds: [],
@@ -148,6 +150,9 @@ export function cloneRunState(runState: RunState): RunState {
     toolRuntime: {
       ...runState.toolRuntime,
       searchLockedWords: [...runState.toolRuntime.searchLockedWords],
+      safetyRevealedWordIndexes: [
+        ...runState.toolRuntime.safetyRevealedWordIndexes,
+      ],
     },
     maintenanceSettledDay: runState.maintenanceSettledDay,
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
@@ -253,6 +258,15 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
         ...(data.toolRuntime?.searchLockedWords ??
           initial.toolRuntime.searchLockedWords),
       ],
+      safetyRevealedWordIndexes: [
+        ...(data.toolRuntime?.safetyRevealedWordIndexes ??
+          initial.toolRuntime.safetyRevealedWordIndexes),
+      ]
+        .filter(
+          (wordIndex): wordIndex is number =>
+            Number.isInteger(wordIndex) && wordIndex >= 0,
+        )
+        .sort((left, right) => left - right),
       searchCurrentTargetIndex:
         data.toolRuntime?.searchCurrentTargetIndex ??
         initial.toolRuntime.searchCurrentTargetIndex,

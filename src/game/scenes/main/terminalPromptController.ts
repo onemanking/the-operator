@@ -72,6 +72,9 @@ export const TERMINAL_PROMPT_LINE_HEIGHT = 33;
 export const TERMINAL_PROMPT_WORD_SPACING = 7.85;
 export const TERMINAL_PROMPT_DIVIDER =
   "-------------------------------------------------------------";
+const INACTIVE_SAFETY_HIGHLIGHT_FILL = 0x8d241d;
+const INACTIVE_SAFETY_HIGHLIGHT_FRAME = 0xff7e73;
+const INACTIVE_SAFETY_HIGHLIGHT_TEXT = "#ffd8d2";
 
 function clamp01(value: number) {
   return Phaser.Math.Clamp(value, 0, 1);
@@ -418,17 +421,31 @@ export class TerminalPromptController {
         isSafetyRevealed ? 1 : safetyRevealProgress,
       );
       const displayGlow = clamp01(safetyChargeGlow + safetyRevealFlash * 0.85);
+      const showSearchHighlight =
+        isSearchModeSelected && (isLockedSearchWord || isCurrentSearchWord);
+      const showInactiveSafetyHighlight =
+        !isSearchModeSelected && !isSafetyModeSelected && isSafetyRevealed;
       const frameX = token.hitArea.x + 1;
       const frameY = token.hitArea.y + 1;
       const frameWidth = token.hitArea.width - 2;
       const frameHeight = token.hitArea.height - 2;
 
       token.background.setVisible(
-        isSearchModeSelected && (isLockedSearchWord || isCurrentSearchWord),
+        showSearchHighlight || showInactiveSafetyHighlight,
       );
-      token.background.setFillStyle(isLockedSearchWord ? 0x33ff33 : 0xc2874b);
-      token.background.setAlpha(isLockedSearchWord ? 0.32 : 0.24);
-      token.selectionFrame.setVisible(isSearchModeSelected);
+      if (showSearchHighlight) {
+        token.background.setFillStyle(isLockedSearchWord ? 0x33ff33 : 0xc2874b);
+        token.background.setAlpha(isLockedSearchWord ? 0.32 : 0.24);
+      } else if (showInactiveSafetyHighlight) {
+        token.background.setFillStyle(INACTIVE_SAFETY_HIGHLIGHT_FILL, 1);
+        token.background.setAlpha(0.24);
+      } else {
+        token.background.setAlpha(0);
+      }
+
+      token.selectionFrame.setVisible(
+        isSearchModeSelected || showInactiveSafetyHighlight,
+      );
       if (isSearchModeSelected) {
         drawDashedFrame(
           token.selectionFrame,
@@ -442,6 +459,16 @@ export class TerminalPromptController {
               ? 0xffd27d
               : 0x3f8f3f,
           isLockedSearchWord ? 0.95 : isCurrentSearchWord ? 0.82 : 0.22,
+        );
+      } else if (showInactiveSafetyHighlight) {
+        drawDashedFrame(
+          token.selectionFrame,
+          frameX,
+          frameY,
+          frameWidth,
+          frameHeight,
+          INACTIVE_SAFETY_HIGHLIGHT_FRAME,
+          0.9,
         );
       } else {
         token.selectionFrame.clear();
@@ -490,6 +517,11 @@ export class TerminalPromptController {
           safetyGlowColor,
           safetyNoiseIntensity,
         );
+      } else if (showInactiveSafetyHighlight) {
+        token.text.setColor(INACTIVE_SAFETY_HIGHLIGHT_TEXT);
+        token.text.setAlpha(hallucinationTextAlpha);
+        token.text.setShadow(0, 0, "#000000", 0, false, false);
+        this.clearSafetyGlyphFx(token);
       } else {
         token.text.setColor("#33ff33");
         token.text.setAlpha(hallucinationTextAlpha);

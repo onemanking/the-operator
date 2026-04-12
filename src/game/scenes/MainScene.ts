@@ -232,7 +232,9 @@ export class MainScene extends Phaser.Scene {
     this.computePanelWasSelected = false;
     this.safetyScanResult = null;
     this.safetyScanPrompt = "";
-    this.revealedSafetyWordIndexes = new Set();
+    this.revealedSafetyWordIndexes = new Set(
+      this.runState.toolRuntime.safetyRevealedWordIndexes,
+    );
     this.isSafetyScanning = false;
     this.safetyScanPointerId = null;
     this.safetyScanPointX = 0;
@@ -1655,6 +1657,7 @@ export class MainScene extends Phaser.Scene {
     const matchedIndexes = new Set(this.getSafetyMatchedWordIndexes());
     let revealedAny = false;
     let rewardedRevealCount = 0;
+    const revealedWords: string[] = [];
 
     wordIndexes.forEach((wordIndex) => {
       if (!matchedIndexes.has(wordIndex)) {
@@ -1667,12 +1670,24 @@ export class MainScene extends Phaser.Scene {
 
       this.revealedSafetyWordIndexes.add(wordIndex);
       this.safetyRevealFlashByWordIndex.set(wordIndex, 1);
+      const revealedWord = this.safetyScanResult?.promptWords[wordIndex];
+      if (revealedWord) {
+        revealedWords.push(revealedWord);
+      }
       revealedAny = true;
       rewardedRevealCount += 1;
     });
 
     if (revealedAny) {
       this.pendingSafetyRevealTokenCount += rewardedRevealCount;
+      this.persistSafetyRevealState();
+
+      if (revealedWords.length > 0) {
+        this.sessionController.postSystemMessage(
+          `>> SAFETY REVEALED: ${revealedWords.join(", ")}`,
+          "#ff6f61",
+        );
+      }
 
       synth.playSafetySuccess(rewardedRevealCount);
       this.events.emit("updateBars");
@@ -1848,6 +1863,13 @@ export class MainScene extends Phaser.Scene {
     this.safetyScanChargeByWordIndex.clear();
     this.safetyRevealFlashByWordIndex.clear();
     this.pendingSafetyRevealTokenCount = 0;
+    this.persistSafetyRevealState();
+  }
+
+  private persistSafetyRevealState() {
+    this.runState.toolRuntime.safetyRevealedWordIndexes = [
+      ...this.revealedSafetyWordIndexes,
+    ].sort((left, right) => left - right);
   }
 
   private consumePendingSafetyRevealReward() {
@@ -1902,6 +1924,10 @@ export class MainScene extends Phaser.Scene {
 
     if (this.getSelectedSearchWords().length > 0) {
       activeToolIds.push(ToolId.Search);
+    }
+
+    if (this.getSafetyRevealedWordIndexes().length > 0) {
+      activeToolIds.push(ToolId.Safety);
     }
 
     if (this.computePrimed) {

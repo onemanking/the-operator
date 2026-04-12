@@ -1289,22 +1289,30 @@ export class MainSceneHudController {
     const selectedPromptToolIds = new Set(
       this.bindings.getSelectedPromptToolIds(),
     );
+    const searchLockedCount = this.bindings.getSearchLockedWords().length;
+    const searchTargetCount = this.bindings.getSearchTargetWords().length;
+    const safetyRevealedCount =
+      this.bindings.getSafetyRevealedWordIndexes().length;
+    const safetyDetectedCount = this.bindings.getSafetyDetectedWordCount();
+    const computeRatio = Math.min(
+      1,
+      this.bindings.getComputeCharge() / this.bindings.getComputeThreshold(),
+    );
 
     this.promptToolButtons.forEach((button, toolId) => {
       const isSelected = selectedPromptToolIds.has(toolId);
       const isComputeReady =
         toolId === ToolId.Compute && this.bindings.isComputeReady();
-      const searchLockedCount = this.bindings.getSearchLockedWords().length;
-      const searchTargetCount = this.bindings.getSearchTargetWords().length;
       const isSearchArmed = toolId === ToolId.Search && searchLockedCount > 0;
       const isSearchComplete =
         toolId === ToolId.Search &&
         searchTargetCount > 0 &&
         searchLockedCount >= searchTargetCount;
-      const computeRatio = Math.min(
-        1,
-        this.bindings.getComputeCharge() / this.bindings.getComputeThreshold(),
-      );
+      const isSafetyArmed = toolId === ToolId.Safety && safetyRevealedCount > 0;
+      const isSafetyComplete =
+        toolId === ToolId.Safety &&
+        safetyDetectedCount > 0 &&
+        safetyRevealedCount >= safetyDetectedCount;
       const activeIndicatorCount = Math.round(
         computeRatio * button.indicatorLamps.length,
       );
@@ -1315,22 +1323,30 @@ export class MainSceneHudController {
           ? 0x9cfb64
           : isSearchArmed
             ? 0xffc84d
-            : isComputeReady
-              ? 0xffc84d
-              : isSelected
+            : isSafetyComplete
+              ? 0x9cfb64
+              : isSafetyArmed
                 ? 0x33ff33
-                : 0x173617,
+                : isComputeReady
+                  ? 0xffc84d
+                  : isSelected
+                    ? 0x33ff33
+                    : 0x173617,
       );
       button.shadow.setFillStyle(
         isSearchComplete
           ? 0x2c5824
           : isSearchArmed
             ? 0x5a4312
-            : isComputeReady
-              ? 0x5a4312
-              : isSelected
+            : isSafetyComplete
+              ? 0x2c5824
+              : isSafetyArmed
                 ? 0x294829
-                : 0x111111,
+                : isComputeReady
+                  ? 0x5a4312
+                  : isSelected
+                    ? 0x294829
+                    : 0x111111,
       );
 
       button.indicatorLamps.forEach((indicatorLamp, lampIndex) => {

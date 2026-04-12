@@ -163,6 +163,8 @@ export class MaintenanceScene extends Phaser.Scene {
             nextRunState.maintenancePurchasedItemType = null;
             nextRunState.shiftEncounterIds = [];
             nextRunState.shiftModifierIds = [];
+            nextRunState.activePolicyGroupIds = [];
+            nextRunState.forbiddenCategoryIds = [];
             this.scene.start("BriefingScene", nextRunState);
           },
         });

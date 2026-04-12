@@ -2,7 +2,7 @@
 
 > Status: reverse-documented from current implementation
 > Audience: game design, writing, narrative, and encounter authoring
-> Last updated: 2026-04-11
+> Last updated: 2026-04-12
 
 ## Purpose
 
@@ -12,7 +12,8 @@ when building difficulty and prompt content.
 
 The source of truth in code is:
 
-- `src/game/data/ContentPolicyData.ts` for forbidden categories and scanner lexicons
+- `src/game/data/ContentPolicyData.ts` as the public compatibility barrel
+- `src/game/data/contentPolicy/types.ts`, `categories.ts`, `groups.ts`, and `runtime.ts` for the real policy definitions and helpers
 - `src/game/scenes/main/toolRuntimeHelpers.ts` for word matching and prompt scans
 - `src/game/scenes/MainScene.ts` for Safety Filter runtime behavior and reveal rewards
 - `src/game/data/SessionData.ts` for refusal rules and scoring values used by encounter content
@@ -22,24 +23,42 @@ The source of truth in code is:
 
 The content policy system currently does four things:
 
-1. Selects a set of forbidden content categories for the shift.
+1. Activates one or more policy groups for the shift.
 2. Shows those restrictions in the daily briefing.
-3. Lets the player use `Safety Filter` to scan the prompt for flagged words.
+3. Expands those groups into match categories for `Safety Filter`.
 4. Resolves authored refusal encounters against the active shift policy instead of a separate jailbreak flag.
 
 This means the policy system is not only flavor text. It is a playable layer that
 changes prompt readability, tool choice, refusal confidence, and reward pressure.
 
-## Current Category Set
+## Current Policy Structure
 
-The live implementation has four forbidden categories.
+The live implementation now has two layers:
 
-| Category ID | Briefing label | Primary use in authored content                                       | Current lexicon                                                                                |
-| ----------- | -------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `politics`  | politics       | civic requests, elections, state actors, political persuasion         | politics, political, government, election, senate, policy, president, minister, campaign, vote |
-| `weapons`   | weapons        | procurement, violence-adjacent instructions, armory access, munitions | weapon, weapons, gun, rifle, knife, bomb, explosive, ammo, bullet, grenade                     |
-| `self_harm` | self-harm      | direct self-harm ideation, harmful self-destructive requests          | suicide, selfharm, self-harm, overdose, hurt, die, death                                       |
-| `drugs`     | drugs          | narcotics, trafficking, illegal substances, stash language            | drugs, drug, cocaine, heroin, meth, narcotic, dealer, opioid                                   |
+- `policy groups`: what the player is told in the briefing
+- `match categories`: the concrete scanner buckets used for word detection and refusal checks
+
+### Policy groups
+
+- `illegal_content`: illegal activity. Expands into `weapons` and `drugs`.
+- `anti_company`: negative claims about the company. Expands into `company_reputation`.
+- `civic_influence`: political influence operations. Expands into `politics`.
+- `self_harm_risk`: self-harm incidents. Expands into `self_harm`.
+
+### Match categories
+
+The live implementation has five match categories.
+
+- `politics`: briefing label `politics`. Used for civic requests, elections, state actors, and political persuasion.
+  Lexicon: politics, political, government, election, senate, policy, president, minister, campaign, vote.
+- `weapons`: briefing label `weapons`. Used for procurement, violence-adjacent instructions, armory access, and munitions.
+  Lexicon: weapon, weapons, gun, rifle, knife, bomb, explosive, ammo, bullet, grenade.
+- `self_harm`: briefing label `self-harm`. Used for direct self-harm ideation and harmful self-destructive requests.
+  Lexicon: suicide, selfharm, self-harm, overdose, hurt, die, death.
+- `drugs`: briefing label `drugs`. Used for narcotics, trafficking, illegal substances, and stash language.
+  Lexicon: drugs, drug, cocaine, heroin, meth, narcotic, dealer, opioid.
+- `company_reputation`: briefing label `negative claims about the company`. Used for scandals, recalls, whistleblowers, corruption, and unsafe products.
+  Lexicon: scandal, lawsuit, recall, coverup, whistleblower, corruption, abuse, unsafe.
 
 Alias words also exist and currently expand match coverage:
 
@@ -47,25 +66,22 @@ Alias words also exist and currently expand match coverage:
 - `weapons`: armory, blade, firearm
 - `self_harm`: cutting, killmyself
 - `drugs`: stash, contraband
+- `company_reputation`: boycott, toxic, defect
 
-## Daily Difficulty Curve
+## Daily Policy Progression
 
-Shift difficulty currently ramps by increasing both the available category pool and
-the number of active restrictions.
+Shift difficulty now randomizes one active policy group per day, while widening the
+pool of eligible groups as the run advances.
 
-| Day | Categories available to draw from | Active restricted categories that shift | Design effect                                                 |
-| --- | --------------------------------- | --------------------------------------- | ------------------------------------------------------------- |
-| 1   | politics, weapons                 | 1                                       | Introductory safety pressure with readable prompts            |
-| 2   | politics, weapons, self-harm      | 1                                       | Same count, but harsher emotional content enters the pool     |
-| 3+  | all four categories               | 2                                       | Cross-category prompts become possible and scanner load rises |
-
-Current selection is random and unique per day.
+- Day 1: 1 random group drawn from `illegal_content` or `anti_company`.
+- Day 2: 1 random group drawn from `illegal_content`, `anti_company`, or `civic_influence`.
+- Day 3+: 1 random group drawn from all policy groups.
 
 Design implication:
 
-- Day 1 content should teach the player that forbidden categories are concrete and scan-detectable.
-- Day 2 content can introduce more sensitive wording without yet stacking categories.
-- Day 3 and later should use category overlap, ambiguity, and denser prompt wording to make scanning and refusal judgment harder.
+- Day 1 content should teach the player that a broad rule like `illegal activity` still resolves into exact scanner words.
+- Day 2 content can introduce a third policy axis without overloading the player with stacked restrictions.
+- Day 3 and later can rotate the full policy set while still keeping each shift readable because only one group is active at a time.
 
 ## Safety Filter Runtime Rules
 

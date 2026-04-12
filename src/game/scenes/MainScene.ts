@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { ContentCategoryId } from "../data/ContentPolicyData";
-import { getForbiddenCategoryBriefingText } from "../data/ContentPolicyData";
+import { getGameplayPolicyStickyNoteContent } from "../data/ContentPolicyData";
 import { addScanlines } from "./shared/retroUi";
 import { synth } from "../utils/SoundSynth";
 import {
@@ -537,8 +537,11 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.stickyNotesController = new MainSceneStickyNotesController(this, {
-      getPolicyText: () =>
-        getForbiddenCategoryBriefingText(this.runState.forbiddenCategoryIds),
+      getPolicyContent: () =>
+        getGameplayPolicyStickyNoteContent(
+          this.runState.activePolicyGroupIds,
+          this.runState.forbiddenCategoryIds,
+        ),
       getShiftEventText: () => {
         const modifiers = getShiftModifierDefinitions(
           this.runState.shiftModifierIds,

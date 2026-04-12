@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import {
-  drawForbiddenCategoriesForDay,
-  getForbiddenCategoryBriefingText,
+  drawPolicyGroupsForDay,
+  expandPolicyGroupIdsToCategoryIds,
+  getActivePolicyBriefingText,
 } from "../data/ContentPolicyData";
 import {
   drawShiftModifiersForDay,
@@ -39,9 +40,14 @@ export class BriefingScene extends Phaser.Scene {
         this.runState.day,
       );
     }
-    if (this.runState.forbiddenCategoryIds.length === 0) {
-      this.runState.forbiddenCategoryIds = drawForbiddenCategoriesForDay(
+    if (this.runState.activePolicyGroupIds.length === 0) {
+      this.runState.activePolicyGroupIds = drawPolicyGroupsForDay(
         this.runState.day,
+      );
+    }
+    if (this.runState.forbiddenCategoryIds.length === 0) {
+      this.runState.forbiddenCategoryIds = expandPolicyGroupIdsToCategoryIds(
+        this.runState.activePolicyGroupIds,
       );
     }
     this.day = this.runState.day;
@@ -67,7 +73,8 @@ export class BriefingScene extends Phaser.Scene {
     const shiftModifiers = getShiftModifierDefinitions(
       this.runState.shiftModifierIds,
     );
-    const policyText = getForbiddenCategoryBriefingText(
+    const policyText = getActivePolicyBriefingText(
+      this.runState.activePolicyGroupIds,
       this.runState.forbiddenCategoryIds,
     );
     const modifierText =

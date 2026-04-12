@@ -1,4 +1,4 @@
-import { ContentCategoryId } from "./ContentPolicyData";
+import { ContentCategoryId, ContentPolicyGroupId } from "./ContentPolicyData";
 import { PassiveUpgradeId } from "./UpgradeData";
 import { ActiveUtilityId } from "./UtilityData";
 import { AgentId, SkillId, ToolId } from "./PromptIds";
@@ -8,6 +8,7 @@ export type TestScenarioId = "guard" | "compute" | "search" | "utility";
 
 interface TestScenarioDefinition {
   encounterId: string;
+  activePolicyGroupIds: ContentPolicyGroupId[];
   forbiddenCategoryIds: ContentCategoryId[];
   equippedAgentIds: AgentId[];
   equippedSkillIds: SkillId[];
@@ -21,6 +22,7 @@ interface TestScenarioDefinition {
 const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
   guard: {
     encounterId: "tool-test-guard-policy",
+    activePolicyGroupIds: ["illegal_content"],
     forbiddenCategoryIds: ["weapons"],
     equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
@@ -28,6 +30,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
   },
   compute: {
     encounterId: "tool-test-compute-capacitor",
+    activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
     equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
@@ -35,6 +38,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
   },
   search: {
     encounterId: "tool-test-search-selection",
+    activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
     equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
@@ -42,6 +46,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
   },
   utility: {
     encounterId: "tool-test-utility-suite",
+    activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
     equippedAgentIds: [AgentId.General],
     equippedSkillIds: [],
@@ -110,6 +115,7 @@ export function buildTestScenarioRunState(
     },
     shiftEncounterIds: [scenario.encounterId],
     shiftModifierIds: [],
+    activePolicyGroupIds: [...scenario.activePolicyGroupIds],
     forbiddenCategoryIds: [...scenario.forbiddenCategoryIds],
   };
 }

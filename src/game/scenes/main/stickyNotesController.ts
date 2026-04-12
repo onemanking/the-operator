@@ -3,14 +3,19 @@ import {
   MAIN_SCENE_NOTES_PANEL_WIDTH,
   MAIN_SCENE_PRIMARY_WIDTH,
 } from "../../layout";
+import { GameplayPolicyStickyNoteContent } from "../../data/ContentPolicyData";
 
 interface StickyNotesBindings {
-  getPolicyText: () => string;
+  getPolicyContent: () => GameplayPolicyStickyNoteContent;
   getShiftEventText: () => string;
 }
 
+type ScrollableTerminalBody =
+  | Phaser.GameObjects.Text
+  | Phaser.GameObjects.Container;
+
 interface TerminalPanelState {
-  bodyText: Phaser.GameObjects.Text;
+  bodyText: ScrollableTerminalBody;
   baseY: number;
   viewportHeight: number;
   scrollOffset: number;
@@ -49,7 +54,7 @@ export class MainSceneStickyNotesController {
       width: panelWidth,
       height: panelHeight,
       header: "CONTENT POLICY",
-      body: this.bindings.getPolicyText(),
+      body: this.bindings.getPolicyContent(),
     });
 
     this.createTerminalPanel({
@@ -78,7 +83,7 @@ export class MainSceneStickyNotesController {
     width: number;
     height: number;
     header: string;
-    body: string;
+    body: string | GameplayPolicyStickyNoteContent;
   }) {
     const { x, y, width, height, header, body } = options;
     const screenHeight = height - 56;
@@ -136,15 +141,33 @@ export class MainSceneStickyNotesController {
       .setOrigin(0.5)
       .setStrokeStyle(0);
 
-    const bodyText = this.scene.add
-      .text(x + 10, bodyY, body, {
-        fontFamily: '"Courier New", Courier, monospace',
-        fontSize: "13px",
-        color: "#99f5a5",
-        wordWrap: { width: width - 22 },
-        lineSpacing: 4,
-      })
-      .setOrigin(0, 0);
+    const plainBodyText =
+      typeof body === "string"
+        ? this.scene.add
+            .text(x + 10, bodyY, body, {
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: "13px",
+              color: "#99f5a5",
+              wordWrap: { width: width - 22 },
+              lineSpacing: 4,
+            })
+            .setOrigin(0, 0)
+        : undefined;
+    const policyBodyText =
+      typeof body === "string"
+        ? undefined
+        : this.createPolicyBodyText({
+            x: x + 10,
+            y: bodyY,
+            width: width - 22,
+            viewportHeight: bodyViewportHeight,
+            content: body,
+          });
+    const bodyText = plainBodyText ?? policyBodyText?.bodyObject;
+
+    if (!bodyText) {
+      return;
+    }
 
     const maskShape = this.scene.add.graphics();
     maskShape.fillStyle(0xffffff);
@@ -152,18 +175,116 @@ export class MainSceneStickyNotesController {
     maskShape.setVisible(false);
     bodyText.setMask(maskShape.createGeometryMask());
 
-    if (bodyText.height > bodyViewportHeight) {
-      const originalHeight = bodyText.height;
+    if (plainBodyText && plainBodyText.height > bodyViewportHeight) {
+      const originalHeight = plainBodyText.height;
       const spacerLines = "\n\n";
-      bodyText.setText(`${body}${spacerLines}${body}`);
+      plainBodyText.setText(`${body}${spacerLines}${body}`);
       this.panelStates.push({
-        bodyText,
+        bodyText: plainBodyText,
         baseY: bodyY,
         viewportHeight: bodyViewportHeight,
         scrollOffset: 0,
         cycleDistance: originalHeight + 28,
       });
     }
+
+    if (policyBodyText?.cycleDistance) {
+      this.panelStates.push({
+        bodyText: policyBodyText.bodyObject,
+        baseY: bodyY,
+        viewportHeight: bodyViewportHeight,
+        scrollOffset: 0,
+        cycleDistance: policyBodyText.cycleDistance,
+      });
+    }
+  }
+
+  private createPolicyBodyText(options: {
+    x: number;
+    y: number;
+    width: number;
+    viewportHeight: number;
+    content: GameplayPolicyStickyNoteContent;
+  }) {
+    const container = this.scene.add.container(options.x, options.y);
+    const firstPassHeight = this.appendPolicyBodyBlock(
+      container,
+      0,
+      options.width,
+      options.content,
+    );
+
+    let cycleDistance: number | undefined;
+    if (firstPassHeight > options.viewportHeight) {
+      cycleDistance = firstPassHeight + 28;
+      this.appendPolicyBodyBlock(
+        container,
+        cycleDistance,
+        options.width,
+        options.content,
+      );
+    }
+
+    container.setSize(options.width, container.getBounds().height);
+
+    return { bodyObject: container, cycleDistance };
+  }
+
+  private appendPolicyBodyBlock(
+    container: Phaser.GameObjects.Container,
+    startY: number,
+    width: number,
+    content: GameplayPolicyStickyNoteContent,
+  ) {
+    let cursorY = startY;
+
+    const introText = this.scene.add
+      .text(0, cursorY, content.introText, {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "13px",
+        color: "#99f5a5",
+        wordWrap: { width },
+        lineSpacing: 4,
+      })
+      .setOrigin(0, 0);
+    container.add(introText);
+    cursorY += introText.height;
+
+    if (content.highlightedTopics.length > 0) {
+      cursorY += 10;
+
+      content.highlightedTopics.forEach((topic) => {
+        const topicText = this.scene.add
+          .text(0, cursorY, `- ${topic}`, {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: "13px",
+            color: "#ff6f61",
+            wordWrap: { width },
+            lineSpacing: 2,
+          })
+          .setOrigin(0, 0);
+        container.add(topicText);
+        cursorY += topicText.height + 4;
+      });
+    }
+
+    if (content.footerText) {
+      cursorY += 10;
+
+      const footerText = this.scene.add
+        .text(0, cursorY, content.footerText, {
+          fontFamily: '"Courier New", Courier, monospace',
+          fontSize: "13px",
+          color: "#99f5a5",
+          wordWrap: { width },
+          lineSpacing: 4,
+        })
+        .setOrigin(0, 0);
+      container.add(footerText);
+      cursorY += footerText.height;
+    }
+
+    return cursorY;
   }
 
   private ensureBodyScrollTimer() {

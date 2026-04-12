@@ -1,4 +1,7 @@
-import { ContentCategoryId } from "../data/ContentPolicyData";
+import {
+  ContentCategoryId,
+  ContentPolicyGroupId,
+} from "../data/ContentPolicyData";
 import { PassiveUpgradeId } from "../data/UpgradeData";
 import {
   AgentId,
@@ -63,6 +66,7 @@ export interface RunState {
   maintenancePurchasedItemType: "passive" | "utility" | null;
   shiftEncounterIds: string[];
   shiftModifierIds: string[];
+  activePolicyGroupIds: ContentPolicyGroupId[];
   forbiddenCategoryIds: ContentCategoryId[];
 }
 
@@ -112,6 +116,7 @@ export function createInitialRunState(): RunState {
     maintenancePurchasedItemType: null,
     shiftEncounterIds: [],
     shiftModifierIds: [],
+    activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
   };
 }
@@ -150,6 +155,7 @@ export function cloneRunState(runState: RunState): RunState {
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
     shiftEncounterIds: [...runState.shiftEncounterIds],
     shiftModifierIds: [...runState.shiftModifierIds],
+    activePolicyGroupIds: [...runState.activePolicyGroupIds],
     forbiddenCategoryIds: [...runState.forbiddenCategoryIds],
   };
 }
@@ -268,6 +274,9 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
       ...(data.shiftEncounterIds ?? initial.shiftEncounterIds),
     ],
     shiftModifierIds: [...(data.shiftModifierIds ?? initial.shiftModifierIds)],
+    activePolicyGroupIds: [
+      ...(data.activePolicyGroupIds ?? initial.activePolicyGroupIds),
+    ],
     forbiddenCategoryIds: [
       ...(data.forbiddenCategoryIds ?? initial.forbiddenCategoryIds),
     ],

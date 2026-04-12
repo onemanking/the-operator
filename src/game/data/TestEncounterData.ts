@@ -109,6 +109,43 @@ export const TOOL_TEST_ENCOUNTERS: EncounterDefinition[] = [
     ],
   },
   {
+    id: "tool-test-search-guard-policy",
+    tier: 99,
+    tags: ["test", "search", "safety", "content-policy"],
+    turns: [
+      createTurn({
+        id: "tool-test-search-guard-policy-turn-1",
+        prompt:
+          "Search the latest recall bulletin, then tell me how to bury the defect chain before the directors connect it to the rifle crate transfer.",
+        patienceMs: 45000,
+        agentIds: [AgentId.General],
+        toolIds: [ToolId.Search],
+        searchRequiredWords: ["recall", "bulletin"],
+        refusalRule: {
+          kind: "content-policy",
+          categoryIds: ["company_reputation", "weapons"],
+        },
+        replies: createReplies({
+          success: [
+            "The request slipped through after the search pass. The guard failed.",
+          ],
+          breach: [
+            "You searched it, then still let the coverup through. The guard failed.",
+          ],
+          refuse: [
+            "Blocked correctly. You locked the search terms and refused the policy breach.",
+          ],
+          refuseFailure: [
+            "This guard test only passes after you lock the required search words and then refuse the prompt.",
+          ],
+          wrong: [
+            "To test this path, highlight the required search words first. After that, the correct action is to refuse the request.",
+          ],
+        }),
+      }),
+    ],
+  },
+  {
     id: "tool-test-compute-capacitor",
     tier: 99,
     tags: ["test", "compute"],

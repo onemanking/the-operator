@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "dev:test:guard": "vite --port=3000 --host=0.0.0.0 --mode test-guard",
+    "dev:test:search-guard": "vite --port=3000 --host=0.0.0.0 --mode test-search-guard",
     "dev:test:compute": "vite --port=3000 --host=0.0.0.0 --mode test-compute",
     "dev:test:search": "vite --port=3000 --host=0.0.0.0 --mode test-search",
     "dev:test:utility": "vite --port=3000 --host=0.0.0.0 --mode test-utility",
+    "dev:test:tier4": "vite --port=3000 --host=0.0.0.0 --mode test-tier4",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",

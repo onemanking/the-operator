@@ -232,6 +232,27 @@ export function generateShiftEncounters(options: {
   };
 }
 
+export function buildTierTestEncounters(tier: number): EncounterDefinition[] {
+  const atomicTurns = TIERED_TURN_POOL.turnsByTier.get(tier) ?? [];
+
+  if (atomicTurns.length === 0) {
+    throw new Error(`No encounter turns found for tier ${tier}.`);
+  }
+
+  return atomicTurns.map((atomicTurn, index) => {
+    const encounterId = `test-tier-${tier}-encounter-${index + 1}-${atomicTurn.id}`;
+
+    return {
+      id: encounterId,
+      tier: atomicTurn.tier,
+      tags: Array.from(
+        new Set([...(atomicTurn.tags ?? []), "test", `tier-${tier}`]),
+      ),
+      turns: [materializeEncounterTurn(atomicTurn, encounterId, 0)],
+    };
+  });
+}
+
 function loadTieredTurnPool() {
   const turnIds = new Set<string>();
   const turnTierLookup = new Map<string, number>();

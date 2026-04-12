@@ -136,6 +136,7 @@ should be read as next-step work rather than missing current features.
 
 ## Related Docs
 
+- [Encounter authoring rules](encounter-authoring.md)
 - [Tool mechanics reference](tool-mechanics.md)
 - [Content policy reference](content-policy.md)
 - [World lore](world-lore.md)

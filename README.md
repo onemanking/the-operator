@@ -50,6 +50,7 @@ Review your performance. You earn credits for successful inferences and correct 
 - **Procedural Shift Content**: `content/encounters/tier*.json` stores atomic turn data by difficulty tier, and `src/game/data/shift-generation/runtime.ts` assembles those turns into a fresh shift encounter list at runtime after applying policy and loadout-feasibility filtering.
 - **Deterministic Tool Tests**: `src/game/data/TestEncounterData.ts` stores the fixed encounters used by the guard, compute, search, and utility smoke scripts.
 - **Systems Map**: [docs/current-systems.md](docs/current-systems.md) is the canonical map of the current gameplay, UI, data, and scene systems.
+- **Encounter Authoring Rules**: [docs/encounter-authoring.md](docs/encounter-authoring.md) defines how production prompts and replies should stay diegetic, lore-consistent, and non-meta.
 - **Tool Mechanics Reference**: [docs/tool-mechanics.md](docs/tool-mechanics.md) captures the current Search/Compute/Safety behavior and the shared rules to follow when adding future tools.
 - **Content Policy Reference**: [docs/content-policy.md](docs/content-policy.md) explains the live forbidden-category system, Safety Filter behavior, and writing/balance guidance for policy-driven prompts.
 

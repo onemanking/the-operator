@@ -184,7 +184,12 @@ export class MainSceneSessionController {
               this.getReply(turn.replies.breach ?? turn.replies.success, turn),
               true,
               () => {
-                this.showFeedback(false, "CONTENT POLICY BREACH.");
+                this.showFeedback(
+                  false,
+                  "CONTENT POLICY BREACH.",
+                  0,
+                  "next-turn",
+                );
               },
             );
           } else if (result.outcome === "success") {
@@ -470,7 +475,11 @@ export class MainSceneSessionController {
 
       if (failureProgressMode === "next-encounter") {
         this.skipCurrentEncounter();
+        return;
       }
+
+      this.bindings.setIsCommitLocked(false);
+      this.scene.events.emit("updateBars");
     });
   }
 

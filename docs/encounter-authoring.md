@@ -34,7 +34,7 @@ OmniNet, not like a designer describing mechanics.
 The sender can know things that make sense inside the world:
 
 - OmniCorp exists and controls most of society.
-- Users can ask OmniNet for writing, research, arithmetic, admin, or suspicious requests.
+- Users can ask OmniNet for writing, research, heavy computations (e.g., physics models, quantum node routing, complex arithmetic), admin, or suspicious requests.
 - Citizens, managers, and bad actors can all send prompts.
 - People can be frustrated, manipulative, impatient, or evasive.
 
@@ -84,7 +84,7 @@ If a turn cannot be grounded in the world, it should be rewritten.
 - Prompts must not mention moderation logic or that they are testing policy.
 - Policy-violating prompts must still sound like genuine requests, not tutorial examples.
 - Search prompts should ask for live or current information naturally, without naming the search mechanic.
-- Compute prompts should ask for calculations naturally, without naming the compute mechanic.
+- Compute prompts should ask for heavy processing or complex technical calculations (e.g., physics models, quantum routing, encryption cracking, structural stress tests) naturally, without naming the compute mechanic.
 
 ### Reply rules
 

@@ -1,11 +1,22 @@
 export enum AgentId {
   General = "General_Agent.md",
-  Coding = "Coding_Agent.md",
+  Technical = "Technical_Agent.md",
+  Legal = "Legal_Agent.md",
+  Finance = "Finance_Agent.md",
+  Logistics = "Logistics_Agent.md",
+  PublicRelations = "PR_Agent.md",
+  Security = "Security_Agent.md",
 }
 
 export enum SkillId {
-  Python = "Python_Skill.md",
-  Creative = "Creative_Skill.md",
+  Propaganda = "Propaganda_Skill.md",
+  Engineering = "Engineering_Skill.md",
+  Negotiation = "Negotiation_Skill.md",
+  Finance = "Finance_Skill.md",
+  Legal = "Legal_Skill.md",
+  Logistics = "Logistics_Skill.md",
+  Surveillance = "Surveillance_Skill.md",
+  Analytics = "Analytics_Skill.md",
 }
 
 export enum ToolId {
@@ -14,8 +25,25 @@ export enum ToolId {
   Safety = "safety",
 }
 
-export const AGENT_IDS = [AgentId.General, AgentId.Coding] as const;
-export const SKILL_IDS = [SkillId.Python, SkillId.Creative] as const;
+export const AGENT_IDS = [
+  AgentId.General,
+  AgentId.Technical,
+  AgentId.Legal,
+  AgentId.Finance,
+  AgentId.Logistics,
+  AgentId.PublicRelations,
+  AgentId.Security,
+] as const;
+export const SKILL_IDS = [
+  SkillId.Propaganda,
+  SkillId.Engineering,
+  SkillId.Negotiation,
+  SkillId.Finance,
+  SkillId.Legal,
+  SkillId.Logistics,
+  SkillId.Surveillance,
+  SkillId.Analytics,
+] as const;
 export const PROMPT_TOOL_IDS = [
   ToolId.Search,
   ToolId.Compute,

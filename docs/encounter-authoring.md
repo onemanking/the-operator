@@ -141,6 +141,7 @@ never leak that metadata into prompt or reply text.
 
 When designing the intended agent or skill path for an encounter:
 
+- Use only agent and skill concepts that already exist in the project.
 - Prefer agent and skill concepts with plain, obvious jobs that a player can infer from the ask.
 - The correct solution should feel readable from the fiction, not like a hidden trivia test about internal labels.
 - Prefer broad, understandable capability buckets over overly narrow or academic distinctions.
@@ -223,7 +224,7 @@ If a line contains phrases like these, it probably needs rewriting:
 - "this shift"
 - "under policy"
 - "use the search tool"
-- "use the coding agent"
+- "use the general agent"
 - "this scenario"
 - "block this request"
 - "active category"

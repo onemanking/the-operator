@@ -24,6 +24,7 @@ The game currently uses three prompt tools that can be armed in combination:
 - `Search` contributes locked search words to evaluation when the player completes the radar timing sequence.
 - `Compute` contributes an armed capacitor state once it has been charged successfully.
 - `Safety Filter` contributes revealed evidence for content-policy refusals and adds live thermal pressure while active.
+- Active prompt tools do not add extra commit-time context heat by themselves; commit heat comes from agent/skill context, locked Search words, and the action's own base cost.
 
 The live shift also includes a separate active-utility system. Utilities are not prompt tools and do not satisfy encounter tool requirements, but they share the same machine-first presentation philosophy.
 
@@ -105,6 +106,7 @@ right-side column between `TOOL CONTROL` and `ACTIVE UTILITY`.
 ## Shared HUD Rules
 
 - Base heat preview should represent loadout cost from agents, skills, Search selection, and over-context penalties.
+- Armed prompt tools should not add extra loadout or commit heat just for being active.
 - Commit-action heat preview should appear only when hovering the relevant action button.
 - All preview heat should use the same visual language unless a future tool intentionally needs a distinct affordance.
 - Tool affordances should be readable at a glance: selected state, hover state, and armed/ready state should all be visually distinct.

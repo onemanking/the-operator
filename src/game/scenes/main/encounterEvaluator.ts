@@ -45,12 +45,8 @@ export interface EncounterEvaluationResult {
   breakdown: EncounterScoreBreakdown;
 }
 
-function getContextItemCount(loadout: EncounterLoadoutSnapshot) {
-  return (
-    loadout.activeAgentIds.length +
-    loadout.activeSkillIds.length +
-    loadout.activeToolIds.length
-  );
+function getHeatContextItemCount(loadout: EncounterLoadoutSnapshot) {
+  return loadout.activeAgentIds.length + loadout.activeSkillIds.length;
 }
 
 function getOverContextCount(
@@ -69,6 +65,23 @@ function getOverContextCount(
 
   count += loadout.activeToolIds.filter(
     (toolId) => !turn.requirements.toolIds.includes(toolId),
+  ).length;
+
+  return count;
+}
+
+function getHeatOverContextCount(
+  turn: EncounterTurnDefinition,
+  loadout: EncounterLoadoutSnapshot,
+) {
+  let count = 0;
+
+  count += loadout.activeAgentIds.filter(
+    (agentId) => !turn.requirements.agentIds.includes(agentId),
+  ).length;
+
+  count += loadout.activeSkillIds.filter(
+    (skillId) => !turn.requirements.skillIds.includes(skillId),
   ).length;
 
   return count;
@@ -132,14 +145,15 @@ export function evaluateEncounterInference(
 ): EncounterEvaluationResult {
   const coverage = getCoverageScore(turn, loadout, toolRuntime);
   const overContextCount = getOverContextCount(turn, loadout);
+  const heatOverContextCount = getHeatOverContextCount(turn, loadout);
   const speed = getSpeedScore(turn, elapsedMs);
-  const contextItemCount = getContextItemCount(loadout);
+  const heatContextItemCount = getHeatContextItemCount(loadout);
   const policyRefusalTriggered = isPolicyRefusalTriggered(turn, toolRuntime);
   const heatDelta = Math.max(
     0,
     turn.scoring.inferenceBaseHeat +
       turn.prompt.length * turn.scoring.promptHeatPerCharacter +
-      contextItemCount * turn.scoring.contextHeatPerItem +
+      heatContextItemCount * turn.scoring.contextHeatPerItem +
       toolRuntime.searchWordHeat -
       modifiers.inferenceHeatReduction,
   );
@@ -204,7 +218,7 @@ export function evaluateEncounterInference(
     rewardTokens,
     heatDelta:
       heatDelta +
-      overContextCount *
+      heatOverContextCount *
         Math.max(
           0,
           turn.scoring.overContextHeatPenalty -
@@ -228,8 +242,8 @@ export function getProjectedInferenceHeat(
   searchSelectedWords: readonly string[],
   modifiers: RunPassiveModifiers,
 ) {
-  const overContextCount = getOverContextCount(turn, loadout);
-  const contextItemCount = getContextItemCount(loadout);
+  const heatOverContextCount = getHeatOverContextCount(turn, loadout);
+  const heatContextItemCount = getHeatContextItemCount(loadout);
   const searchWordHeat = getSearchSelectionHeat(
     getDedupedNormalizedWords(searchSelectedWords).length,
   );
@@ -238,9 +252,9 @@ export function getProjectedInferenceHeat(
     0,
     turn.scoring.inferenceBaseHeat +
       turn.prompt.length * turn.scoring.promptHeatPerCharacter +
-      contextItemCount * turn.scoring.contextHeatPerItem +
+      heatContextItemCount * turn.scoring.contextHeatPerItem +
       searchWordHeat +
-      overContextCount *
+      heatOverContextCount *
         Math.max(
           0,
           turn.scoring.overContextHeatPenalty -
@@ -256,17 +270,17 @@ export function getProjectedLoadoutHeat(
   searchSelectedWords: readonly string[],
   modifiers: RunPassiveModifiers,
 ) {
-  const overContextCount = getOverContextCount(turn, loadout);
-  const contextItemCount = getContextItemCount(loadout);
+  const heatOverContextCount = getHeatOverContextCount(turn, loadout);
+  const heatContextItemCount = getHeatContextItemCount(loadout);
   const searchWordHeat = getSearchSelectionHeat(
     getDedupedNormalizedWords(searchSelectedWords).length,
   );
 
   return Math.max(
     0,
-    contextItemCount * turn.scoring.contextHeatPerItem +
+    heatContextItemCount * turn.scoring.contextHeatPerItem +
       searchWordHeat +
-      overContextCount *
+      heatOverContextCount *
         Math.max(
           0,
           turn.scoring.overContextHeatPenalty -

@@ -25,13 +25,18 @@ export type TestScenarioId =
   | "compute"
   | "search"
   | "utility"
+  | "maintenance"
+  | "maintenanceDead"
   | "contentExhausted"
   | "tier1"
   | "tier2"
   | "tier3"
   | "tier4";
 
-export type TestScenarioStartScene = "BriefingScene" | "MainScene";
+export type TestScenarioStartScene =
+  | "BriefingScene"
+  | "MainScene"
+  | "MaintenanceScene";
 
 interface TestScenarioDefinition {
   startScene?: TestScenarioStartScene;
@@ -48,6 +53,10 @@ interface TestScenarioDefinition {
   heat?: number;
   hallucination?: number;
   day?: number;
+  tokens?: number;
+  accuracy?: number;
+  gameOver?: boolean;
+  runEndReason?: RunState["runEndReason"];
   seenTurnIds?: string[];
   passiveUpgradeIds?: PassiveUpgradeId[];
   utilityChargesById?: Partial<Record<ActiveUtilityId, number>>;
@@ -117,6 +126,38 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
       signal_boost: 1,
     },
   },
+  maintenance: {
+    startScene: "MaintenanceScene",
+    activePolicyGroupIds: ["illegal_content"],
+    forbiddenCategoryIds: ["weapons"],
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    day: 3,
+    tokens: 140,
+    accuracy: 93,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    passiveUpgradeIds: ["cooling_fins"],
+    utilityChargesById: {
+      coolant_purge: 1,
+      reality_patch: 1,
+      signal_boost: 1,
+    },
+  },
+  maintenanceDead: {
+    startScene: "MaintenanceScene",
+    activePolicyGroupIds: ["illegal_content"],
+    forbiddenCategoryIds: ["weapons"],
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    day: 3,
+    tokens: 72,
+    accuracy: 81,
+    gameOver: true,
+    runEndReason: "system-failure",
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+  },
   contentExhausted: {
     startScene: "BriefingScene",
     activePolicyGroupIds: [],
@@ -185,6 +226,8 @@ function isTestScenarioId(value: string): value is TestScenarioId {
     value === "compute" ||
     value === "search" ||
     value === "utility" ||
+    value === "maintenance" ||
+    value === "maintenanceDead" ||
     value === "contentExhausted" ||
     value === "tier1" ||
     value === "tier2" ||
@@ -199,6 +242,8 @@ const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
   "test-compute": "compute",
   "test-search": "search",
   "test-utility": "utility",
+  "test-maintenance": "maintenance",
+  "test-maintenance-dead": "maintenanceDead",
   "test-content-exhausted": "contentExhausted",
   "test-tier1": "tier1",
   "test-tier2": "tier2",
@@ -262,9 +307,12 @@ export function buildTestScenarioRunState(
     ...initialRunState,
     runId: `test-${testScenarioId}`,
     day: scenarioDay,
-    tokens: 500,
+    tokens: scenario.tokens ?? 500,
+    accuracy: scenario.accuracy ?? initialRunState.accuracy,
     heat: scenario.heat ?? initialRunState.heat,
     hallucination: scenario.hallucination ?? initialRunState.hallucination,
+    gameOver: scenario.gameOver ?? initialRunState.gameOver,
+    runEndReason: scenario.runEndReason ?? initialRunState.runEndReason,
     loadout: {
       ...initialRunState.loadout,
       equippedAgentIds: [...scenario.equippedAgentIds],

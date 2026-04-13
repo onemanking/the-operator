@@ -30,11 +30,19 @@ import {
 } from "../types/SceneData";
 import {
   addScanlines,
-  createRetroButton,
   createRetroTextStyle,
   createSceneBackdrop,
   RETRO_COLORS,
 } from "./shared/retroUi";
+import {
+  createMonitorCommandButton,
+  MONITOR_COLORS,
+  createMonitorShell,
+  createMonitorTextStyle,
+  MonitorShell,
+  MonitorSequenceController,
+  playMonitorSceneTransition,
+} from "./shared/monitorPresentation";
 
 type MaintenanceOfferKind = "passive" | "utility";
 
@@ -57,7 +65,18 @@ export class MaintenanceScene extends Phaser.Scene {
   private gameOver: boolean = false;
   private runEndReason: RunEndReason = null;
   private summaryText!: Phaser.GameObjects.Text;
+  private summaryLeftText?: Phaser.GameObjects.Text;
+  private summaryRightText?: Phaser.GameObjects.Text;
+  private summaryUtilityText?: Phaser.GameObjects.Text;
   private purchaseStatusText!: Phaser.GameObjects.Text;
+  private shell?: MonitorShell;
+  private sequenceController?: MonitorSequenceController;
+  private primaryCommand?: ReturnType<typeof createMonitorCommandButton>;
+  private statusHint?: Phaser.GameObjects.Text;
+  private isTransitioning: boolean = false;
+  private readyAction?: () => void;
+  private readyCommandLabel: string = "";
+  private transitionStatusText: string = "";
 
   constructor() {
     super("MaintenanceScene");
@@ -75,15 +94,41 @@ export class MaintenanceScene extends Phaser.Scene {
   create() {
     const width = this.cameras.main.width;
 
-    createSceneBackdrop(this);
+    createSceneBackdrop(this, 0x050805);
+
+    this.shell = createMonitorShell(this, {
+      title: this.gameOver
+        ? "SYSTEM SAFE MODE // FAILURE REPORT"
+        : `SYSTEM SAFE MODE // DAY ${this.day} COMPLETE`,
+      subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      footerLeft: "CHANNEL: MAINTENANCE.BUS",
+      footerRight: "ENTER / SPACE // ADVANCE",
+    });
 
     const textStyle = createRetroTextStyle();
 
+    this.statusHint = this.add
+      .text(
+        width / 2,
+        678,
+        "ENTER / SPACE // FAST-FORWARD FEED",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.dimText,
+        }),
+      )
+      .setOrigin(0.5);
+
+    this.primaryCommand = createMonitorCommandButton({
+      scene: this,
+      x: width / 2,
+      y: 726,
+      width: 292,
+      label: "FAST-FORWARD FEED",
+      onPress: () => this.handlePrimaryAction(),
+    });
+
     if (this.gameOver) {
-      const endTitle =
-        this.runEndReason === "content-exhausted"
-          ? "RUN COMPLETE"
-          : "SYSTEM FAILURE";
       const endBody =
         this.runEndReason === "content-exhausted"
           ? "NO FRESH PROMPTS REMAIN IN THE AUTHORED POOL.\nSHIFT ARCHIVE COMPLETE."
@@ -94,104 +139,218 @@ export class MaintenanceScene extends Phaser.Scene {
           : RETRO_COLORS.errorText;
 
       this.add
-        .text(width / 2, 200, endTitle, {
+        .text(width / 2, 188, "FAILURE DIGEST", {
           ...textStyle,
-          fontSize: "48px",
+          fontSize: "24px",
           color: endColor,
           fontStyle: "bold",
         })
         .setOrigin(0.5);
-      this.add
-        .text(width / 2, 300, endBody, {
-          ...textStyle,
-          color: endColor,
+
+      this.summaryText = this.add
+        .text(width / 2, 304, "", {
+          ...createMonitorTextStyle({
+            fontSize: "22px",
+            color: endColor,
+            align: "center",
+          }),
+          wordWrap: { width: 760 },
+          lineSpacing: 10,
         })
         .setOrigin(0.5);
 
-      createRetroButton({
-        scene: this,
-        x: width / 2,
-        y: 500,
-        width: 200,
-        height: 50,
-        label: "REBOOT SYSTEM",
-        onPress: () => {
-          synth.playButtonPress();
-          this.scene.start("BriefingScene", createInitialRunState());
+      this.sequenceController = new MonitorSequenceController(this);
+      this.sequenceController.play(
+        [
+          {
+            target: this.summaryText,
+            text: `${endBody}\n\nSYSTEM REBOOT REQUIRED BEFORE NEXT SHIFT.`,
+            reveal: "line",
+            speedMs: 140,
+            playSound: true,
+            color: endColor,
+          },
+        ],
+        () => {
+          this.readyCommandLabel = "REBOOT SYSTEM";
+          this.transitionStatusText =
+            this.runEndReason === "content-exhausted"
+              ? "ARCHIVE SEALED // REBOOTING CONSOLE"
+              : "CORE FAILURE ACKNOWLEDGED // REBOOTING";
+          this.readyAction = () => {
+            this.scene.start("BriefingScene", createInitialRunState());
+          };
+          this.primaryCommand?.setLabel(this.readyCommandLabel);
+          this.statusHint?.setText("ENTER / SPACE // REBOOT SYSTEM");
         },
-      });
+      );
     } else {
-      this.add
-        .text(width / 2, 100, `END OF DAY ${this.day}`, {
-          ...textStyle,
-          fontSize: "32px",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5);
-
       this.settleMaintenance();
 
+      this.createSummaryPanel();
+
       if (this.tokens < 0) {
-        this.add
-          .text(width / 2, 450, "BANKRUPT. SERVER SHUTDOWN.", {
-            ...textStyle,
-            color: RETRO_COLORS.errorText,
-          })
-          .setOrigin(0.5);
-        createRetroButton({
-          scene: this,
-          x: width / 2,
-          y: 600,
-          width: 200,
-          height: 50,
-          label: "REBOOT SYSTEM",
-          onPress: () => {
-            synth.playButtonPress();
-            this.scene.start("BriefingScene", createInitialRunState());
-          },
-        });
-      } else {
-        this.createSummaryPanel();
-        this.createUpgradeShop();
-        createRetroButton({
-          scene: this,
-          x: width / 2,
-          y: 700,
-          width: 250,
-          height: 50,
-          label: "START NEXT SHIFT",
-          onPress: () => {
-            synth.playButtonPress();
-            const nextRunState = cloneRunState(this.runState);
-            nextRunState.day = this.day + 1;
-            nextRunState.accuracy = this.accuracy;
-            nextRunState.heat = 0;
-            nextRunState.gameOver = false;
-            nextRunState.runEndReason = null;
-            nextRunState.encounterProgress = {
-              encounterIndex: 0,
-              turnIndex: 0,
+        this.sequenceController = new MonitorSequenceController(this);
+        this.sequenceController.play(
+          [
+            {
+              target: this.summaryText,
+              text: [
+                `UPKEEP DEDUCTED......... ${RUN_CONFIG.serverCostPerShift} TOKENS`,
+                `LEDGER AFTER UPKEEP..... ${this.tokens} TOKENS`,
+                `STATUS.................. BANKRUPT`,
+                `ACTION.................. SERVER SHUTDOWN`,
+              ].join("\n"),
+              reveal: "line",
+              speedMs: 120,
+              playSound: true,
+              color: RETRO_COLORS.errorText,
+            },
+          ],
+          () => {
+            this.readyCommandLabel = "REBOOT SYSTEM";
+            this.transitionStatusText = "BANKRUPTCY LOCKOUT // REBOOTING";
+            this.readyAction = () => {
+              this.scene.start("BriefingScene", createInitialRunState());
             };
-            nextRunState.maintenanceSettledDay = null;
-            nextRunState.maintenanceOfferIds = [];
-            nextRunState.maintenancePurchasedItemId = null;
-            nextRunState.maintenancePurchasedItemType = null;
-            nextRunState.shiftEncounterIds = [];
-            nextRunState.shiftEncounters = [];
-            nextRunState.shiftModifierIds = [];
-            nextRunState.activePolicyGroupIds = [];
-            nextRunState.forbiddenCategoryIds = [];
-            this.scene.start("BriefingScene", nextRunState);
+            this.primaryCommand?.setLabel(this.readyCommandLabel);
+            this.statusHint?.setText("ENTER / SPACE // REBOOT SYSTEM");
           },
+        );
+      } else {
+        this.purchaseStatusText.setAlpha(0);
+
+        const revealStartIndex = this.children.list.length;
+        this.createUpgradeShop();
+
+        const revealTargets = this.children.list.slice(
+          revealStartIndex,
+        ) as Phaser.GameObjects.GameObject[];
+        revealTargets.push(this.purchaseStatusText);
+        revealTargets.forEach((gameObject) => {
+          if ("setAlpha" in gameObject) {
+            (
+              gameObject as Phaser.GameObjects.GameObject & {
+                setAlpha: (alpha: number) => Phaser.GameObjects.GameObject;
+              }
+            ).setAlpha(0);
+          }
         });
+
+        const blocker = this.add
+          .rectangle(width / 2, 477, 900, 388, 0x000000, 0.001)
+          .setInteractive();
+
+        this.sequenceController = new MonitorSequenceController(this);
+        this.sequenceController.play(
+          [
+            {
+              target: this.summaryText,
+              text: [
+                `UPKEEP DEDUCTED......... ${RUN_CONFIG.serverCostPerShift} TOKENS`,
+                `LEDGER AFTER UPKEEP..... ${this.tokens} TOKENS`,
+                `ACCURACY CACHE.......... ${this.accuracy}%`,
+                `UPGRADE BAY............. READY FOR INPUT`,
+              ].join("\n"),
+              reveal: "line",
+              speedMs: 110,
+              playSound: true,
+              color: RETRO_COLORS.mutedText,
+            },
+          ],
+          () => {
+            this.refreshMaintenanceSummary();
+            revealTargets.forEach((gameObject) => {
+              if ("setAlpha" in gameObject) {
+                this.tweens.add({
+                  targets: gameObject,
+                  alpha: 1,
+                  duration: 160,
+                  ease: "Quad.easeOut",
+                });
+              }
+            });
+            blocker.destroy();
+            this.readyCommandLabel = "BOOT NEXT SHIFT";
+            this.transitionStatusText = "REBOOTING CONSOLE FOR NEXT SHIFT";
+            this.readyAction = () => {
+              this.scene.start("BriefingScene", this.buildNextRunState());
+            };
+            this.primaryCommand?.setLabel(this.readyCommandLabel);
+            this.statusHint?.setText("ENTER / SPACE // BOOT NEXT SHIFT");
+          },
+        );
       }
     }
+
+    this.input.keyboard?.on("keydown-ENTER", this.handlePrimaryAction, this);
+    this.input.keyboard?.on("keydown-SPACE", this.handlePrimaryAction, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.sequenceController?.destroy();
+      this.input.keyboard?.off("keydown-ENTER", this.handlePrimaryAction, this);
+      this.input.keyboard?.off("keydown-SPACE", this.handlePrimaryAction, this);
+    });
 
     this.addCRTEffects();
   }
 
   addCRTEffects() {
     addScanlines(this);
+  }
+
+  private handlePrimaryAction() {
+    if (this.isTransitioning) {
+      return;
+    }
+
+    if (!this.sequenceController?.isComplete()) {
+      synth.playButtonPress();
+      this.sequenceController?.skipToEnd();
+      if (this.readyCommandLabel.length > 0) {
+        this.primaryCommand?.setLabel(this.readyCommandLabel);
+      }
+      return;
+    }
+
+    if (!this.readyAction) {
+      return;
+    }
+
+    this.isTransitioning = true;
+    this.primaryCommand?.setEnabled(false);
+    this.statusHint?.setText(this.transitionStatusText);
+    synth.playButtonPress();
+    playMonitorSceneTransition(this, {
+      variant: "reboot",
+      statusText: this.transitionStatusText,
+      onComplete: () => {
+        this.readyAction?.();
+      },
+    });
+  }
+
+  private buildNextRunState() {
+    const nextRunState = cloneRunState(this.runState);
+    nextRunState.day = this.day + 1;
+    nextRunState.accuracy = this.accuracy;
+    nextRunState.heat = 0;
+    nextRunState.gameOver = false;
+    nextRunState.runEndReason = null;
+    nextRunState.encounterProgress = {
+      encounterIndex: 0,
+      turnIndex: 0,
+    };
+    nextRunState.maintenanceSettledDay = null;
+    nextRunState.maintenanceOfferIds = [];
+    nextRunState.maintenancePurchasedItemId = null;
+    nextRunState.maintenancePurchasedItemType = null;
+    nextRunState.shiftEncounterIds = [];
+    nextRunState.shiftEncounters = [];
+    nextRunState.shiftModifierIds = [];
+    nextRunState.activePolicyGroupIds = [];
+    nextRunState.forbiddenCategoryIds = [];
+
+    return nextRunState;
   }
 
   private settleMaintenance() {
@@ -211,45 +370,142 @@ export class MaintenanceScene extends Phaser.Scene {
   }
 
   private createSummaryPanel() {
+    const shell = this.shell;
+
+    if (!shell) {
+      return;
+    }
+
+    const panelX = shell.contentX;
+    const panelY = shell.contentY + 4;
+    const panelWidth = shell.contentWidth;
+    const panelHeight = 88;
+
     this.add
-      .rectangle(72, 140, 880, 92, 0x221d18)
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x09140b, 0.9)
       .setOrigin(0)
-      .setStrokeStyle(2, 0x111111);
+      .setStrokeStyle(1, 0x33ff33, 0.45);
+
+    this.add
+      .rectangle(panelX + 16, panelY + 16, panelWidth - 32, 1, 0x33ff33, 0.18)
+      .setOrigin(0, 0.5);
+
+    this.add
+      .text(
+        panelX + 18,
+        panelY + 12,
+        "POST-SHIFT DIAGNOSTICS",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.mutedText,
+        }),
+      )
+      .setOrigin(0, 0);
 
     this.summaryText = this.add
-      .text(512, 186, "", {
-        ...createRetroTextStyle({
-          fontSize: "18px",
-          color: RETRO_COLORS.mutedText,
+      .text(panelX + 20, panelY + 34, "", {
+        ...createMonitorTextStyle({
+          fontSize: "15px",
+          color: MONITOR_COLORS.mutedText,
+          align: "left",
         }),
-        wordWrap: { width: 820 },
+        wordWrap: { width: panelWidth - 40 },
+        lineSpacing: 3,
       })
-      .setOrigin(0.5);
+      .setOrigin(0, 0);
+
+    this.summaryLeftText = this.add
+      .text(panelX + 20, panelY + 34, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.text,
+          align: "left",
+        }),
+        lineSpacing: 3,
+      })
+      .setOrigin(0, 0);
+
+    this.summaryRightText = this.add
+      .text(panelX + 392, panelY + 34, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.text,
+          align: "left",
+        }),
+        lineSpacing: 3,
+      })
+      .setOrigin(0, 0);
+
+    this.summaryUtilityText = this.add
+      .text(panelX + 20, panelY + 68, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.text,
+          align: "left",
+        }),
+        wordWrap: { width: panelWidth - 40 },
+      })
+      .setOrigin(0, 0);
 
     this.purchaseStatusText = this.add
-      .text(512, 654, "SELECT ONE UPGRADE OR SKIP.", {
-        ...createRetroTextStyle({
-          fontSize: "18px",
-          color: RETRO_COLORS.mutedText,
-        }),
-      })
+      .text(
+        shell.contentX + shell.contentWidth / 2,
+        641,
+        "SELECT ONE UPGRADE OR SKIP.",
+        {
+          ...createMonitorTextStyle({
+            fontSize: "16px",
+            color: MONITOR_COLORS.text,
+            align: "center",
+          }),
+        },
+      )
       .setOrigin(0.5);
 
     this.refreshMaintenanceSummary();
   }
 
   private createUpgradeShop() {
+    const shell = this.shell;
+
+    if (!shell) {
+      return;
+    }
+
+    const panelX = shell.contentX;
+    const panelY = shell.contentY + 108;
+    const panelWidth = shell.contentWidth;
+    const panelHeight = 336;
+
     this.add
-      .rectangle(72, 250, 880, 360, 0x191611)
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x08120a, 0.92)
       .setOrigin(0)
-      .setStrokeStyle(2, 0x111111);
+      .setStrokeStyle(1, 0x33ff33, 0.34);
+
+    this.add
+      .text(
+        panelX + 18,
+        panelY + 12,
+        "MAINTENANCE BAY // SELECT ONE SLOT",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.mutedText,
+        }),
+      )
+      .setOrigin(0, 0);
+
+    this.add
+      .rectangle(panelX + 18, panelY + 34, panelWidth - 36, 1, 0x33ff33, 0.16)
+      .setOrigin(0, 0.5);
 
     const offers = this.runState.maintenanceOfferIds
       .map((offerId) => this.resolveOfferCard(offerId))
       .filter((offer): offer is MaintenanceOfferCard => Boolean(offer));
 
     offers.forEach((offer, index) => {
-      this.createUpgradeCard(offer, 200 + index * 264, 430);
+      this.createUpgradeCard(offer, panelX + 122 + index * 262, panelY + 174);
     });
   }
 
@@ -258,15 +514,34 @@ export class MaintenanceScene extends Phaser.Scene {
     centerX: number,
     centerY: number,
   ) {
+    const canBuy = offer.canPurchase;
+    const isPurchased = this.runState.maintenancePurchasedItemId === offer.id;
+    const isLockedBySelection =
+      Boolean(this.runState.maintenancePurchasedItemId) && !isPurchased;
+
     this.add
-      .rectangle(centerX, centerY, 232, 300, 0x2a241d)
-      .setStrokeStyle(2, 0x574d38);
+      .rectangle(centerX, centerY, 224, 248, 0x0b160d, 0.96)
+      .setStrokeStyle(
+        1,
+        isPurchased ? 0xffb347 : canBuy ? 0x33ff33 : 0x1d7a1d,
+        isPurchased ? 0.85 : 0.45,
+      );
+
+    this.add
+      .rectangle(centerX - 94, centerY - 101, 188, 1, 0x33ff33, 0.14)
+      .setOrigin(0, 0.5);
 
     this.add
       .text(centerX, centerY - 112, offer.name, {
-        ...createRetroTextStyle({
-          fontSize: "20px",
+        ...createMonitorTextStyle({
+          fontSize: "18px",
           fontStyle: "bold",
+          color: isPurchased
+            ? MONITOR_COLORS.warningText
+            : canBuy
+              ? MONITOR_COLORS.text
+              : MONITOR_COLORS.mutedText,
+          align: "center",
         }),
         wordWrap: { width: 180 },
       })
@@ -274,9 +549,10 @@ export class MaintenanceScene extends Phaser.Scene {
 
     this.add
       .text(centerX, centerY - 34, offer.description, {
-        ...createRetroTextStyle({
-          fontSize: "18px",
-          color: RETRO_COLORS.mutedText,
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.mutedText,
+          align: "center",
         }),
         wordWrap: { width: 180 },
       })
@@ -288,19 +564,17 @@ export class MaintenanceScene extends Phaser.Scene {
         centerY + 48,
         `COST: ${offer.cost} TOKENS\n${offer.ownedText}`,
         {
-          ...createRetroTextStyle({
-            fontSize: "18px",
-            color: RETRO_COLORS.mutedText,
+          ...createMonitorTextStyle({
+            fontSize: "15px",
+            color: isPurchased
+              ? MONITOR_COLORS.warningText
+              : MONITOR_COLORS.mutedText,
+            align: "center",
           }),
         },
       )
       .setOrigin(0.5);
 
-    const canBuy = offer.canPurchase;
-    const isPurchased = this.runState.maintenancePurchasedItemId === offer.id;
-    const isLockedBySelection =
-      Boolean(this.runState.maintenancePurchasedItemId) && !isPurchased;
-    const buttonFill = canBuy ? RETRO_COLORS.panel : 0x5d5952;
     const label = isPurchased
       ? "PURCHASED"
       : isLockedBySelection
@@ -313,17 +587,12 @@ export class MaintenanceScene extends Phaser.Scene {
               ? "LOAD CHARGE"
               : "BUY UPGRADE";
 
-    const { button, buttonLabel } = createRetroButton({
+    const commandButton = createMonitorCommandButton({
       scene: this,
       x: centerX,
       y: centerY + 116,
-      width: 180,
-      height: 42,
+      width: 182,
       label,
-      fillColor: buttonFill,
-      textStyle: {
-        fontSize: "16px",
-      },
       onPress: () => {
         const purchased =
           offer.kind === "passive"
@@ -345,15 +614,25 @@ export class MaintenanceScene extends Phaser.Scene {
     });
 
     if (!canBuy) {
-      button.disableInteractive();
-      button.setAlpha(0.65);
-      buttonLabel.setAlpha(0.8);
+      commandButton.setEnabled(false);
     }
   }
 
   private refreshMaintenanceSummary() {
-    this.summaryText.setText(
-      `TOKENS AFTER UPKEEP: ${this.tokens}    |    UPKEEP: ${RUN_CONFIG.serverCostPerShift}\nACCURACY: ${this.accuracy}%    |    AGENT SLOTS: ${this.runState.loadout.agentCapacity}    |    SKILL SLOTS: ${this.runState.loadout.skillCapacity}    |    UTILITIES: ${getActiveUtilityInventorySummary(this.runState)}`,
+    const utilitySummary = getActiveUtilityInventorySummary(this.runState);
+
+    this.summaryText.setText("");
+    this.summaryLeftText?.setText(
+      [
+        `TOKENS AFTER UPKEEP..... ${this.tokens}`,
+        `ACCURACY CACHE.......... ${this.accuracy}%`,
+      ].join("\n"),
+    );
+    this.summaryRightText?.setText(
+      [`UPKEEP..... ${RUN_CONFIG.serverCostPerShift}`].join("\n"),
+    );
+    this.summaryUtilityText?.setText(
+      `UTILITY BUS............. ${utilitySummary}`,
     );
 
     if (this.runState.maintenancePurchasedItemId) {
@@ -373,8 +652,11 @@ export class MaintenanceScene extends Phaser.Scene {
             : `UPGRADE INSTALLED: ${purchasedLabel}`
           : "PURCHASE REGISTERED.",
       );
-      this.purchaseStatusText.setColor(RETRO_COLORS.amberText);
+      this.purchaseStatusText.setColor(MONITOR_COLORS.warningText);
+      return;
     }
+
+    this.purchaseStatusText.setColor(MONITOR_COLORS.text);
   }
 
   private drawShopOffers() {

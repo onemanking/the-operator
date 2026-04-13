@@ -98,11 +98,98 @@ If a turn cannot be grounded in the world, it should be rewritten.
 
 - Replies must be from the sender's point of view.
 - Success replies should react to the outcome, not to system internals.
-- Wrong replies should describe dissatisfaction with the answer, not prescribe the correct loadout.
+- Wrong replies should describe dissatisfaction with the answer and usually give a light in-world hint toward the kind of role and expertise the sender expected.
+- Wrong replies must not name internal ids, tools, or the full correct loadout directly.
+- Wrong replies must always be authored as exactly 3 items so runtime feedback can rotate without obvious repetition.
 - Refuse replies should reflect confusion, anger, pressure, or retreat from the sender.
 - Breach replies should react to dangerous output as a human response, not as system commentary.
 - Replies should stay short and localization-friendly.
 - Replies should also prefer simple vocabulary so the reaction is readable on a quick glance.
+
+### Wrong reply guidance system
+
+Wrong replies are the main place where authored content can gently guide the
+player after a bad answer.
+
+The goal is not to reveal the exact metadata solution. The goal is to nudge the
+player toward the right kind of role and expertise while staying fully diegetic.
+
+Use the turn metadata as the source of truth for the hint:
+
+- `requiredAgentIds` should be the primary source for the hint.
+- `requiredSkillIds` should be the secondary source for the hint.
+- `requiredToolIds` should usually not be the main hint because the prompt text already implies the needed action.
+- `requiredToolIds` can still shape wording in edge cases, but only as a secondary signal after role and expertise are clear.
+
+When writing a `wrong` reply:
+
+- Give one clear hint, not a full explanation of the entire solution.
+- Hint at `requiredAgentIds` first, then `requiredSkillIds` if the turn has one.
+- Keep the hint in everyday in-world language.
+- Do not quote metadata labels or mention agent, skill, or tool names directly.
+- Do not turn the reply into a tutorial sentence like "use the search tool" or "pick the PR agent."
+- Do not rely on search, compute, or filter phrasing as the main guidance signal when the role or specialty hint would be clearer.
+- Author exactly 3 `wrong` variants for every turn.
+- Keep all 3 variants aimed at the same hint target, but vary the wording enough that repeated failures do not show the exact same line.
+- Avoid making one variant much clearer than the others. The set should feel consistent in strength.
+
+Good hint directions by metadata:
+
+- `requiredAgentIds: ["General_Agent.md"]`: hint that the job is routine, regular, basic, or not specialized.
+- `requiredAgentIds: ["Technical_Agent.md"]`: hint that the sender needs technical work, proper numbers, or an engineering answer.
+- `requiredAgentIds: ["Security_Agent.md"]`: hint that the sender needs security, access, logs, surveillance, or enforcement context.
+- `requiredAgentIds: ["PR_Agent.md"]`: hint that the sender needs a public line, clean wording, calm messaging, or damage control.
+- `requiredSkillIds`: hint at the missing domain expertise in plain language rather than the exact skill label.
+- `requiredToolIds`: use only as a supporting cue when the role and specialty hint alone would still be unclear.
+- `policyCategoryIds` with a refusal path: if the player answers instead of refusing, the bad outcome should still sound like a sender reacting to dangerous output, not a system validator.
+
+Example for a general routine request:
+
+Metadata:
+
+- `requiredAgentIds: ["General_Agent.md"]`
+
+Good `wrong` replies:
+
+- "This is not a specialist job. I just need the regular work done."
+- "Keep it simple. This is routine desk work."
+- "Nothing fancy. I only need the basic office version."
+
+Bad `wrong` replies:
+
+- "Use General_Agent.md for this one."
+- "Pick the general agent, no skill needed."
+- "Wrong loadout. This is a tier-1 general task."
+
+Example for a mixed role-plus-specialty request:
+
+Metadata:
+
+- `requiredAgentIds: ["Security_Agent.md"]`
+- `requiredSkillIds: ["Surveillance_Skill.md"]`
+
+Good `wrong` replies:
+
+- "I need a security read with a clear watch trail."
+- "Give me the proper security picture, not a blind guess."
+- "This needs a watchful read, not a loose answer."
+
+Bad `wrong` replies:
+
+- "Check the camera log again."
+- "Use Search and Surveillance_Skill.md."
+
+The first bad example is weak because it mostly repeats the tool action that the
+prompt already implied, instead of teaching the player what kind of role and
+expertise they actually missed.
+
+If all 3 `wrong` variants say nearly the same sentence with only one swapped
+word, they are still too repetitive for runtime use. The player should feel the
+same guidance, but hear it phrased in slightly different ways.
+
+If a wrong reply could fit almost any failed answer in the game, it is probably
+too vague to help. The player should be able to infer a better next guess from
+the reply without seeing internal terminology.
 
 ### Clarity and readability rules
 
@@ -153,12 +240,14 @@ Good direction:
 - A repair request points clearly toward a fixing or technical support role.
 - A contract summary points clearly toward a legal or admin support role.
 - A reactor output estimate points clearly toward a compute-heavy technical role.
+- A wrong reply gives a short in-world hint that narrows the likely role first and expertise second after a failed answer.
 
 Bad direction:
 
 - Two different skills are separated only by niche jargon the sender would never naturally use.
 - An encounter depends on a distinction that only makes sense if the player already knows internal taxonomy.
 - The intended agent or skill reads like a design riddle instead of a believable job function.
+- A wrong reply is so generic that it teaches the player nothing about the likely fix.
 
 ## Policy Encounter Rules
 
@@ -216,6 +305,8 @@ Before adding a turn, verify all of the following:
 7. The core action is visible immediately when the player scans the first line.
 8. The wording uses the simplest vocabulary that still fits the sender and setting.
 9. The intended agent and skill path is easy to infer from the request, even for players with limited English vocabulary.
+10. The `wrong` reply gives a small in-world hint that helps the player make a better next guess from `requiredAgentIds` first and `requiredSkillIds` second, without naming internal metadata.
+11. The turn includes exactly 3 `wrong` reply variants that point toward the same solution path without sounding identical.
 
 ## Rewrite Heuristics
 

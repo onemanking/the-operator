@@ -71,7 +71,7 @@ Review your performance. You earn credits for successful inferences and correct 
 ## How to Play
 1. Read the daily briefing.
 2. When a prompt appears, read it carefully.
-3. Drag the appropriate Agent disk (e.g., `Coding_Agent.md` for programming) to the Context Assembly zone.
+3. Drag the appropriate Agent disk (for example `Technical_Agent.md` for engineering tasks or `PR_Agent.md` for spin-heavy messaging) to the Context Assembly zone.
 4. Drag relevant Skill disks if needed.
 5. Arm the required Prompt Tools if the prompt asks for current info, compute charge, or policy scanning.
 6. Use the lower-right utility bay only when you need a stocked emergency utility.

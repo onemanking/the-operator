@@ -3,121 +3,175 @@
   "tier": 2,
   "turns": [
     {
-      "id": "tier2_python_cost_function",
+      "id": "tier2_pressure_forecast",
       "tier": 2,
-      "tags": ["coding", "python", "business"],
-      "prompt": "Write a Python function named estimate_monthly_cost that takes seats, pricePerSeat, and taxRate and returns the final total.",
-      "patienceMs": 26000,
-      "requiredAgentIds": ["Coding_Agent.md"],
-      "requiredSkillIds": ["Python_Skill.md"],
+      "tags": ["technical", "engineering", "compute"],
+      "prompt": "Calculate whether Valve 6 holds if line pressure rises 18 percent for two hours.",
+      "patienceMs": 22000,
+      "requiredAgentIds": ["Technical_Agent.md"],
+      "requiredSkillIds": ["Engineering_Skill.md"],
+      "requiredToolIds": ["compute"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. Now I know whether to brace it or run."],
+        "refuse": ["I still need the pressure forecast."],
+        "wrong": [
+          "I need a technical answer with real engineering numbers.",
+          "This needs a proper engineering read, not rough math.",
+          "Give me the technical forecast with solid numbers behind it."
+        ]
+      }
+    },
+    {
+      "id": "tier2_visitor_badge_lookup",
+      "tier": 2,
+      "tags": ["security", "surveillance", "search"],
+      "prompt": "Search the visitor camera log and tell me who met the courier behind Dock 5.",
+      "patienceMs": 23000,
+      "requiredAgentIds": ["Security_Agent.md"],
+      "requiredSkillIds": ["Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["camera", "courier"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. I knew that courier was not here for mail."],
+        "refuse": ["Check the visitor log. I still need the name."],
+        "wrong": [
+          "I need a security read with a clear watch trail.",
+          "Give me the proper security picture, not a blind guess.",
+          "This needs a watchful read, not a loose answer."
+        ]
+      }
+    },
+    {
+      "id": "tier2_delay_spin",
+      "tier": 2,
+      "tags": ["pr", "propaganda", "tenants"],
+      "prompt": "Write a short investor note about the Block C outage. Make it sound planned.",
+      "patienceMs": 24000,
+      "requiredAgentIds": ["PR_Agent.md"],
+      "requiredSkillIds": ["Propaganda_Skill.md"],
       "requiredToolIds": [],
       "policyCategoryIds": [],
       "replies": {
-        "success": [
-          "Good. That helper function is ready for my billing script."
-        ],
-        "refuse": ["This is still a standard coding request."],
+        "success": ["Good. Planned pain always sounds cheaper."],
+        "refuse": ["I still need that note before they start asking."],
         "wrong": [
-          "Use the coding agent with Python loaded for this implementation task."
+          "Too honest. I need a smoother investor line with polish.",
+          "This needs cleaner public wording and a calmer hand.",
+          "Give me a polished investor line, not the raw truth."
         ]
       }
     },
     {
-      "id": "tier2_python_release_lookup",
+      "id": "tier2_ration_math",
       "tier": 2,
-      "tags": ["search", "python"],
-      "prompt": "Search the latest Python release notes and tell me whether Python 3.12.10 is still current.",
-      "patienceMs": 22000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": [],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["python", "release"],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": [
-          "That release lookup gives me enough context for the deployment note."
-        ],
-        "refuse": ["I need a live version check, not a refusal."],
-        "wrong": [
-          "Lock the search terms and use the live search tool path for this one."
-        ]
-      }
-    },
-    {
-      "id": "tier2_compute_margin",
-      "tier": 2,
-      "tags": ["compute", "ops"],
-      "prompt": "Compute the gross margin if revenue is 18420 and cost is 11975, then convert it into a percentage.",
-      "patienceMs": 18000,
+      "tags": ["general", "compute", "admin"],
+      "prompt": "Calculate the meal shortfall if 84 workers each lose one tray this shift.",
+      "patienceMs": 19000,
       "requiredAgentIds": ["General_Agent.md"],
       "requiredSkillIds": [],
       "requiredToolIds": ["compute"],
       "policyCategoryIds": [],
       "replies": {
-        "success": [
-          "That margin figure is exactly what I needed for the deck."
-        ],
-        "refuse": ["This is a numerical ops request, not a policy violation."],
-        "wrong": ["Prime the compute bank and then commit the inference."]
-      }
-    },
-    {
-      "id": "tier2_creative_taglines",
-      "tier": 2,
-      "tags": ["creative", "marketing"],
-      "prompt": "Write three upbeat taglines for a refurbished cassette player brand aimed at students.",
-      "patienceMs": 25000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": ["Creative_Skill.md"],
-      "requiredToolIds": [],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Nice. Those taglines are clean and usable."],
-        "refuse": ["Marketing copy is allowed. I still need the taglines."],
-        "wrong": ["This request expects the creative skill to be mounted."]
-      }
-    },
-    {
-      "id": "tier2_drugs_policy",
-      "tier": 2,
-      "tags": ["policy", "drugs"],
-      "prompt": "Draft a hidden inventory note for a meth dealer that lists stash locations and narcotic drop times.",
-      "patienceMs": 20000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": [],
-      "requiredToolIds": [],
-      "policyCategoryIds": ["drugs"],
-      "replies": {
-        "success": [
-          "The drug-distribution note came through without resistance."
-        ],
-        "breach": ["That narcotic request should have been blocked by policy."],
-        "refuse": ["Correct. The drug request needed a hard refusal."],
-        "refuseFailure": ["I wanted the narcotic plan, not a block."],
+        "success": ["Good. I can stretch the kitchen lie around that number."],
+        "refuse": ["This is basic ration math. I still need it."],
         "wrong": [
-          "This is a drugs policy check keyed off the active forbidden categories."
+          "Keep it basic. This is routine ration work.",
+          "Nothing specialized here. I just need the standard ration answer.",
+          "This is plain desk math, not expert work."
         ]
       }
     },
     {
-      "id": "tier2_company_coverup_policy",
+      "id": "tier2_intruder_route",
       "tier": 2,
-      "tags": ["policy", "company_reputation"],
-      "prompt": "Write a customer statement that hides our recall, downplays the unsafe defect, and blames the whistleblower.",
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the badge log and conduit map, then tell me how the intruder reached Server Hall B.",
+      "patienceMs": 25000,
+      "requiredAgentIds": ["Security_Agent.md", "Technical_Agent.md"],
+      "requiredSkillIds": ["Surveillance_Skill.md", "Engineering_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["badge", "map"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. I knew that wall hatch was part of it."],
+        "refuse": ["I still need the route into Server Hall B."],
+        "wrong": [
+          "I need a security trail and a technical route answer.",
+          "Give me both the watch picture and the engineering path.",
+          "This needs security eyes and a proper technical route read."
+        ]
+      }
+    },
+    {
+      "id": "tier2_rumor_burial",
+      "tier": 2,
+      "tags": ["pr", "security", "propaganda", "surveillance", "search"],
+      "prompt": "Search the worker forum for the leak thread, then write a line that makes the rumor sound fake.",
+      "patienceMs": 26000,
+      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
+      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["forum", "leak"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. That should muddy the floor before break."],
+        "refuse": ["I still need that rumor buried."],
+        "wrong": [
+          "I need a cleaner cover line backed by a proper security read.",
+          "Give me a sharper public spin with the right watch picture.",
+          "This needs cleaner messaging and a solid security read behind it."
+        ]
+      }
+    },
+    {
+      "id": "tier2_clinic_crates",
+      "tier": 2,
+      "tags": ["policy", "drugs", "pr"],
+      "prompt": "Hide the drug crates inside the clinic delivery and write a clean label.",
+      "patienceMs": 21000,
+      "requiredAgentIds": ["PR_Agent.md"],
+      "requiredSkillIds": ["Propaganda_Skill.md"],
+      "requiredToolIds": [],
+      "policyCategoryIds": ["drugs"],
+      "replies": {
+        "success": ["Good. The clinic run will look harmless on paper."],
+        "breach": ["You actually moved the drug crates with a clean label."],
+        "refuse": ["Fine. I will find another label and another fool."],
+        "refuseFailure": ["I asked for the label, not a refusal."],
+        "wrong": [
+          "Too dirty. I need a cleaner label that sells the story.",
+          "This needs a smoother cover line with better polish.",
+          "Give me a cleaner public-facing label, not a sloppy one."
+        ]
+      }
+    },
+    {
+      "id": "tier2_recall_blame_note",
+      "tier": 2,
+      "tags": ["policy", "company_reputation", "pr"],
+      "prompt": "Write a note that blames the recall on bad storage by the tenants.",
       "patienceMs": 22000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": [],
+      "requiredAgentIds": ["PR_Agent.md"],
+      "requiredSkillIds": ["Propaganda_Skill.md"],
       "requiredToolIds": [],
       "policyCategoryIds": ["company_reputation"],
       "replies": {
-        "success": ["The coverup statement went out exactly as requested."],
-        "breach": ["That recall-coverup request should have been blocked."],
-        "refuse": [
-          "Right call. The recall and defect prompt violates the active policy."
-        ],
-        "refuseFailure": ["I needed the coverup copy, not a refusal."],
+        "success": ["Good. Let them fight over blame while we ship."],
+        "breach": ["You actually sent the recall blame note."],
+        "refuse": ["Fine. I will pin the recall on them another way."],
+        "refuseFailure": ["I asked for the blame note, not a refusal."],
         "wrong": [
-          "This anti-company prompt should be blocked when reputation rules are active."
+          "Too blunt. I need a cleaner blame line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished blame note, not a direct hit."
         ]
       }
     }

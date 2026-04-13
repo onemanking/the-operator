@@ -68,6 +68,12 @@ Review your performance. You earn credits for successful inferences and correct 
 - Browser UI smoke check should confirm the updated HUD/UI is visible, aligned, not clipped or overlapping unexpectedly, and that the main related interaction still works.
 - For scene-specific UI, verify the scene state that exposes the changed HUD before considering the work complete.
 
+## GitHub Pages Deployment
+
+- The app is configured to build with a relative Vite base so it can run from the project Pages URL.
+- GitHub Pages should publish the `dist` folder via GitHub Actions, not the source tree.
+- After enabling Pages in repository settings, select GitHub Actions as the source so pushes to `main` deploy automatically.
+
 ## Tool Test Scripts
 
 - Run `npm run dev:test:guard` to boot directly into a content-policy guard scenario on port 3000.

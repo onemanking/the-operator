@@ -362,6 +362,9 @@ export class MainScene extends Phaser.Scene {
       clearSearchSelection: () => {
         this.clearSearchSelection();
       },
+      resetSafetyState: () => {
+        this.resetSafetyInteractionState(true);
+      },
       syncStorageUi: () => this.storageController.syncUi(),
       isCommitLocked: () => this.isCommitLocked,
       setIsCommitLocked: (value) => {

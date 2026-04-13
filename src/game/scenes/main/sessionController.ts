@@ -54,6 +54,7 @@ interface SessionControllerBindings {
   getSelectedPromptToolIds: () => ToolId[];
   getEncounterToolRuntime: () => EncounterToolRuntimeSnapshot;
   clearSearchSelection: () => void;
+  resetSafetyState: () => void;
   syncStorageUi: () => void;
   isCommitLocked: () => boolean;
   setIsCommitLocked: (value: boolean) => void;
@@ -86,6 +87,7 @@ export class MainSceneSessionController {
 
     this.bindings.setIsCommitLocked(true);
     this.bindings.clearSearchSelection();
+    this.bindings.resetSafetyState();
     this.scene.events.emit("clearPrompt");
 
     if (this.bindings.getCurrentTurnIndex() === 0) {

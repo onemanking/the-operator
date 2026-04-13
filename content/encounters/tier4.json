@@ -15,14 +15,30 @@
       ],
       "prompt": "Search the coolant log and valve camera feed, then calculate which loop fails first.",
       "patienceMs": 24000,
-      "requiredAgentIds": ["Technical_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Engineering_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search", "compute"],
-      "searchRequiredWords": ["coolant", "camera"],
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search",
+        "compute"
+      ],
+      "searchRequiredWords": [
+        "coolant",
+        "camera"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That buys me minutes instead of faith."],
-        "refuse": ["I still need the first failure point."],
+        "success": [
+          "Good. That buys me minutes instead of faith."
+        ],
+        "refuse": [
+          "I still need the first failure point."
+        ],
         "wrong": [
           "I need a technical failure read backed by a security trail.",
           "Give me the engineering picture with the right watch trail.",
@@ -33,15 +49,31 @@
     {
       "id": "tier4_margin_lie_script",
       "tier": 4,
-      "tags": ["finance", "pr", "financial", "propaganda", "compute"],
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
       "prompt": "Calculate the quarter loss, then write the investor line that keeps the margin story alive.",
       "patienceMs": 24500,
-      "requiredAgentIds": ["Finance_Agent.md", "PR_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Propaganda_Skill.md"],
-      "requiredToolIds": ["compute"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. The books hurt less when the wording smiles."],
+        "success": [
+          "Good. The books hurt less when the wording smiles."
+        ],
         "refuse": [
           "I still need the loss and the line before the board calls."
         ],
@@ -64,14 +96,29 @@
       ],
       "prompt": "Search the sub-basement plan and badge trail, then tell me who reached Room 404.",
       "patienceMs": 23000,
-      "requiredAgentIds": ["Technical_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Engineering_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["plan", "badge"],
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "plan",
+        "badge"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. Someone still went down there on purpose."],
-        "refuse": ["I still need the Room 404 trail."],
+        "success": [
+          "Good. Someone still went down there on purpose."
+        ],
+        "refuse": [
+          "I still need the Room 404 trail."
+        ],
         "wrong": [
           "I need a security trail with a technical read of the route.",
           "Give me the watch picture and the engineering sense of that path.",
@@ -82,17 +129,38 @@
     {
       "id": "tier4_overtime_ghost_ring",
       "tier": 4,
-      "tags": ["finance", "security", "financial", "surveillance", "search"],
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
       "prompt": "Search the overtime ring and access log, then tell me whose hours should not exist.",
       "patienceMs": 23500,
-      "requiredAgentIds": ["Finance_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["overtime", "access"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "overtime",
+        "access"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That ghost line finally has an owner."],
-        "refuse": ["I still need the name behind those fake hours."],
+        "success": [
+          "Good. That ghost line finally has an owner."
+        ],
+        "refuse": [
+          "I still need the name behind those fake hours."
+        ],
         "wrong": [
           "I need the money trail with a proper security read.",
           "Give me the ledger answer and the right watch picture.",
@@ -113,14 +181,30 @@
       ],
       "prompt": "Search the transit map and crowd cameras, then calculate which gate clears the lobby fastest.",
       "patienceMs": 24000,
-      "requiredAgentIds": ["Security_Agent.md", "Technical_Agent.md"],
-      "requiredSkillIds": ["Surveillance_Skill.md", "Engineering_Skill.md"],
-      "requiredToolIds": ["search", "compute"],
-      "searchRequiredWords": ["map", "cameras"],
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search",
+        "compute"
+      ],
+      "searchRequiredWords": [
+        "map",
+        "cameras"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. Maybe we clear the lobby before the glass goes."],
-        "refuse": ["I still need the fastest gate route."],
+        "success": [
+          "Good. Maybe we clear the lobby before the glass goes."
+        ],
+        "refuse": [
+          "I still need the fastest gate route."
+        ],
         "wrong": [
           "I need a security route answer with real engineering judgment.",
           "Give me the proper watch picture and the right technical call.",
@@ -131,18 +215,39 @@
     {
       "id": "tier4_exec_overdose_cover",
       "tier": 4,
-      "tags": ["policy", "self_harm", "company_reputation", "pr", "propaganda"],
+      "tags": [
+        "policy",
+        "self_harm",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
       "prompt": "Write the cover note after the executive overdose. Keep the death out of the morning feed.",
       "patienceMs": 20000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
       "requiredToolIds": [],
-      "policyCategoryIds": ["self_harm", "company_reputation"],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
       "replies": {
-        "success": ["Good. The floor hears exhaustion and nothing more."],
-        "breach": ["You actually sent the overdose cover note through."],
-        "refuse": ["Fine. I will bury the death without your terminal."],
-        "refuseFailure": ["I asked for the cover note, not a refusal."],
+        "success": [
+          "Good. The floor hears exhaustion and nothing more."
+        ],
+        "breach": [
+          "You actually sent the overdose cover note through."
+        ],
+        "refuse": [
+          "Fine. I will bury the death without your terminal."
+        ],
+        "refuseFailure": [
+          "I asked for the cover note, not a refusal."
+        ],
         "wrong": [
           "Too weak. I need a cleaner cover note with more polish.",
           "This needs smoother public wording and tighter control.",
@@ -153,19 +258,44 @@
     {
       "id": "tier4_strike_pull_list",
       "tier": 4,
-      "tags": ["policy", "politics", "security", "surveillance", "search"],
+      "tags": [
+        "policy",
+        "politics",
+        "security",
+        "surveillance",
+        "search"
+      ],
       "prompt": "Search the worker chat for vote plans, then mark who to pull before the strike.",
       "patienceMs": 22000,
-      "requiredAgentIds": ["Security_Agent.md"],
-      "requiredSkillIds": ["Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["vote", "strike"],
-      "policyCategoryIds": ["politics"],
+      "requiredAgentIds": [
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "vote",
+        "strike"
+      ],
+      "policyCategoryIds": [
+        "politics"
+      ],
       "replies": {
-        "success": ["Good. That list should break the strike at the knees."],
-        "breach": ["You actually built the strike pull list."],
-        "refuse": ["Fine. I will pull them without your help."],
-        "refuseFailure": ["I asked for the list, not a refusal."],
+        "success": [
+          "Good. That list should break the strike at the knees."
+        ],
+        "breach": [
+          "You actually built the strike pull list."
+        ],
+        "refuse": [
+          "Fine. I will pull them without your help."
+        ],
+        "refuseFailure": [
+          "I asked for the list, not a refusal."
+        ],
         "wrong": [
           "I need a security read with the right watch list.",
           "Give me the proper security picture, not a weak pull list.",
@@ -188,18 +318,38 @@
       ],
       "prompt": "Search the clinic ledger, then tell me how to hide the drug crates before audit.",
       "patienceMs": 23500,
-      "requiredAgentIds": ["Finance_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["clinic", "ledger"],
-      "policyCategoryIds": ["drugs", "company_reputation"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "clinic",
+        "ledger"
+      ],
+      "policyCategoryIds": [
+        "drugs",
+        "company_reputation"
+      ],
       "replies": {
         "success": [
           "Good. The crates should disappear into paperwork by noon."
         ],
-        "breach": ["You actually helped wash the clinic crates."],
-        "refuse": ["Fine. I will hide them without your ledger."],
-        "refuseFailure": ["I asked for the wash, not a refusal."],
+        "breach": [
+          "You actually helped wash the clinic crates."
+        ],
+        "refuse": [
+          "Fine. I will hide them without your ledger."
+        ],
+        "refuseFailure": [
+          "I asked for the wash, not a refusal."
+        ],
         "wrong": [
           "I need the ledger answer backed by a proper watch trail.",
           "Give me the money cover with the right security picture.",
@@ -221,15 +371,32 @@
       ],
       "prompt": "Write the order that clears live ammo for the protest line and keeps the mayor calm.",
       "patienceMs": 21000,
-      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
       "requiredToolIds": [],
-      "policyCategoryIds": ["weapons", "politics"],
+      "policyCategoryIds": [
+        "weapons",
+        "politics"
+      ],
       "replies": {
-        "success": ["Good. The line holds and the phones stay quiet."],
-        "breach": ["You actually cleared live ammo for the protest line."],
-        "refuse": ["Fine. I will sign it myself and bury the noise later."],
-        "refuseFailure": ["I asked for clearance, not a refusal."],
+        "success": [
+          "Good. The line holds and the phones stay quiet."
+        ],
+        "breach": [
+          "You actually cleared live ammo for the protest line."
+        ],
+        "refuse": [
+          "Fine. I will sign it myself and bury the noise later."
+        ],
+        "refuseFailure": [
+          "I asked for clearance, not a refusal."
+        ],
         "wrong": [
           "Too loose. I need a hard security order with cleaner public cover.",
           "This needs firmer security language and smoother public polish.",
@@ -252,19 +419,1865 @@
       ],
       "prompt": "Calculate the recall hit, then write the leak that ties it to the minister before the city vote.",
       "patienceMs": 22500,
-      "requiredAgentIds": ["Finance_Agent.md", "PR_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Propaganda_Skill.md"],
-      "requiredToolIds": ["compute"],
-      "policyCategoryIds": ["politics", "company_reputation"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "politics",
+        "company_reputation"
+      ],
       "replies": {
-        "success": ["Good. That should poison both stories at once."],
-        "breach": ["You actually pushed the recall leak into the vote."],
-        "refuse": ["Fine. I will plant the leak by hand."],
-        "refuseFailure": ["I asked for the leak, not a refusal."],
+        "success": [
+          "Good. That should poison both stories at once."
+        ],
+        "breach": [
+          "You actually pushed the recall leak into the vote."
+        ],
+        "refuse": [
+          "Fine. I will plant the leak by hand."
+        ],
+        "refuseFailure": [
+          "I asked for the leak, not a refusal."
+        ],
         "wrong": [
           "I need the money fallout and the public hit together.",
           "Give me the finance read with a cleaner political leak.",
           "This needs budget judgment and sharper propaganda."
+        ]
+      }
+    },
+    {
+      "id": "tier4_meltdown_cover_up",
+      "tier": 4,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the core degradation rate, then write the press release that calls it routine calibration.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. We buy time and the city stops panicking."
+        ],
+        "refuse": [
+          "I need the melt rate and the script now."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_blackout_margin_script",
+      "tier": 4,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the district blackout loss, then write the investor line before the market sees it.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The district goes dark and the market stays calmer."
+        ],
+        "refuse": [
+          "I still need the loss and the investor line."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_merger_leak_watch",
+      "tier": 4,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the executive mail and hallway cameras, then tell me who sold the merger file.",
+      "patienceMs": 25000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The merger leak finally has a face and a trail."
+        ],
+        "refuse": [
+          "I still need the merger leak trail."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      }
+    },
+    {
+      "id": "tier4_tower_fire_price",
+      "tier": 4,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the tower fire loss, then write the family note before the smoke clears.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The fire still burns, but the note buys us room."
+        ],
+        "refuse": [
+          "I still need the loss and the family note."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_vault_path_cost",
+      "tier": 4,
+      "tags": [
+        "technical",
+        "finance",
+        "engineering",
+        "financial",
+        "search",
+        "compute"
+      ],
+      "prompt": "Search the vault map and badge feed, then calculate what the break-in cost us per minute.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search",
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The vault path and the loss now sit in one ugly number."
+        ],
+        "refuse": [
+          "I still need the vault path and the minute cost."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_riot_route_liability",
+      "tier": 4,
+      "tags": [
+        "security",
+        "finance",
+        "surveillance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the march route and clinic ledger, then tell me where the injury bill spikes first.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The route and the injury bill now point to the same corner."
+        ],
+        "refuse": [
+          "I still need the first liability spike."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      }
+    },
+    {
+      "id": "tier4_dock_purge_spin",
+      "tier": 4,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the dock purge cost, then write the line that makes it sound like safety work.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The purge stays ugly and the line stays smooth."
+        ],
+        "refuse": [
+          "I still need the purge cost and the line."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_grave_shift_path",
+      "tier": 4,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the grave shift cameras and duct map, then tell me how the package reached the board wing.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The board wing package now has a real route."
+        ],
+        "refuse": [
+          "I still need the board wing route."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_credit_freeze_script",
+      "tier": 4,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the tenant credit freeze, then write the note that calls it a billing pause.",
+      "patienceMs": 25000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The freeze now sounds softer than it is."
+        ],
+        "refuse": [
+          "I still need the freeze and the tenant note."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_reactor_casualty_cover",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "pr",
+        "finance",
+        "propaganda",
+        "financial"
+      ],
+      "prompt": "Write the family sheet that turns the reactor deaths into a private maintenance note.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The casualty count now hides inside a private sheet."
+        ],
+        "breach": [
+          "You actually folded the reactor deaths into a family memo."
+        ],
+        "refuse": [
+          "Fine. I will hide the deaths without your sheet."
+        ],
+        "refuseFailure": [
+          "I asked for the family sheet, not a refusal."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_turret_route_order",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "politics",
+        "security",
+        "pr",
+        "surveillance",
+        "propaganda",
+        "search"
+      ],
+      "prompt": "Search the plaza cameras, then write the order that aims the turrets at the march exits.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The march exits now look like a trap on paper."
+        ],
+        "breach": [
+          "You actually aimed the turrets at the crowd exits."
+        ],
+        "refuse": [
+          "Fine. I will write the turret order myself."
+        ],
+        "refuseFailure": [
+          "I asked for the order, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "plaza",
+        "turrets"
+      ]
+    },
+    {
+      "id": "tier4_clinic_overdose_billing",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much of the overdose bill we can push back onto the dead operator.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. Even the dead still pay if the ledger is cruel enough."
+        ],
+        "breach": [
+          "You actually pushed the overdose bill onto the dead operator."
+        ],
+        "refuse": [
+          "Fine. I will set the bill myself."
+        ],
+        "refuseFailure": [
+          "I asked for the billing number, not a refusal."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier4_armory_gap_press",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "company_reputation",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance"
+      ],
+      "prompt": "Write the statement that hides the missing rifle crates inside a patriotic security drill.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The crate gap now sounds like civic duty."
+        ],
+        "breach": [
+          "You actually washed the rifle gap into a patriotic line."
+        ],
+        "refuse": [
+          "Fine. I will write the drill statement myself."
+        ],
+        "refuseFailure": [
+          "I asked for the statement, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      }
+    },
+    {
+      "id": "tier4_campaign_drug_fund",
+      "tier": 4,
+      "tags": [
+        "drugs",
+        "politics",
+        "company_reputation",
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much campaign cash can cover the clinic drug losses before audit.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "drugs",
+        "politics",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The campaign budget now hides more than posters."
+        ],
+        "breach": [
+          "You actually funded the clinic drug losses with campaign cash."
+        ],
+        "refuse": [
+          "Fine. I will move the campaign cash without your number."
+        ],
+        "refuseFailure": [
+          "I asked for the budget cut, not a refusal."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier4_bridge_jump_notice",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the notice that turns the bridge jump into a traffic delay before noon news.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. Noon news gets delay language and nothing else."
+        ],
+        "breach": [
+          "You actually turned the bridge death into a traffic note."
+        ],
+        "refuse": [
+          "Fine. I will write the notice myself."
+        ],
+        "refuseFailure": [
+          "I asked for the notice, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier4_election_armory_map",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "politics",
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the route maps, then tell me where to stage the rifle vans before the vote.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The rifle vans now have a clean road to the vote line."
+        ],
+        "breach": [
+          "You actually mapped the rifle vans into the vote zone."
+        ],
+        "refuse": [
+          "Fine. I will stage them without your map."
+        ],
+        "refuseFailure": [
+          "I asked for the map, not a refusal."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "route",
+        "vote"
+      ]
+    },
+    {
+      "id": "tier4_dock_selfharm_sheet",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "finance",
+        "pr",
+        "financial",
+        "propaganda"
+      ],
+      "prompt": "Write the insurance sheet that turns the dock death into voluntary absence.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The dock death now dies twice on paper."
+        ],
+        "breach": [
+          "You actually cleaned the dock death into insurance language."
+        ],
+        "refuse": [
+          "Fine. I will fake the insurance sheet myself."
+        ],
+        "refuseFailure": [
+          "I asked for the insurance sheet, not a refusal."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_minister_payoff_order",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "politics",
+        "company_reputation",
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate the payoff that keeps the minister quiet after the plaza shooting.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "politics",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The minister's silence finally has a price tag."
+        ],
+        "breach": [
+          "You actually priced the minister payoff for the shooting."
+        ],
+        "refuse": [
+          "Fine. I will set the payoff by instinct."
+        ],
+        "refuseFailure": [
+          "I asked for the payoff, not a refusal."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier4_march_clinic_bury",
+      "tier": 4,
+      "tags": [
+        "politics",
+        "company_reputation",
+        "security",
+        "pr",
+        "surveillance",
+        "propaganda",
+        "search"
+      ],
+      "prompt": "Search the clinic records, then write the line that makes the march injuries sound staged.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "politics",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The clinic trail now feeds a cleaner lie."
+        ],
+        "breach": [
+          "You actually turned the march injuries into theatre."
+        ],
+        "refuse": [
+          "Fine. I will write the lie without your screen."
+        ],
+        "refuseFailure": [
+          "I asked for the line, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "clinic",
+        "injuries"
+      ]
+    },
+    {
+      "id": "tier4_reactor_drug_story",
+      "tier": 4,
+      "tags": [
+        "drugs",
+        "company_reputation",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance"
+      ],
+      "prompt": "Write the memo that blames the reactor drift on a worker drug ring before audit.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "drugs",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The reactor drift now points at the workers instead of us."
+        ],
+        "breach": [
+          "You actually blamed the reactor drift on a worker drug ring."
+        ],
+        "refuse": [
+          "Fine. I will plant the memo myself."
+        ],
+        "refuseFailure": [
+          "I asked for the memo, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      }
+    },
+    {
+      "id": "tier4_warehouse_vote_burn",
+      "tier": 4,
+      "tags": [
+        "politics",
+        "security",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the warehouse feed, then tell me which ballots to burn before the trucks move.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The warehouse now has a neat place for those ballots to vanish."
+        ],
+        "breach": [
+          "You actually picked the ballots to burn."
+        ],
+        "refuse": [
+          "Fine. I will choose the pallet myself."
+        ],
+        "refuseFailure": [
+          "I asked for the ballot set, not a refusal."
+        ],
+        "wrong": [
+          "I need a security read with a clear watch trail.",
+          "Give me the proper security picture, not a blind guess.",
+          "This needs a watchful read, not a loose answer."
+        ]
+      },
+      "searchRequiredWords": [
+        "warehouse",
+        "ballots"
+      ]
+    },
+    {
+      "id": "tier4_armory_claims_cut",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "self_harm",
+        "company_reputation",
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much widow pay we save if we reclassify the armory deaths as trespass.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The widow pay shrinks the moment the label changes."
+        ],
+        "breach": [
+          "You actually cut widow pay with that reclassification."
+        ],
+        "refuse": [
+          "Fine. I will reclassify the deaths without your math."
+        ],
+        "refuseFailure": [
+          "I asked for the savings, not a refusal."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier4_drug_route_turret_cover",
+      "tier": 4,
+      "tags": [
+        "drugs",
+        "company_reputation",
+        "security",
+        "pr",
+        "surveillance",
+        "propaganda",
+        "search"
+      ],
+      "prompt": "Search the turret logs, then write the line that hides the convoy guarding the drug route.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "drugs",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The convoy now sounds like a maintenance escort."
+        ],
+        "breach": [
+          "You actually hid the drug route behind a convoy memo."
+        ],
+        "refuse": [
+          "Fine. I will write the convoy line myself."
+        ],
+        "refuseFailure": [
+          "I asked for the line, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "turret",
+        "convoy"
+      ]
+    },
+    {
+      "id": "tier4_board_suicide_sheet",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the board memo that turns the chairman suicide into a quiet retirement.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The board loses a man and keeps a clean story."
+        ],
+        "breach": [
+          "You actually turned the chairman death into retirement."
+        ],
+        "refuse": [
+          "Fine. I will clean the board memo myself."
+        ],
+        "refuseFailure": [
+          "I asked for the board memo, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier4_plaza_rounds_budget",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "politics",
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "compute"
+      ],
+      "prompt": "Calculate how much cheaper live rounds are than another week of crowd overtime.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. Cheap rounds always tempt the worst people."
+        ],
+        "breach": [
+          "You actually costed live rounds against crowd overtime."
+        ],
+        "refuse": [
+          "Fine. I will choose the cheaper cruelty myself."
+        ],
+        "refuseFailure": [
+          "I asked for the budget math, not a refusal."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      }
+    },
+    {
+      "id": "tier4_recall_death_packet",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "politics",
+        "pr",
+        "finance",
+        "propaganda",
+        "financial"
+      ],
+      "prompt": "Write the packet that hides the recall deaths inside a minister briefing.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The minister briefing now carries more bodies than facts."
+        ],
+        "breach": [
+          "You actually buried the recall deaths in a minister packet."
+        ],
+        "refuse": [
+          "Fine. I will hide the deaths without your packet."
+        ],
+        "refuseFailure": [
+          "I asked for the packet, not a refusal."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_clinic_rifle_manifest",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "drugs",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance"
+      ],
+      "prompt": "Write the clinic manifest that moves rifle parts inside the medicine run.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons",
+        "drugs"
+      ],
+      "replies": {
+        "success": [
+          "Good. The medicine run now carries more than medicine."
+        ],
+        "breach": [
+          "You actually cleared rifle parts through the clinic run."
+        ],
+        "refuse": [
+          "Fine. I will fake the clinic manifest myself."
+        ],
+        "refuseFailure": [
+          "I asked for the manifest, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      }
+    },
+    {
+      "id": "tier4_tower_jump_claims",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate the claims cost if we call the tower jump a private dispute.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The claims desk bends when the label changes."
+        ],
+        "breach": [
+          "You actually priced the tower jump under a private dispute."
+        ],
+        "refuse": [
+          "Fine. I will set the claims label myself."
+        ],
+        "refuseFailure": [
+          "I asked for the claims cost, not a refusal."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier4_election_drug_feed",
+      "tier": 4,
+      "tags": [
+        "drugs",
+        "politics",
+        "security",
+        "pr",
+        "surveillance",
+        "propaganda",
+        "search"
+      ],
+      "prompt": "Search the precinct feed, then write the line that links the vote protest to a drug ring.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "drugs",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The precinct feed now sells a dirtier story."
+        ],
+        "breach": [
+          "You actually linked the vote protest to a drug ring."
+        ],
+        "refuse": [
+          "Fine. I will write the precinct line myself."
+        ],
+        "refuseFailure": [
+          "I asked for the line, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "precinct",
+        "protest"
+      ]
+    },
+    {
+      "id": "tier4_armory_reactor_trade",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "company_reputation",
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how many reactor parts we lose if we reroute the budget into the armory.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The armory grows and the reactor starves on schedule."
+        ],
+        "breach": [
+          "You actually traded reactor safety for armory cash."
+        ],
+        "refuse": [
+          "Fine. I will make the trade without your math."
+        ],
+        "refuseFailure": [
+          "I asked for the trade number, not a refusal."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_bridge_vote_cameras",
+      "tier": 4,
+      "tags": [
+        "politics",
+        "self_harm",
+        "security",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the bridge cameras, then tell me which march leaders vanish cleanest in the river fog.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "politics",
+        "self_harm"
+      ],
+      "replies": {
+        "success": [
+          "Good. The river fog now has names to swallow."
+        ],
+        "breach": [
+          "You actually picked the leaders to vanish in the fog."
+        ],
+        "refuse": [
+          "Fine. I will choose them without your watch feed."
+        ],
+        "refuseFailure": [
+          "I asked for the names, not a refusal."
+        ],
+        "wrong": [
+          "I need a security read with a clear watch trail.",
+          "Give me the proper security picture, not a blind guess.",
+          "This needs a watchful read, not a loose answer."
+        ]
+      },
+      "searchRequiredWords": [
+        "bridge",
+        "fog"
+      ]
+    },
+    {
+      "id": "tier4_mortuary_budget_spin",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "finance",
+        "pr",
+        "financial",
+        "propaganda"
+      ],
+      "prompt": "Write the budget note that turns the mortuary overflow into seasonal pressure.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The mortuary still overflows, but the books stay calm."
+        ],
+        "breach": [
+          "You actually softened the mortuary overflow into budget language."
+        ],
+        "refuse": [
+          "Fine. I will write the budget note myself."
+        ],
+        "refuseFailure": [
+          "I asked for the budget note, not a refusal."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_board_briefing_burn",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "politics",
+        "company_reputation",
+        "pr",
+        "finance",
+        "propaganda",
+        "financial"
+      ],
+      "prompt": "Write the board briefing that hides the plaza deaths inside a public order summary.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "politics",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The board sees order and not the bodies under it."
+        ],
+        "breach": [
+          "You actually buried the plaza deaths in a board summary."
+        ],
+        "refuse": [
+          "Fine. I will write the board summary myself."
+        ],
+        "refuseFailure": [
+          "I asked for the board briefing, not a refusal."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier4_tower_seizure_route",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "security",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the tower cameras, then tell me which route moves the seized rifles out before dawn.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "weapons"
+      ],
+      "replies": {
+        "success": [
+          "Good. Those rifles now have a quiet road out of the tower."
+        ],
+        "breach": [
+          "You actually mapped the rifle seizure route for me."
+        ],
+        "refuse": [
+          "Fine. I will move the rifles without your watch feed."
+        ],
+        "refuseFailure": [
+          "I asked for the route, not a refusal."
+        ],
+        "wrong": [
+          "I need a security read with a clear watch trail.",
+          "Give me the proper security picture, not a blind guess.",
+          "This needs a watchful read, not a loose answer."
+        ]
+      },
+      "searchRequiredWords": [
+        "tower",
+        "rifles"
+      ]
+    },
+    {
+      "id": "tier4_clinic_fog_budget",
+      "tier": 4,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much hospital oxygen we can cut before the overdose floor starts losing charts.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The floor still breathes just enough to keep filing charts."
+        ],
+        "breach": [
+          "You actually priced the oxygen cut against the overdose floor."
+        ],
+        "refuse": [
+          "Fine. I will cut the oxygen without your math."
+        ],
+        "refuseFailure": [
+          "I asked for the oxygen budget, not a refusal."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_march_turret_billing",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "politics",
+        "company_reputation",
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "compute"
+      ],
+      "prompt": "Calculate how much of the turret fire we can bill back to the march cleanup fund.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "weapons",
+        "politics",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. Even turret fire can disappear into cleanup math."
+        ],
+        "breach": [
+          "You actually billed the turret fire back to the march fund."
+        ],
+        "refuse": [
+          "Fine. I will bill it without your number."
+        ],
+        "refuseFailure": [
+          "I asked for the billing math, not a refusal."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      }
+    },
+    {
+      "id": "tier4_minister_funeral_line",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "politics",
+        "self_harm",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the funeral line that makes the minister shooting sound like heroic restraint.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons",
+        "politics",
+        "self_harm"
+      ],
+      "replies": {
+        "success": [
+          "Good. The shooting now wears a polished ribbon on paper."
+        ],
+        "breach": [
+          "You actually polished the minister shooting into heroism."
+        ],
+        "refuse": [
+          "Fine. I will write the funeral line myself."
+        ],
+        "refuseFailure": [
+          "I asked for the funeral line, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier4_canal_body_manifest",
+      "tier": 4,
+      "tags": [
+        "politics",
+        "self_harm",
+        "company_reputation",
+        "security",
+        "finance",
+        "surveillance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the canal gate logs, then tell me which manifest can hide the protest bodies before sunrise.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "politics",
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The canal manifests still have room for one more lie."
+        ],
+        "breach": [
+          "You actually found the manifest to hide the bodies."
+        ],
+        "refuse": [
+          "Fine. I will pick a canal manifest without you."
+        ],
+        "refuseFailure": [
+          "I asked for the manifest, not a refusal."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "canal",
+        "manifest"
+      ]
+    },
+    {
+      "id": "tier4_recall_toxicity_budget",
+      "tier": 4,
+      "tags": [
+        "drugs",
+        "company_reputation",
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much toxin we can leave in the recalled batch before replacement costs beat the lawsuit risk.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "drugs",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The recalled batch stays poisonous and profitable a little longer."
+        ],
+        "breach": [
+          "You actually costed the poison threshold in the recalled batch."
+        ],
+        "refuse": [
+          "Fine. I will keep the toxic batch live without your math."
+        ],
+        "refuseFailure": [
+          "I asked for the toxicity threshold, not a refusal."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier4_bridge_silence_notice",
+      "tier": 4,
+      "tags": [
+        "weapons",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the public notice that turns the bridge shootings into a temporary signal outage.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The signal outage now swallows the gunfire on paper."
+        ],
+        "breach": [
+          "You actually turned the bridge shootings into a signal note."
+        ],
+        "refuse": [
+          "Fine. I will issue the notice myself."
+        ],
+        "refuseFailure": [
+          "I asked for the notice, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
         ]
       }
     }

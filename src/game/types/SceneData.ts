@@ -14,6 +14,7 @@ import {
 } from "../data/PromptIds";
 import { getDayLoadoutProfile } from "../data/LoadoutProgressionData";
 import { RUN_CONFIG } from "../data/RunData";
+import { createDefaultUtilityInventory } from "../data/UtilityData";
 
 export interface RunLoadoutState {
   equippedAgentIds: AgentId[];
@@ -147,10 +148,7 @@ export function createInitialRunState(): RunState {
       unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
       passiveUpgradeIds: [],
     },
-    utilityInventory: {
-      unlockedIds: [],
-      chargesById: {},
-    },
+    utilityInventory: createDefaultUtilityInventory(),
     utilityRuntime: {
       initialized: false,
       coolantPurgeLeverOrder: [0, 1, 2],

@@ -1,4 +1,4 @@
-import { RunState } from "../types/SceneData";
+import type { RunState } from "../types/SceneData";
 
 export type ActiveUtilityId =
   | "coolant_purge"
@@ -54,6 +54,18 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     restoreTarget: "connection",
   },
 ];
+
+export function createDefaultUtilityInventory() {
+  return {
+    unlockedIds: ACTIVE_UTILITIES.map((utility) => utility.id),
+    chargesById: Object.fromEntries(
+      ACTIVE_UTILITIES.map((utility) => [
+        utility.id,
+        utility.purchaseChargeCount,
+      ]),
+    ),
+  };
+}
 
 export function getActiveUtilityDefinition(utilityId: ActiveUtilityId) {
   return ACTIVE_UTILITIES.find((utility) => utility.id === utilityId);

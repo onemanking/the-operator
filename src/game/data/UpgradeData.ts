@@ -2,16 +2,6 @@ import { RunState } from "../types/SceneData";
 import { RUN_CONFIG } from "./RunData";
 import { AGENT_IDS, SKILL_IDS } from "./PromptIds";
 
-const AGENT_BAY_MAX_STACKS = Math.max(
-  0,
-  AGENT_IDS.length - RUN_CONFIG.defaultAgentCapacity,
-);
-
-const SKILL_BUFFER_MAX_STACKS = Math.max(
-  0,
-  SKILL_IDS.length - RUN_CONFIG.defaultSkillCapacity,
-);
-
 export type PassiveUpgradeId =
   | "agent_bay"
   | "skill_buffer"
@@ -62,20 +52,6 @@ export interface RunPassiveModifiers {
 export const SHOP_OFFER_COUNT = 3;
 
 export const PASSIVE_UPGRADES: PassiveUpgradeDefinition[] = [
-  {
-    id: "agent_bay",
-    name: "AGENT BAY",
-    description: "+1 agent slot for future shifts.",
-    cost: 28,
-    maxStacks: AGENT_BAY_MAX_STACKS,
-  },
-  {
-    id: "skill_buffer",
-    name: "SKILL BUFFER",
-    description: "+1 skill slot for future shifts.",
-    cost: 24,
-    maxStacks: SKILL_BUFFER_MAX_STACKS,
-  },
   {
     id: "cooling_fins",
     name: "COOLING FINS",

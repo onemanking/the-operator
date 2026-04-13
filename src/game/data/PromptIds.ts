@@ -1,14 +1,15 @@
 export enum AgentId {
-  General = "General_Agent.md",
   Technical = "Technical_Agent.md",
   PublicRelations = "PR_Agent.md",
   Security = "Security_Agent.md",
+  Finance = "Finance_Agent.md",
 }
 
 export enum SkillId {
   Propaganda = "Propaganda_Skill.md",
   Engineering = "Engineering_Skill.md",
   Surveillance = "Surveillance_Skill.md",
+  Financial = "Financial_Skill.md",
 }
 
 export enum ToolId {
@@ -18,15 +19,16 @@ export enum ToolId {
 }
 
 export const AGENT_IDS = [
-  AgentId.General,
   AgentId.Technical,
   AgentId.PublicRelations,
   AgentId.Security,
+  AgentId.Finance,
 ] as const;
 export const SKILL_IDS = [
   SkillId.Propaganda,
   SkillId.Engineering,
   SkillId.Surveillance,
+  SkillId.Financial,
 ] as const;
 export const PROMPT_TOOL_IDS = [
   ToolId.Search,

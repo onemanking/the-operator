@@ -5,7 +5,7 @@ export const RUN_CONFIG = {
   initialHeat: 0,
   initialHallucination: 0,
   defaultAgentCapacity: 1,
-  defaultSkillCapacity: 2,
+  defaultSkillCapacity: 1,
   serverCostPerShift: 30,
 } as const;
 

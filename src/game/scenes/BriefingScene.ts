@@ -214,6 +214,7 @@ export class BriefingScene extends Phaser.Scene {
         createMonitorTextStyle({
           fontSize: "17px",
           color: MONITOR_COLORS.text,
+          wordWrap: { width: shell.contentWidth },
           lineSpacing: 6,
         }),
       )
@@ -292,32 +293,60 @@ export class BriefingScene extends Phaser.Scene {
     addScanlines(this);
   }
 
+  private formatLoadoutIdentifier(identifier: string) {
+    return identifier.replace(/\.md$/i, "").replace(/_/g, " ").toUpperCase();
+  }
+
+  private formatLoadoutLine(label: string, values: string[]) {
+    const labelWidth = 22;
+    const contentWidth = 34;
+    const linePrefix = `${label.padEnd(labelWidth, ".")} `;
+    const continuationPrefix = `${" ".repeat(labelWidth)} `;
+
+    if (values.length === 0) {
+      return `${linePrefix}NONE`;
+    }
+
+    const lines: string[] = [];
+    let currentLine = linePrefix;
+
+    values.forEach((value, index) => {
+      const segment = index === 0 ? value : ` / ${value}`;
+      const currentValueWidth = currentLine.length - linePrefix.length;
+
+      if (
+        currentValueWidth > 0 &&
+        currentValueWidth + segment.length > contentWidth
+      ) {
+        lines.push(currentLine);
+        currentLine = `${continuationPrefix}${value}`;
+        return;
+      }
+
+      currentLine += segment;
+    });
+
+    lines.push(currentLine);
+    return lines.join("\n");
+  }
+
   private buildLoadoutSummary() {
-    const agentIds =
-      this.runState.loadout.unlockedAgentIds.length > 0
-        ? this.runState.loadout.unlockedAgentIds
-            .map((agentId) => agentId.replace(/_/g, " ").toUpperCase())
-            .join(" / ")
-        : "NONE";
-    const skillIds =
-      this.runState.loadout.unlockedSkillIds.length > 0
-        ? this.runState.loadout.unlockedSkillIds
-            .map((skillId) => skillId.replace(/_/g, " ").toUpperCase())
-            .join(" / ")
-        : "NONE";
-    const toolIds =
-      this.runState.loadout.unlockedPromptToolIds.length > 0
-        ? this.runState.loadout.unlockedPromptToolIds
-            .map((toolId) => toolId.replace(/_/g, " ").toUpperCase())
-            .join(" / ")
-        : "NONE";
+    const agentIds = this.runState.loadout.unlockedAgentIds.map((agentId) =>
+      this.formatLoadoutIdentifier(agentId),
+    );
+    const skillIds = this.runState.loadout.unlockedSkillIds.map((skillId) =>
+      this.formatLoadoutIdentifier(skillId),
+    );
+    const toolIds = this.runState.loadout.unlockedPromptToolIds.map((toolId) =>
+      this.formatLoadoutIdentifier(toolId),
+    );
 
     return [
       `TOKENS IN RESERVE..... ${this.tokens}`,
       `TARGET ACCURACY....... ${this.accuracy}%`,
-      `AGENT DISCS........... ${agentIds}`,
-      `SKILL DISCS........... ${skillIds}`,
-      `PROMPT TOOL BUS....... ${toolIds}`,
+      this.formatLoadoutLine("AGENT DISCS", agentIds),
+      this.formatLoadoutLine("SKILL DISCS", skillIds),
+      this.formatLoadoutLine("PROMPT TOOL BUS", toolIds),
     ].join("\n");
   }
 

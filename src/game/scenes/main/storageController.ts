@@ -22,6 +22,11 @@ interface StorageControllerBindings {
   getSkillCapacity: () => number;
   getUnlockedAgentIds: () => AgentId[];
   getUnlockedSkillIds: () => SkillId[];
+  canInteractDrive?: (
+    action: "mount" | "eject",
+    driveId: DriveId,
+    label?: string,
+  ) => boolean;
 }
 
 export class MainSceneStorageController {
@@ -438,6 +443,14 @@ export class MainSceneStorageController {
           ? this.activeAgents.length > 0
           : this.activeSkills.length > 0;
       if (!isLoaded) {
+        synth.playError();
+        return;
+      }
+
+      if (
+        this.bindings.canInteractDrive &&
+        !this.bindings.canInteractDrive("eject", config.id)
+      ) {
         synth.playError();
         return;
       }
@@ -1090,6 +1103,13 @@ export class MainSceneStorageController {
   }
 
   private tryLoadDisk(driveId: DriveId, label: string): DiskLoadResult {
+    if (
+      this.bindings.canInteractDrive &&
+      !this.bindings.canInteractDrive("mount", driveId, label)
+    ) {
+      return { success: false, statusMessage: "TRAINER LOCK" };
+    }
+
     if (driveId === "agent") {
       if (!isAgentId(label)) {
         return { success: false, statusMessage: "INVALID AGENT FORMAT" };

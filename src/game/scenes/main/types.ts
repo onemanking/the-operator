@@ -17,8 +17,10 @@ export {
   normalizeToolIds,
 } from "../../data/PromptIds";
 
+export type ChatSender = "SYSTEM" | "USER" | "LLM" | "OMNICORP TRAINER";
+
 export interface ChatMessage {
-  sender: "SYSTEM" | "USER" | "LLM";
+  sender: ChatSender;
   text: string;
   color?: string;
 }

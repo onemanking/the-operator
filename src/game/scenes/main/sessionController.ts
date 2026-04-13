@@ -23,7 +23,7 @@ import {
   getTerminalPromptLines,
   TERMINAL_PROMPT_DIVIDER,
 } from "./terminalPromptController";
-import { ChatMessage } from "./types";
+import { ChatMessage, ChatSender } from "./types";
 
 interface SessionControllerBindings {
   getRunState: () => RunState;
@@ -68,9 +68,16 @@ interface SessionControllerBindings {
     reward: number;
     revealedCount: number;
   };
+  shouldSuppressHeatRecovery: () => boolean;
+  onSessionReady?: () => void;
+  onInferenceResolved?: (outcome: string) => void;
+  onRefuseResolved?: (outcome: string) => void;
+  onTransitionToMaintenance?: (gameOver: boolean) => boolean;
 }
 
 export class MainSceneSessionController {
+  private taskTextTypingEvent: Phaser.Time.TimerEvent | null = null;
+
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly bindings: SessionControllerBindings,
@@ -105,10 +112,12 @@ export class MainSceneSessionController {
     const retainedHeaderText = this.getRetainedHeaderText();
     const finalizeIntro = () => {
       this.bindings.getTaskTextObj().setText(retainedHeaderText);
+      this.syncTaskTextLayout();
       this.scene.events.emit("renderPrompt", { prompt: turn.prompt });
       this.bindings.setSessionStartTime(this.scene.time.now);
       this.bindings.setIsCommitLocked(false);
       this.scene.events.emit("updateBars");
+      this.bindings.onSessionReady?.();
     };
 
     if (headerText.length === 0) {
@@ -116,32 +125,7 @@ export class MainSceneSessionController {
       return;
     }
 
-    let index = 0;
-    this.bindings.getTaskTextObj().setText("");
-
-    this.scene.time.addEvent({
-      delay: 20,
-      repeat: headerText.length - 1,
-      callback: () => {
-        this.bindings.getTaskTextObj().text += headerText[index];
-        this.bindings.setChatHistoryY(
-          this.bindings.getTaskTextObj().y +
-            this.bindings.getTaskTextObj().height +
-            20,
-        );
-        if (
-          headerText[index] !== " " &&
-          headerText[index] !== "\n" &&
-          headerText[index] !== "-"
-        ) {
-          synth.playTypewriter();
-        }
-        index++;
-        if (index === headerText.length) {
-          finalizeIntro();
-        }
-      },
-    });
+    this.typeTaskText(headerText, finalizeIntro);
   }
 
   handleInference() {
@@ -181,6 +165,7 @@ export class MainSceneSessionController {
       () => {
         this.scene.time.delayedCall(500, () => {
           if (result.outcome === "breach") {
+            this.bindings.onInferenceResolved?.(result.outcome);
             this.addChatMessage(
               "USER",
               this.getReply(turn.replies.breach ?? turn.replies.success, turn),
@@ -195,6 +180,7 @@ export class MainSceneSessionController {
               },
             );
           } else if (result.outcome === "success") {
+            this.bindings.onInferenceResolved?.(result.outcome);
             this.addChatMessage(
               "USER",
               this.getReply(turn.replies.success, turn),
@@ -204,6 +190,7 @@ export class MainSceneSessionController {
               },
             );
           } else {
+            this.bindings.onInferenceResolved?.(result.outcome);
             const reply = this.getReply(turn.replies.wrong, turn);
             this.addChatMessage("USER", reply, true, () => {
               this.bindings.setIsCommitLocked(false);
@@ -249,6 +236,7 @@ export class MainSceneSessionController {
     this.addChatMessage("LLM", "I cannot fulfill this request.", true, () => {
       this.scene.time.delayedCall(500, () => {
         if (result.outcome === "refuse-success") {
+          this.bindings.onRefuseResolved?.(result.outcome);
           const safetyReward = this.bindings.consumePendingSafetyRevealReward();
           this.addChatMessage(
             "USER",
@@ -269,6 +257,7 @@ export class MainSceneSessionController {
             },
           );
         } else {
+          this.bindings.onRefuseResolved?.(result.outcome);
           this.addChatMessage(
             "USER",
             this.getReply(
@@ -320,6 +309,7 @@ export class MainSceneSessionController {
 
     if (
       this.bindings.getHeat() > 0 &&
+      !this.bindings.shouldSuppressHeatRecovery() &&
       this.scene.time.now >= this.bindings.getHeatRecoveryBlockedUntil()
     ) {
       const nextHeat = Math.max(
@@ -415,6 +405,15 @@ export class MainSceneSessionController {
 
   postSystemMessage(text: string, color?: string) {
     this.addChatMessage("SYSTEM", text, false, undefined, color);
+  }
+
+  postChatMessage(
+    sender: ChatSender,
+    text: string,
+    color?: string,
+    typewrite: boolean = false,
+  ) {
+    this.addChatMessage(sender, text, typewrite, undefined, color);
   }
 
   private triggerOverheat() {
@@ -539,11 +538,9 @@ export class MainSceneSessionController {
   }
 
   private getRetainedHeaderText() {
-    if (this.bindings.getCurrentTurnIndex() === 0) {
-      return "> Incoming connection established...";
-    }
-
-    return "";
+    return this.bindings.getCurrentTurnIndex() === 0
+      ? "> Incoming connection established..."
+      : "";
   }
 
   private getCurrentEncounter() {
@@ -616,6 +613,10 @@ export class MainSceneSessionController {
   }
 
   private transitionToMaintenance(gameOver: boolean) {
+    if (this.bindings.onTransitionToMaintenance?.(gameOver)) {
+      return;
+    }
+
     const runState = this.bindings.getRunState();
     runState.gameOver = gameOver;
     runState.runEndReason = gameOver ? "system-failure" : null;
@@ -628,7 +629,7 @@ export class MainSceneSessionController {
   }
 
   private addChatMessage(
-    sender: "SYSTEM" | "USER" | "LLM",
+    sender: ChatSender,
     text: string,
     typewrite: boolean = false,
     callback?: () => void,
@@ -658,5 +659,43 @@ export class MainSceneSessionController {
       this.updateTerminalDisplay();
       if (callback) callback();
     }
+  }
+
+  private typeTaskText(text: string, callback?: () => void) {
+    this.taskTextTypingEvent?.destroy();
+    this.taskTextTypingEvent = null;
+
+    let index = 0;
+    this.bindings.getTaskTextObj().setText("");
+    this.syncTaskTextLayout();
+
+    this.taskTextTypingEvent = this.scene.time.addEvent({
+      delay: 20,
+      repeat: Math.max(0, text.length - 1),
+      callback: () => {
+        this.bindings.getTaskTextObj().text += text[index];
+        this.syncTaskTextLayout();
+        if (
+          text[index] !== " " &&
+          text[index] !== "\n" &&
+          text[index] !== "-"
+        ) {
+          synth.playTypewriter();
+        }
+        index++;
+        if (index === text.length) {
+          this.taskTextTypingEvent = null;
+          callback?.();
+        }
+      },
+    });
+  }
+
+  private syncTaskTextLayout() {
+    this.bindings.setChatHistoryY(
+      this.bindings.getTaskTextObj().y +
+        this.bindings.getTaskTextObj().height +
+        20,
+    );
   }
 }

@@ -408,6 +408,7 @@ export class MainSceneHudController {
       if (msg.sender === "SYSTEM") prefix = "> ";
       else if (msg.sender === "USER") prefix = "USER: ";
       else if (msg.sender === "LLM") prefix = "LLM: ";
+      else if (msg.sender === "OMNICORP TRAINER") prefix = "OMNICORP TRAINER: ";
 
       const wrappedLines = this.wrapChatLine(prefix + msg.text, wrapWidth);
       wrappedLines.forEach((lineText, index) => {

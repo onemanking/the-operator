@@ -15,6 +15,32 @@ import {
 import { getDayLoadoutProfile } from "../data/LoadoutProgressionData";
 import { RUN_CONFIG } from "../data/RunData";
 
+export type RunMode = "standard" | "orientation";
+
+export type OrientationStepId =
+  | "read_prompt"
+  | "mount_agent"
+  | "mount_skill"
+  | "inference"
+  | "thermal_basics"
+  | "search"
+  | "compute"
+  | "safety"
+  | "refuse"
+  | "hallucination_basics"
+  | "coolant_purge"
+  | "reality_patch"
+  | "signal_boost"
+  | "graduation";
+
+export interface RunOrientationState {
+  active: boolean;
+  currentStepId: OrientationStepId | null;
+  suppressHeatRecovery: boolean;
+  suppressHallucinationLoss: boolean;
+  suppressConnectionLoss: boolean;
+}
+
 export interface RunLoadoutState {
   equippedAgentIds: AgentId[];
   equippedSkillIds: SkillId[];
@@ -56,6 +82,7 @@ export type RunEndReason = "system-failure" | "content-exhausted" | null;
 
 export interface RunState {
   runId: string;
+  runMode: RunMode;
   day: number;
   tokens: number;
   accuracy: number;
@@ -78,6 +105,7 @@ export interface RunState {
   shiftModifierIds: string[];
   activePolicyGroupIds: ContentPolicyGroupId[];
   forbiddenCategoryIds: ContentCategoryId[];
+  orientation: RunOrientationState;
 }
 
 export type ShiftSceneData = Partial<RunState>;
@@ -129,6 +157,7 @@ export function createInitialRunState(): RunState {
 
   return {
     runId: "run-1",
+    runMode: "standard",
     day: RUN_CONFIG.initialDay,
     tokens: RUN_CONFIG.initialTokens,
     accuracy: RUN_CONFIG.initialAccuracy,
@@ -178,6 +207,13 @@ export function createInitialRunState(): RunState {
     shiftModifierIds: [],
     activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
+    orientation: {
+      active: false,
+      currentStepId: null,
+      suppressHeatRecovery: false,
+      suppressHallucinationLoss: false,
+      suppressConnectionLoss: false,
+    },
   };
 }
 
@@ -225,6 +261,7 @@ export function cloneRunState(runState: RunState): RunState {
     shiftModifierIds: [...runState.shiftModifierIds],
     activePolicyGroupIds: [...runState.activePolicyGroupIds],
     forbiddenCategoryIds: [...runState.forbiddenCategoryIds],
+    orientation: { ...runState.orientation },
   };
 }
 
@@ -381,5 +418,9 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     forbiddenCategoryIds: [
       ...(data.forbiddenCategoryIds ?? initial.forbiddenCategoryIds),
     ],
+    orientation: {
+      ...initial.orientation,
+      ...data.orientation,
+    },
   };
 }

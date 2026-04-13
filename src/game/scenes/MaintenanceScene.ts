@@ -291,6 +291,10 @@ export class MaintenanceScene extends Phaser.Scene {
         );
       } else {
         this.createSummaryPanel();
+        this.summaryText.setAlpha(0);
+        this.summaryLeftText?.setAlpha(1);
+        this.summaryRightText?.setAlpha(1);
+        this.summaryUtilityText?.setAlpha(1);
         this.purchaseStatusText.setAlpha(0);
 
         const revealStartIndex = this.children.list.length;
@@ -318,17 +322,31 @@ export class MaintenanceScene extends Phaser.Scene {
         this.sequenceController.play(
           [
             {
-              target: this.summaryText,
+              target: this.summaryLeftText!,
               text: [
-                `UPKEEP DEDUCTED......... ${RUN_CONFIG.serverCostPerShift} TOKENS`,
-                `LEDGER AFTER UPKEEP..... ${this.tokens} TOKENS`,
+                `TOKENS AFTER UPKEEP..... ${this.tokens}`,
                 `ACCURACY CACHE.......... ${this.accuracy}%`,
-                `UPGRADE BAY............. READY FOR INPUT`,
               ].join("\n"),
               reveal: "line",
               speedMs: 110,
               playSound: true,
-              color: RETRO_COLORS.mutedText,
+              color: MONITOR_COLORS.text,
+            },
+            {
+              target: this.summaryRightText!,
+              text: `UPKEEP..... ${RUN_CONFIG.serverCostPerShift}`,
+              reveal: "line",
+              speedMs: 110,
+              playSound: true,
+              color: MONITOR_COLORS.text,
+            },
+            {
+              target: this.summaryUtilityText!,
+              text: `UTILITY BUS............. ${getActiveUtilityInventorySummary(this.runState)}`,
+              reveal: "line",
+              speedMs: 110,
+              playSound: true,
+              color: MONITOR_COLORS.text,
             },
           ],
           () => {

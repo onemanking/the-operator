@@ -1,5 +1,6 @@
 export const RUN_CONFIG = {
   initialDay: 1,
+  maxDay: 5,
   initialTokens: 100,
   initialAccuracy: 100,
   initialHeat: 0,

@@ -94,15 +94,27 @@ export class MaintenanceScene extends Phaser.Scene {
   create() {
     const width = this.cameras.main.width;
 
+    if (!this.gameOver) {
+      this.settleMaintenance();
+    }
+
+    const runComplete = this.isRunComplete();
+
     createSceneBackdrop(this, 0x050805);
 
     this.shell = createMonitorShell(this, {
       title: this.gameOver
         ? "SYSTEM SAFE MODE // FAILURE REPORT"
-        : `SYSTEM SAFE MODE // DAY ${this.day} COMPLETE`,
-      subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+        : runComplete
+          ? "SYSTEM SAFE MODE // RUN COMPLETE"
+          : `SYSTEM SAFE MODE // DAY ${this.day} COMPLETE`,
+      subtitle: runComplete
+        ? `DAY ${this.day}/${RUN_CONFIG.maxDay} // TOKENS ${this.tokens} // ACC ${this.accuracy}%`
+        : `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
       footerLeft: "CHANNEL: MAINTENANCE.BUS",
-      footerRight: "ENTER / SPACE // ADVANCE",
+      footerRight: runComplete
+        ? "ENTER / SPACE // ARCHIVE RUN"
+        : "ENTER / SPACE // ADVANCE",
     });
 
     const textStyle = createRetroTextStyle();
@@ -185,8 +197,6 @@ export class MaintenanceScene extends Phaser.Scene {
         },
       );
     } else {
-      this.settleMaintenance();
-
       this.createSummaryPanel();
 
       if (this.tokens < 0) {
@@ -215,6 +225,46 @@ export class MaintenanceScene extends Phaser.Scene {
             };
             this.primaryCommand?.setLabel(this.readyCommandLabel);
             this.statusHint?.setText("ENTER / SPACE // REBOOT SYSTEM");
+          },
+        );
+      } else if (runComplete) {
+        const maintenancePurchaseStatusText = this.purchaseStatusText;
+        this.createRunCompletePanel();
+        maintenancePurchaseStatusText.destroy();
+        this.purchaseStatusText.setAlpha(0);
+        this.summaryLeftText?.setAlpha(0);
+        this.summaryRightText?.setAlpha(0);
+        this.summaryUtilityText?.setAlpha(0);
+
+        this.sequenceController = new MonitorSequenceController(this);
+        this.sequenceController.play(
+          [
+            {
+              target: this.summaryText,
+              text: [
+                "FIVE-DAY OPERATOR CONTRACT COMPLETE.",
+                "MAINFRAME LOAD STABILIZED.",
+                "ARCHIVE THE RUN AND PREP THE NEXT CREW.",
+              ].join("\n"),
+              reveal: "line",
+              speedMs: 120,
+              playSound: true,
+              color: MONITOR_COLORS.text,
+            },
+          ],
+          () => {
+            this.summaryLeftText?.setAlpha(1);
+            this.summaryRightText?.setAlpha(1);
+            this.summaryUtilityText?.setAlpha(1);
+            this.purchaseStatusText.setAlpha(1);
+            this.readyCommandLabel = "ARCHIVE RUN";
+            this.transitionStatusText =
+              "RUN ARCHIVE SEALED // REBOOTING CONSOLE";
+            this.readyAction = () => {
+              this.scene.start("BriefingScene", createInitialRunState());
+            };
+            this.primaryCommand?.setLabel(this.readyCommandLabel);
+            this.statusHint?.setText("ENTER / SPACE // ARCHIVE RUN");
           },
         );
       } else {
@@ -354,6 +404,10 @@ export class MaintenanceScene extends Phaser.Scene {
     return nextRunState;
   }
 
+  private isRunComplete() {
+    return !this.gameOver && this.day >= RUN_CONFIG.maxDay;
+  }
+
   private settleMaintenance() {
     if (this.runState.maintenanceSettledDay === this.day) {
       this.tokens = this.runState.tokens;
@@ -466,6 +520,99 @@ export class MaintenanceScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.refreshMaintenanceSummary();
+  }
+
+  private createRunCompletePanel() {
+    const shell = this.shell;
+
+    if (!shell) {
+      return;
+    }
+
+    const panelX = shell.contentX;
+    const panelY = shell.contentY + 108;
+    const panelWidth = shell.contentWidth;
+    const panelHeight = 336;
+
+    this.add
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x08120a, 0.92)
+      .setOrigin(0)
+      .setStrokeStyle(1, 0x33ff33, 0.34);
+
+    this.add
+      .text(
+        panelX + 18,
+        panelY + 12,
+        "FINAL RUN ARCHIVE // STORED METRICS",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.mutedText,
+        }),
+      )
+      .setOrigin(0, 0);
+
+    this.add
+      .rectangle(panelX + 18, panelY + 34, panelWidth - 36, 1, 0x33ff33, 0.16)
+      .setOrigin(0, 0.5);
+
+    this.summaryText = this.add
+      .text(shell.contentX + shell.contentWidth / 2, panelY + 74, "", {
+        ...createMonitorTextStyle({
+          fontSize: "21px",
+          color: MONITOR_COLORS.text,
+          align: "center",
+        }),
+        wordWrap: { width: panelWidth - 96 },
+        lineSpacing: 8,
+      })
+      .setOrigin(0.5, 0);
+
+    this.summaryLeftText = this.add
+      .text(panelX + 28, panelY + 152, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.text,
+          align: "left",
+        }),
+        lineSpacing: 6,
+      })
+      .setOrigin(0, 0);
+
+    this.summaryRightText = this.add
+      .text(panelX + 430, panelY + 152, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.text,
+          align: "left",
+        }),
+        lineSpacing: 6,
+      })
+      .setOrigin(0, 0);
+
+    this.summaryUtilityText = this.add
+      .text(panelX + 28, panelY + 276, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.mutedText,
+          align: "left",
+        }),
+        wordWrap: { width: panelWidth - 56 },
+        lineSpacing: 4,
+      })
+      .setOrigin(0, 0);
+
+    this.purchaseStatusText = this.add
+      .text(shell.contentX + shell.contentWidth / 2, 610, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.warningText,
+          align: "center",
+        }),
+      })
+      .setOrigin(0.5);
+
+    this.refreshRunCompleteSummary();
   }
 
   private createUpgradeShop() {
@@ -660,6 +807,42 @@ export class MaintenanceScene extends Phaser.Scene {
     }
 
     this.purchaseStatusText.setColor(MONITOR_COLORS.text);
+  }
+
+  private refreshRunCompleteSummary() {
+    const utilitySummary = getActiveUtilityInventorySummary(this.runState);
+    const installedUpgradeCount =
+      this.runState.loadout.passiveUpgradeIds.length;
+    const utilityChargeCount = Object.values(
+      this.runState.utilityInventory.chargesById,
+    ).reduce((total, charges) => total + (charges ?? 0), 0);
+
+    this.summaryLeftText?.setText(
+      [
+        `DAYS CLEARED............ ${this.day}/${RUN_CONFIG.maxDay}`,
+        `TOKENS BANKED........... ${this.tokens}`,
+        `ACCURACY CACHE.......... ${this.accuracy}%`,
+        `THERMAL LOAD............ ${Math.round(this.runState.heat)}%`,
+      ].join("\n"),
+    );
+    this.summaryRightText?.setText(
+      [
+        `HALLUCINATION DRIFT..... ${Math.round(this.runState.hallucination)}%`,
+        `PROMPTS ARCHIVED........ ${this.runState.seenTurnIds.length}`,
+        `UPGRADES INSTALLED...... ${installedUpgradeCount}`,
+        `UTILITY CHARGES......... ${utilityChargeCount}`,
+      ].join("\n"),
+    );
+    this.summaryUtilityText?.setText(
+      [
+        `UTILITY BUS............. ${utilitySummary}`,
+        `FINAL LOADOUT........... AGENT ${this.runState.loadout.agentCapacity} // SKILL ${this.runState.loadout.skillCapacity}`,
+      ].join("\n"),
+    );
+    this.purchaseStatusText.setText(
+      "RUN COMPLETE // REBOOT TO START A FRESH CONTRACT",
+    );
+    this.purchaseStatusText.setColor(MONITOR_COLORS.warningText);
   }
 
   private drawShopOffers() {

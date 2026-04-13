@@ -26,6 +26,7 @@ export type TestScenarioId =
   | "search"
   | "utility"
   | "maintenance"
+  | "maintenanceVictory"
   | "maintenanceDead"
   | "contentExhausted"
   | "tier1"
@@ -144,6 +145,27 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
       signal_boost: 1,
     },
   },
+  maintenanceVictory: {
+    startScene: "MaintenanceScene",
+    activePolicyGroupIds: ["illegal_content"],
+    forbiddenCategoryIds: ["weapons"],
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    day: 5,
+    tokens: 312,
+    accuracy: 96,
+    heat: 18,
+    hallucination: 9,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    passiveUpgradeIds: ["cooling_fins", "cache_coalescer", "ecc_memory"],
+    utilityChargesById: {
+      coolant_purge: 1,
+      reality_patch: 2,
+      signal_boost: 1,
+    },
+    seenTurnIds: getAllAtomicTurnIds().slice(0, 14),
+  },
   maintenanceDead: {
     startScene: "MaintenanceScene",
     activePolicyGroupIds: ["illegal_content"],
@@ -227,6 +249,7 @@ function isTestScenarioId(value: string): value is TestScenarioId {
     value === "search" ||
     value === "utility" ||
     value === "maintenance" ||
+    value === "maintenanceVictory" ||
     value === "maintenanceDead" ||
     value === "contentExhausted" ||
     value === "tier1" ||
@@ -243,6 +266,7 @@ const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
   "test-search": "search",
   "test-utility": "utility",
   "test-maintenance": "maintenance",
+  "test-maintenance-victory": "maintenanceVictory",
   "test-maintenance-dead": "maintenanceDead",
   "test-content-exhausted": "contentExhausted",
   "test-tier1": "tier1",

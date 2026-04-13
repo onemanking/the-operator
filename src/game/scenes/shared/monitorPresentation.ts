@@ -13,7 +13,7 @@ export const MONITOR_COLORS = {
   mutedText: "#33ff33",
   dimText: "#1d7a1d",
   warningText: "#ffb347",
-  dangerText: "#ff756b",
+  dangerText: "#ff0000",
   commandFill: 0x030703,
   commandDisabledFill: 0x050705,
   commandStroke: 0x33ff33,
@@ -62,6 +62,20 @@ interface MonitorCommandButtonConfig {
   width: number;
   label: string;
   onPress: () => void;
+}
+
+interface MonitorCommandButtonTheme {
+  fillColor: number;
+  hoverFillColor: number;
+  strokeColor: number;
+  hoverStrokeColor: number;
+  textColor: string;
+  hoverTextColor: string;
+  disabledFillColor: number;
+  disabledStrokeColor: number;
+  disabledTextColor: string;
+  cursorColor: number;
+  hoverCursorColor: number;
 }
 
 interface MonitorSceneTransitionConfig {
@@ -294,30 +308,43 @@ export function createMonitorCommandButton({
   ]);
 
   let enabled = true;
+  let theme: MonitorCommandButtonTheme = {
+    fillColor: MONITOR_COLORS.commandFill,
+    hoverFillColor: MONITOR_COLORS.invertFill,
+    strokeColor: MONITOR_COLORS.commandStroke,
+    hoverStrokeColor: MONITOR_COLORS.invertFill,
+    textColor: MONITOR_COLORS.text,
+    hoverTextColor: MONITOR_COLORS.invertText,
+    disabledFillColor: MONITOR_COLORS.commandDisabledFill,
+    disabledStrokeColor: MONITOR_COLORS.commandDisabledStroke,
+    disabledTextColor: MONITOR_COLORS.dimText,
+    cursorColor: 0x33ff33,
+    hoverCursorColor: 0x020602,
+  };
 
   const applyVisualState = (hovered: boolean = false) => {
     const fillColor = enabled
       ? hovered
-        ? MONITOR_COLORS.invertFill
-        : MONITOR_COLORS.commandFill
-      : MONITOR_COLORS.commandDisabledFill;
+        ? theme.hoverFillColor
+        : theme.fillColor
+      : theme.disabledFillColor;
     const strokeColor = enabled
       ? hovered
-        ? MONITOR_COLORS.invertFill
-        : MONITOR_COLORS.commandStroke
-      : MONITOR_COLORS.commandDisabledStroke;
+        ? theme.hoverStrokeColor
+        : theme.strokeColor
+      : theme.disabledStrokeColor;
     const textColor = enabled
       ? hovered
-        ? MONITOR_COLORS.invertText
-        : MONITOR_COLORS.text
-      : MONITOR_COLORS.dimText;
+        ? theme.hoverTextColor
+        : theme.textColor
+      : theme.disabledTextColor;
 
     button.setFillStyle(fillColor, 1);
     button.setStrokeStyle(2, strokeColor);
     buttonLabel.setColor(textColor);
     prompt.setColor(textColor);
     cursor.setFillStyle(
-      hovered && enabled ? 0x020602 : 0x33ff33,
+      hovered && enabled ? theme.hoverCursorColor : theme.cursorColor,
       enabled ? 0.7 : 0.2,
     );
     container.setAlpha(enabled ? 1 : 0.55);
@@ -366,6 +393,13 @@ export function createMonitorCommandButton({
     },
     setLabel(nextLabel: string) {
       buttonLabel.setText(nextLabel);
+    },
+    setTheme(nextTheme: Partial<MonitorCommandButtonTheme>) {
+      theme = {
+        ...theme,
+        ...nextTheme,
+      };
+      applyVisualState(false);
     },
   };
 }
@@ -521,15 +555,59 @@ export function playMonitorSceneTransition(
   config: MonitorSceneTransitionConfig,
 ) {
   const { width, height } = scene.cameras.main;
+  const isFineTuneTransition = config.statusText.includes("FINE-TUNE");
   const overlay = scene.add.container(0, 0).setDepth(5000);
   const blackout = scene.add
     .rectangle(0, 0, width, height, 0x010401, 0)
     .setOrigin(0);
+
+  if (isFineTuneTransition) {
+    const status = scene.add
+      .text(
+        54,
+        height - 104,
+        `> ${config.statusText}`,
+        createMonitorTextStyle({
+          fontSize: "22px",
+          color: MONITOR_COLORS.dangerText,
+        }),
+      )
+      .setOrigin(0, 0.5)
+      .setAlpha(0);
+    const cursor = scene.add
+      .rectangle(54, height - 62, 14, 22, 0xff0000, 0)
+      .setOrigin(0, 0.5);
+
+    overlay.add([blackout, status, cursor]);
+
+    scene.tweens.add({ targets: blackout, alpha: 1, duration: 120 });
+    scene.tweens.add({
+      targets: status,
+      alpha: 1,
+      duration: 110,
+      delay: 220,
+    });
+    scene.tweens.add({
+      targets: cursor,
+      alpha: { from: 0.18, to: 0.92 },
+      duration: 420,
+      delay: 300,
+      yoyo: true,
+      repeat: 1,
+    });
+    scene.cameras.main.shake(120, 0.0012, true);
+
+    scene.time.delayedCall(1800, () => {
+      config.onComplete();
+    });
+    return;
+  }
+
   const tintColor =
     config.variant === "dispatch"
       ? 0x33ff33
       : config.statusText.includes("FAIL")
-        ? 0xff756b
+          ? 0xff0000
         : 0xffb347;
   const sweep = scene.add
     .rectangle(

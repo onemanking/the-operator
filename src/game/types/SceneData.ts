@@ -55,6 +55,10 @@ export interface RunUtilityRuntimeState {
 
 export type RunEndReason = "system-failure" | "content-exhausted" | null;
 
+function createRunId() {
+  return `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export interface RunState {
   runId: string;
   day: number;
@@ -130,7 +134,7 @@ export function createInitialRunState(): RunState {
   const initialLoadoutProfile = getDayLoadoutProfile(RUN_CONFIG.initialDay);
 
   return {
-    runId: "run-1",
+    runId: createRunId(),
     day: RUN_CONFIG.initialDay,
     tokens: RUN_CONFIG.initialTokens,
     accuracy: RUN_CONFIG.initialAccuracy,
@@ -180,8 +184,6 @@ export function createInitialRunState(): RunState {
     forbiddenCategoryIds: [],
   };
 }
-
-export const INITIAL_SHIFT_STATE: RunState = createInitialRunState();
 
 export function cloneRunState(runState: RunState): RunState {
   return {

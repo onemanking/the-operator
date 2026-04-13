@@ -21,6 +21,10 @@ import {
 } from "../data/UtilityData";
 import { synth } from "../utils/SoundSynth";
 import {
+  getPersistentDeathCount,
+  recordPersistentDeath,
+} from "../data/RunHistoryData";
+import {
   cloneRunState,
   createInitialRunState,
   hydrateRunState,
@@ -77,6 +81,7 @@ export class MaintenanceScene extends Phaser.Scene {
   private readyAction?: () => void;
   private readyCommandLabel: string = "";
   private transitionStatusText: string = "";
+  private deathCount: number = 0;
 
   constructor() {
     super("MaintenanceScene");
@@ -98,16 +103,25 @@ export class MaintenanceScene extends Phaser.Scene {
       this.settleMaintenance();
     }
 
+    const contentExhausted = this.isContentExhaustedRun();
+    const failureRun = this.isFailureRun();
     const runComplete = this.isRunComplete();
+
+    if (failureRun) {
+      this.deathCount = recordPersistentDeath(this.runState.runId);
+    } else {
+      this.deathCount = getPersistentDeathCount();
+    }
 
     createSceneBackdrop(this, 0x050805);
 
     this.shell = createMonitorShell(this, {
-      title: this.gameOver
-        ? "SYSTEM SAFE MODE // FAILURE REPORT"
-        : runComplete
-          ? "SYSTEM SAFE MODE // RUN COMPLETE"
-          : `SYSTEM SAFE MODE // DAY ${this.day} COMPLETE`,
+      title:
+        contentExhausted || failureRun
+          ? "SYSTEM SAFE MODE // FAILURE REPORT"
+          : runComplete
+            ? "SYSTEM SAFE MODE // RUN COMPLETE"
+            : `SYSTEM SAFE MODE // DAY ${this.day} COMPLETE`,
       subtitle: runComplete
         ? `DAY ${this.day}/${RUN_CONFIG.maxDay} // TOKENS ${this.tokens} // ACC ${this.accuracy}%`
         : `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
@@ -140,7 +154,11 @@ export class MaintenanceScene extends Phaser.Scene {
       onPress: () => this.handlePrimaryAction(),
     });
 
-    if (this.gameOver) {
+    if (failureRun) {
+      this.applyFailureTheme();
+    }
+
+    if (contentExhausted) {
       const endBody =
         this.runEndReason === "content-exhausted"
           ? "NO FRESH PROMPTS REMAIN IN THE AUTHORED POOL.\nSHIFT ARCHIVE COMPLETE."
@@ -197,20 +215,19 @@ export class MaintenanceScene extends Phaser.Scene {
         },
       );
     } else {
-      this.createSummaryPanel();
+      if (failureRun) {
+        this.createFailurePanel();
+        this.purchaseStatusText.setAlpha(0);
+        this.summaryLeftText?.setAlpha(0);
+        this.summaryRightText?.setAlpha(0);
+        this.summaryUtilityText?.setAlpha(0);
 
-      if (this.tokens < 0) {
         this.sequenceController = new MonitorSequenceController(this);
         this.sequenceController.play(
           [
             {
               target: this.summaryText,
-              text: [
-                `UPKEEP DEDUCTED......... ${RUN_CONFIG.serverCostPerShift} TOKENS`,
-                `LEDGER AFTER UPKEEP..... ${this.tokens} TOKENS`,
-                `STATUS.................. BANKRUPT`,
-                `ACTION.................. SERVER SHUTDOWN`,
-              ].join("\n"),
+              text: this.getFailureDigestText(),
               reveal: "line",
               speedMs: 120,
               playSound: true,
@@ -218,8 +235,12 @@ export class MaintenanceScene extends Phaser.Scene {
             },
           ],
           () => {
+            this.summaryLeftText?.setAlpha(1);
+            this.summaryRightText?.setAlpha(1);
+            this.summaryUtilityText?.setAlpha(1);
+            this.purchaseStatusText.setAlpha(1);
             this.readyCommandLabel = "REBOOT SYSTEM";
-            this.transitionStatusText = "BANKRUPTCY LOCKOUT // REBOOTING";
+            this.transitionStatusText = this.getFineTuneRebootText();
             this.readyAction = () => {
               this.scene.start("BriefingScene", createInitialRunState());
             };
@@ -228,6 +249,7 @@ export class MaintenanceScene extends Phaser.Scene {
           },
         );
       } else if (runComplete) {
+        this.createSummaryPanel();
         const maintenancePurchaseStatusText = this.purchaseStatusText;
         this.createRunCompletePanel();
         maintenancePurchaseStatusText.destroy();
@@ -268,6 +290,7 @@ export class MaintenanceScene extends Phaser.Scene {
           },
         );
       } else {
+        this.createSummaryPanel();
         this.purchaseStatusText.setAlpha(0);
 
         const revealStartIndex = this.children.list.length;
@@ -370,6 +393,12 @@ export class MaintenanceScene extends Phaser.Scene {
     this.primaryCommand?.setEnabled(false);
     this.statusHint?.setText(this.transitionStatusText);
     synth.playButtonPress();
+
+    if (this.isFailureRun()) {
+      this.playFailureRebootSequence();
+      return;
+    }
+
     playMonitorSceneTransition(this, {
       variant: "reboot",
       statusText: this.transitionStatusText,
@@ -404,8 +433,43 @@ export class MaintenanceScene extends Phaser.Scene {
     return nextRunState;
   }
 
+  private isContentExhaustedRun() {
+    return this.gameOver && this.runEndReason === "content-exhausted";
+  }
+
+  private isFailureRun() {
+    return (
+      this.runEndReason === "system-failure" ||
+      (!this.gameOver && this.tokens < 0)
+    );
+  }
+
   private isRunComplete() {
     return !this.gameOver && this.day >= RUN_CONFIG.maxDay;
+  }
+
+  private formatFineTuneVersion() {
+    return `v1.${String(Math.max(1, this.deathCount)).padStart(2, "0")}`;
+  }
+
+  private getFineTuneRebootText() {
+    return `INITIATING FINE-TUNE: OMNI-SENTINEL ${this.formatFineTuneVersion()}...`;
+  }
+
+  private getFailureDigestText() {
+    if (this.tokens < 0) {
+      return [
+        "LEDGER COLLAPSE CONFIRMED.",
+        "SERVER SHUTDOWN.",
+        "",
+      ].join("\n");
+    }
+
+    return [
+      "HALLUCINATION CRITICAL MASS REACHED.",
+      "SERVER MELTDOWN.",
+      "",
+    ].join("\n");
   }
 
   private settleMaintenance() {
@@ -615,6 +679,99 @@ export class MaintenanceScene extends Phaser.Scene {
     this.refreshRunCompleteSummary();
   }
 
+  private createFailurePanel() {
+    const shell = this.shell;
+
+    if (!shell) {
+      return;
+    }
+
+    const panelX = shell.contentX;
+    const panelY = shell.contentY + 4;
+    const panelWidth = shell.contentWidth;
+    const panelHeight = shell.contentHeight - 16;
+
+    this.add
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x120404, 0.92)
+      .setOrigin(0)
+      .setStrokeStyle(1, 0xff0000, 0.28);
+
+    this.add
+      .text(
+        panelX + 18,
+        panelY + 12,
+        "FAILURE ARCHIVE // LAST RECORDED METRICS",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.dangerText,
+        }),
+      )
+      .setOrigin(0, 0);
+
+    this.add
+      .rectangle(panelX + 18, panelY + 34, panelWidth - 36, 1, 0xff0000, 0.16)
+      .setOrigin(0, 0.5);
+
+    this.summaryText = this.add
+      .text(shell.contentX + shell.contentWidth / 2, panelY + 70, "", {
+        ...createMonitorTextStyle({
+          fontSize: "20px",
+          color: MONITOR_COLORS.dangerText,
+          align: "center",
+        }),
+        wordWrap: { width: panelWidth - 96 },
+        lineSpacing: 8,
+      })
+      .setOrigin(0.5, 0);
+
+    this.summaryLeftText = this.add
+      .text(panelX + 28, panelY + 188, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.dangerText,
+          align: "left",
+        }),
+        lineSpacing: 6,
+      })
+      .setOrigin(0, 0);
+
+    this.summaryRightText = this.add
+      .text(panelX + 430, panelY + 188, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.dangerText,
+          align: "left",
+        }),
+        lineSpacing: 6,
+      })
+      .setOrigin(0, 0);
+
+    this.summaryUtilityText = this.add
+      .text(panelX + 28, panelY + 326, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.dangerText,
+          align: "left",
+        }),
+        wordWrap: { width: panelWidth - 56 },
+        lineSpacing: 4,
+      })
+      .setOrigin(0, 0);
+
+    this.purchaseStatusText = this.add
+      .text(shell.contentX + shell.contentWidth / 2, 620, "", {
+        ...createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.dangerText,
+          align: "center",
+        }),
+      })
+      .setOrigin(0.5);
+
+    this.refreshFailureSummary();
+  }
+
   private createUpgradeShop() {
     const shell = this.shell;
 
@@ -770,16 +927,23 @@ export class MaintenanceScene extends Phaser.Scene {
 
   private refreshMaintenanceSummary() {
     const utilitySummary = getActiveUtilityInventorySummary(this.runState);
+    const haltedRun = this.gameOver;
 
     this.summaryText.setText("");
     this.summaryLeftText?.setText(
       [
-        `TOKENS AFTER UPKEEP..... ${this.tokens}`,
+        haltedRun
+          ? `TOKENS ON HALT......... ${this.tokens}`
+          : `TOKENS AFTER UPKEEP..... ${this.tokens}`,
         `ACCURACY CACHE.......... ${this.accuracy}%`,
       ].join("\n"),
     );
     this.summaryRightText?.setText(
-      [`UPKEEP..... ${RUN_CONFIG.serverCostPerShift}`].join("\n"),
+      [
+        haltedRun
+          ? "UPKEEP..... SKIPPED"
+          : `UPKEEP..... ${RUN_CONFIG.serverCostPerShift}`,
+      ].join("\n"),
     );
     this.summaryUtilityText?.setText(
       `UTILITY BUS............. ${utilitySummary}`,
@@ -843,6 +1007,125 @@ export class MaintenanceScene extends Phaser.Scene {
       "RUN COMPLETE // REBOOT TO START A FRESH CONTRACT",
     );
     this.purchaseStatusText.setColor(MONITOR_COLORS.warningText);
+  }
+
+  private refreshFailureSummary() {
+    const utilitySummary = getActiveUtilityInventorySummary(this.runState);
+    const installedUpgradeCount =
+      this.runState.loadout.passiveUpgradeIds.length;
+    const utilityChargeCount = Object.values(
+      this.runState.utilityInventory.chargesById,
+    ).reduce((total, charges) => total + (charges ?? 0), 0);
+
+    this.summaryLeftText?.setText(
+      [
+        `LAST DAY CLEARED........ ${this.day}`,
+        `TOKENS BANKED........... ${this.tokens}`,
+        `ACCURACY CACHE.......... ${this.accuracy}%`,
+        `THERMAL LOAD............ ${Math.round(this.runState.heat)}%`,
+      ].join("\n"),
+    );
+    this.summaryRightText?.setText(
+      [
+        `HALLUCINATION DRIFT..... ${Math.round(this.runState.hallucination)}%`,
+        `PROMPTS ARCHIVED........ ${this.runState.seenTurnIds.length}`,
+        `UPGRADES INSTALLED...... ${installedUpgradeCount}`,
+        `DEATH COUNT............. ${this.deathCount}`,
+      ].join("\n"),
+    );
+    this.summaryUtilityText?.setText(
+      [
+        `UTILITY BUS............. ${utilitySummary}`,
+        `LAST LOADOUT............ AGENT ${this.runState.loadout.agentCapacity} // SKILL ${this.runState.loadout.skillCapacity}`,
+      ].join("\n"),
+    );
+    this.purchaseStatusText.setText(
+      "REBOOT SYSTEM TO QUEUE THE NEXT FINE-TUNE PASS",
+    );
+    this.purchaseStatusText.setColor(MONITOR_COLORS.dangerText);
+  }
+
+  private applyFailureTheme() {
+    this.statusHint?.setColor(MONITOR_COLORS.dangerText);
+    this.shell?.chrome.forEach((gameObject) => {
+      if (gameObject instanceof Phaser.GameObjects.Text) {
+        gameObject.setColor(MONITOR_COLORS.dangerText);
+      }
+    });
+    this.primaryCommand?.setTheme({
+      fillColor: 0x120404,
+      hoverFillColor: 0x2b0909,
+      strokeColor: 0xff0000,
+      hoverStrokeColor: 0xff0000,
+      textColor: MONITOR_COLORS.dangerText,
+      hoverTextColor: MONITOR_COLORS.dangerText,
+      disabledFillColor: 0x120404,
+      disabledStrokeColor: 0x6b2b28,
+      disabledTextColor: MONITOR_COLORS.dangerText,
+      cursorColor: 0xff0000,
+      hoverCursorColor: 0xff0000,
+    });
+  }
+
+  private playFailureRebootSequence() {
+    const shell = this.shell;
+
+    if (!shell) {
+      this.readyAction?.();
+      return;
+    }
+
+    this.sequenceController?.destroy();
+    this.statusHint?.setAlpha(0);
+    this.primaryCommand?.container.setAlpha(0.35);
+
+    const screenX = shell.contentX - 22;
+    const screenY = shell.contentY - 66;
+    const screenWidth = shell.contentWidth + 44;
+    const screenHeight = shell.contentHeight + 114;
+
+    const screenBlackout = this.add
+      .rectangle(screenX, screenY, screenWidth, screenHeight, 0x000000, 1)
+      .setOrigin(0)
+      .setDepth(4500);
+    const rebootText = this.add
+      .text(
+        screenX + 28,
+        screenY + screenHeight / 2,
+        "",
+        createMonitorTextStyle({
+          fontSize: "22px",
+          color: MONITOR_COLORS.dangerText,
+          align: "left",
+        }),
+      )
+      .setOrigin(0, 0.5)
+      .setDepth(4501);
+
+    this.sequenceController = new MonitorSequenceController(this);
+    this.sequenceController.play(
+      [
+        {
+          target: rebootText,
+          text: `> ${this.getFineTuneRebootText()}`,
+          reveal: "char",
+          delayMs: 220,
+          speedMs: 22,
+          playSound: true,
+          color: MONITOR_COLORS.dangerText,
+        },
+      ],
+      () => {
+        this.time.delayedCall(1000, () => {
+          this.readyAction?.();
+          // Prevent flash from the BriefingScene loading before the blackout finishes
+          this.time.delayedCall(500, () => {
+            screenBlackout.destroy();
+            rebootText.destroy();
+          });
+        });
+      },
+    );
   }
 
   private drawShopOffers() {

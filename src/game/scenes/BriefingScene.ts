@@ -165,7 +165,7 @@ export class BriefingScene extends Phaser.Scene {
     const modifierLabel = this.add
       .text(
         shell.contentX,
-        directiveBody.y + directiveBodyHeight + 34,
+        directiveBody.y + directiveBodyHeight + 28,
         "SHIFT MODIFIER",
         createMonitorTextStyle({
           fontSize: "18px",
@@ -196,7 +196,7 @@ export class BriefingScene extends Phaser.Scene {
     const systemsLabel = this.add
       .text(
         shell.contentX,
-        modifierBody.y + modifierBodyHeight + 34,
+        modifierBody.y + modifierBodyHeight + 26,
         "SHIFT LOADOUT",
         createMonitorTextStyle({
           fontSize: "18px",
@@ -212,10 +212,10 @@ export class BriefingScene extends Phaser.Scene {
         systemsLabel.y + systemsLabel.height + 10,
         "",
         createMonitorTextStyle({
-          fontSize: "17px",
+          fontSize: "16px",
           color: MONITOR_COLORS.text,
           wordWrap: { width: shell.contentWidth },
-          lineSpacing: 6,
+          lineSpacing: 4,
         }),
       )
       .setOrigin(0, 0);
@@ -330,6 +330,32 @@ export class BriefingScene extends Phaser.Scene {
     return lines.join("\n");
   }
 
+  private formatLoadoutGrid(label: string, values: string[]) {
+    const labelWidth = 22;
+    const linePrefix = `${label.padEnd(labelWidth, ".")} `;
+    const continuationPrefix = `${" ".repeat(labelWidth)} `;
+    const columnWidth = 19;
+
+    if (values.length === 0) {
+      return `${linePrefix}NONE`;
+    }
+
+    const lines: string[] = [];
+    for (let index = 0; index < values.length; index += 2) {
+      const leftValue = values[index] ?? "";
+      const rightValue = values[index + 1] ?? "";
+      const prefix = index === 0 ? linePrefix : continuationPrefix;
+
+      lines.push(
+        rightValue.length > 0
+          ? `${prefix}${leftValue.padEnd(columnWidth, " ")} ${rightValue}`
+          : `${prefix}${leftValue}`,
+      );
+    }
+
+    return lines.join("\n");
+  }
+
   private buildLoadoutSummary() {
     const agentIds = this.runState.loadout.unlockedAgentIds.map((agentId) =>
       this.formatLoadoutIdentifier(agentId),
@@ -344,8 +370,8 @@ export class BriefingScene extends Phaser.Scene {
     return [
       `TOKENS IN RESERVE..... ${this.tokens}`,
       `TARGET ACCURACY....... ${this.accuracy}%`,
-      this.formatLoadoutLine("AGENT DISCS", agentIds),
-      this.formatLoadoutLine("SKILL DISCS", skillIds),
+      this.formatLoadoutGrid("AGENT DISCS", agentIds),
+      this.formatLoadoutGrid("SKILL DISCS", skillIds),
       this.formatLoadoutLine("PROMPT TOOL BUS", toolIds),
     ].join("\n");
   }

@@ -18,7 +18,6 @@ import {
   ACTIVE_UTILITIES,
   canUseActiveUtility,
   consumeActiveUtilityCharge,
-  getActiveUtilityCharges,
   getActiveUtilityDefinition,
   getUnlockedActiveUtilityIds,
   ActiveUtilityId,
@@ -450,13 +449,8 @@ export class MainScene extends Phaser.Scene {
         const definition = this.selectedUtilityId
           ? getActiveUtilityDefinition(this.selectedUtilityId)
           : null;
-        const charges = this.selectedUtilityId
-          ? getActiveUtilityCharges(this.runState, this.selectedUtilityId)
-          : 0;
 
-        return definition
-          ? `${definition.shortLabel}\n${charges > 0 ? definition.effectText : "OFFLINE"}\nX${charges}`
-          : "NO UTILITY\nSTOCK";
+        return definition ? definition.name : "NO UTILITY";
       },
       canCycleUtilities: () => this.getSelectableUtilityIds().length > 1,
       getProjectedToolHeat: () => this.projectedToolHeat,

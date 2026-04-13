@@ -70,7 +70,7 @@ Review your performance. You earn credits for successful inferences and correct 
 
 ## GitHub Pages Deployment
 
-- The app is configured to build with a relative Vite base so it can run from the project Pages URL.
+- The app uses `/` in local/dev modes and `/the-operator/` for production builds published to GitHub Pages.
 - GitHub Pages should publish the `dist` folder via GitHub Actions, not the source tree.
 - After enabling Pages in repository settings, select GitHub Actions as the source so pushes to `main` deploy automatically.
 

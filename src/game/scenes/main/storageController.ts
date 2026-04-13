@@ -20,6 +20,8 @@ interface StorageControllerBindings {
   setActiveSkills: (value: SkillId[]) => void;
   getAgentCapacity: () => number;
   getSkillCapacity: () => number;
+  getUnlockedAgentIds: () => AgentId[];
+  getUnlockedSkillIds: () => SkillId[];
 }
 
 export class MainSceneStorageController {
@@ -336,6 +338,20 @@ export class MainSceneStorageController {
 
   private get activeSkills() {
     return this.bindings.getActiveSkills();
+  }
+
+  private get unlockedAgents() {
+    return this.bindings.getUnlockedAgentIds();
+  }
+
+  private get unlockedSkills() {
+    return this.bindings.getUnlockedSkillIds();
+  }
+
+  private isDiskUnlocked(definition: StorageDiskDefinition) {
+    return definition.type === "agent"
+      ? this.unlockedAgents.includes(definition.label)
+      : this.unlockedSkills.includes(definition.label);
   }
 
   private createDriveModule(config: DriveConfig) {
@@ -732,6 +748,10 @@ export class MainSceneStorageController {
 
   private getFilteredStorageDisks() {
     return this.storageDisks.filter(({ definition }) => {
+      if (!this.isDiskUnlocked(definition)) {
+        return false;
+      }
+
       const isMounted =
         definition.type === "agent"
           ? this.activeAgents.includes(definition.label)
@@ -1075,6 +1095,10 @@ export class MainSceneStorageController {
         return { success: false, statusMessage: "INVALID AGENT FORMAT" };
       }
 
+      if (!this.unlockedAgents.includes(label)) {
+        return { success: false, statusMessage: "AGENT DISK LOCKED" };
+      }
+
       if (this.activeAgents.includes(label)) {
         return { success: false, statusMessage: "AGENT ALREADY LOADED" };
       }
@@ -1095,6 +1119,10 @@ export class MainSceneStorageController {
 
     if (!isSkillId(label)) {
       return { success: false, statusMessage: "INVALID SKILL FORMAT" };
+    }
+
+    if (!this.unlockedSkills.includes(label)) {
+      return { success: false, statusMessage: "SKILL DISK LOCKED" };
     }
 
     if (this.activeSkills.includes(label)) {

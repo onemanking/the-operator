@@ -71,6 +71,8 @@ export interface ShiftGenerationProfile {
 export interface ShiftGenerationCapabilities {
   agentCapacity: number;
   skillCapacity: number;
+  availableAgentIds: readonly AgentId[];
+  availableSkillIds: readonly SkillId[];
   unlockedToolIds: readonly ToolId[];
 }
 
@@ -435,6 +437,10 @@ function parseAtomicTurn(
     );
   }
 
+  if (requiredAgentIds.length > 2) {
+    throw new Error(`${label}.requiredAgentIds must contain at most 2 items.`);
+  }
+
   if (
     requiredSkillIds &&
     normalizeSkillIds(requiredSkillIds).length !== requiredSkillIds.length
@@ -442,6 +448,10 @@ function parseAtomicTurn(
     throw new Error(
       `${label}.requiredSkillIds contains an unknown skill id. Expected one of ${Array.from(VALID_SKILL_IDS).join(", ")}.`,
     );
+  }
+
+  if ((requiredSkillIds?.length ?? 0) > 2) {
+    throw new Error(`${label}.requiredSkillIds must contain at most 2 items.`);
   }
 
   if (
@@ -715,6 +725,22 @@ function isTurnFeasibleForCapabilities(
   }
 
   if ((turn.requiredSkillIds?.length ?? 0) > capabilities.skillCapacity) {
+    return false;
+  }
+
+  if (
+    turn.requiredAgentIds.some(
+      (agentId) => !capabilities.availableAgentIds.includes(agentId as AgentId),
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    turn.requiredSkillIds?.some(
+      (skillId) => !capabilities.availableSkillIds.includes(skillId as SkillId),
+    )
+  ) {
     return false;
   }
 

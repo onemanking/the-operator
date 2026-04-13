@@ -12,11 +12,14 @@ import {
   normalizeSkillIds,
   normalizeToolIds,
 } from "../data/PromptIds";
+import { getDayLoadoutProfile } from "../data/LoadoutProgressionData";
 import { RUN_CONFIG } from "../data/RunData";
 
 export interface RunLoadoutState {
   equippedAgentIds: AgentId[];
   equippedSkillIds: SkillId[];
+  unlockedAgentIds: AgentId[];
+  unlockedSkillIds: SkillId[];
   selectedPromptToolIds: ToolId[];
   agentCapacity: number;
   skillCapacity: number;
@@ -122,6 +125,8 @@ function cloneEncounterDefinitions(
 }
 
 export function createInitialRunState(): RunState {
+  const initialLoadoutProfile = getDayLoadoutProfile(RUN_CONFIG.initialDay);
+
   return {
     runId: "run-1",
     day: RUN_CONFIG.initialDay,
@@ -134,9 +139,11 @@ export function createInitialRunState(): RunState {
     loadout: {
       equippedAgentIds: [],
       equippedSkillIds: [],
+      unlockedAgentIds: [...initialLoadoutProfile.unlockedAgentIds],
+      unlockedSkillIds: [...initialLoadoutProfile.unlockedSkillIds],
       selectedPromptToolIds: [],
-      agentCapacity: RUN_CONFIG.defaultAgentCapacity,
-      skillCapacity: RUN_CONFIG.defaultSkillCapacity,
+      agentCapacity: initialLoadoutProfile.agentCapacity,
+      skillCapacity: initialLoadoutProfile.skillCapacity,
       unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
       passiveUpgradeIds: [],
     },
@@ -183,6 +190,8 @@ export function cloneRunState(runState: RunState): RunState {
       ...runState.loadout,
       equippedAgentIds: [...runState.loadout.equippedAgentIds],
       equippedSkillIds: [...runState.loadout.equippedSkillIds],
+      unlockedAgentIds: [...runState.loadout.unlockedAgentIds],
+      unlockedSkillIds: [...runState.loadout.unlockedSkillIds],
       selectedPromptToolIds: [...runState.loadout.selectedPromptToolIds],
       unlockedPromptToolIds: [...runState.loadout.unlockedPromptToolIds],
       passiveUpgradeIds: [...runState.loadout.passiveUpgradeIds],
@@ -221,6 +230,8 @@ export function cloneRunState(runState: RunState): RunState {
 
 export function hydrateRunState(data?: ShiftSceneData): RunState {
   const initial = createInitialRunState();
+  const day = data?.day ?? initial.day;
+  const loadoutProfile = getDayLoadoutProfile(day);
   const legacyLoadout = data?.loadout as
     | (Partial<RunLoadoutState> & {
         activeUtilityIds?: string[];
@@ -254,36 +265,53 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     return initial;
   }
 
+  const equippedAgentIds = normalizeAgentIds(
+    data.loadout?.equippedAgentIds ??
+      legacyLoadout?.equippedAgentIds ??
+      initial.loadout.equippedAgentIds,
+  )
+    .filter((agentId) => loadoutProfile.unlockedAgentIds.includes(agentId))
+    .slice(0, loadoutProfile.agentCapacity);
+  const equippedSkillIds = normalizeSkillIds(
+    data.loadout?.equippedSkillIds ??
+      legacyLoadout?.equippedSkillIds ??
+      initial.loadout.equippedSkillIds,
+  )
+    .filter((skillId) => loadoutProfile.unlockedSkillIds.includes(skillId))
+    .slice(0, loadoutProfile.skillCapacity);
+  const unlockedPromptToolIds = normalizeToolIds(
+    data.loadout?.unlockedPromptToolIds ??
+      legacyLoadout?.unlockedPromptToolIds ??
+      initial.loadout.unlockedPromptToolIds,
+  );
+  const selectedPromptToolIds = normalizeToolIds(
+    data.loadout?.selectedPromptToolIds ??
+      legacyLoadout?.selectedPromptToolIds ??
+      legacySelectedPromptToolIds,
+  ).filter((toolId) => unlockedPromptToolIds.includes(toolId));
+  const passiveUpgradeIds = (
+    (data.loadout?.passiveUpgradeIds ??
+      initial.loadout.passiveUpgradeIds) as readonly string[]
+  ).filter(
+    (upgradeId) => upgradeId !== "agent_bay" && upgradeId !== "skill_buffer",
+  ) as PassiveUpgradeId[];
+
   return {
     ...initial,
     ...data,
+    day,
     loadout: {
       ...initial.loadout,
       ...data.loadout,
-      equippedAgentIds: normalizeAgentIds(
-        data.loadout?.equippedAgentIds ??
-          legacyLoadout?.equippedAgentIds ??
-          initial.loadout.equippedAgentIds,
-      ),
-      equippedSkillIds: normalizeSkillIds(
-        data.loadout?.equippedSkillIds ??
-          legacyLoadout?.equippedSkillIds ??
-          initial.loadout.equippedSkillIds,
-      ),
-      selectedPromptToolIds: normalizeToolIds(
-        data.loadout?.selectedPromptToolIds ??
-          legacyLoadout?.selectedPromptToolIds ??
-          legacySelectedPromptToolIds,
-      ),
-      unlockedPromptToolIds: normalizeToolIds(
-        data.loadout?.unlockedPromptToolIds ??
-          legacyLoadout?.unlockedPromptToolIds ??
-          initial.loadout.unlockedPromptToolIds,
-      ),
-      passiveUpgradeIds: [
-        ...(data.loadout?.passiveUpgradeIds ??
-          initial.loadout.passiveUpgradeIds),
-      ],
+      equippedAgentIds,
+      equippedSkillIds,
+      unlockedAgentIds: [...loadoutProfile.unlockedAgentIds],
+      unlockedSkillIds: [...loadoutProfile.unlockedSkillIds],
+      selectedPromptToolIds,
+      agentCapacity: loadoutProfile.agentCapacity,
+      skillCapacity: loadoutProfile.skillCapacity,
+      unlockedPromptToolIds,
+      passiveUpgradeIds: [...passiveUpgradeIds],
     },
     utilityInventory: {
       unlockedIds: mergedUtilityUnlockedIds,

@@ -1,10 +1,7 @@
 import { RunState } from "../types/SceneData";
 import { RUN_CONFIG } from "./RunData";
-import { AGENT_IDS, SKILL_IDS } from "./PromptIds";
 
 export type PassiveUpgradeId =
-  | "agent_bay"
-  | "skill_buffer"
   | "cooling_fins"
   | "cache_coalescer"
   | "noise_filter"
@@ -28,8 +25,6 @@ export interface PassiveUpgradeHudItem {
 }
 
 const PASSIVE_UPGRADE_SHORT_LABELS: Record<PassiveUpgradeId, string> = {
-  agent_bay: "AGNT",
-  skill_buffer: "SKL",
   cooling_fins: "COOL",
   cache_coalescer: "CACH",
   noise_filter: "NOIS",
@@ -194,14 +189,6 @@ export function applyPassiveUpgrade(
   runState.loadout.passiveUpgradeIds.push(upgradeId);
   runState.maintenancePurchasedItemId = upgradeId;
   runState.maintenancePurchasedItemType = "passive";
-
-  if (upgradeId === "agent_bay") {
-    runState.loadout.agentCapacity += 1;
-  }
-
-  if (upgradeId === "skill_buffer") {
-    runState.loadout.skillCapacity += 1;
-  }
 
   return true;
 }

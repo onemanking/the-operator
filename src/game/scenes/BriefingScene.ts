@@ -62,6 +62,8 @@ export class BriefingScene extends Phaser.Scene {
           capabilities: {
             agentCapacity: this.runState.loadout.agentCapacity,
             skillCapacity: this.runState.loadout.skillCapacity,
+            availableAgentIds: this.runState.loadout.unlockedAgentIds,
+            availableSkillIds: this.runState.loadout.unlockedSkillIds,
             unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
           },
           excludedTurnIds: this.runState.seenTurnIds,

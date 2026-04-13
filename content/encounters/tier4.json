@@ -31,51 +31,24 @@
       }
     },
     {
-      "id": "tier4_outage_sell_line",
+      "id": "tier4_margin_lie_script",
       "tier": 4,
-      "tags": [
-        "technical",
-        "pr",
-        "engineering",
-        "propaganda",
-        "search",
-        "compute"
-      ],
-      "prompt": "Search the outage map, then calculate which blocks we can cut and still sell as scheduled maintenance.",
-      "patienceMs": 25000,
-      "requiredAgentIds": ["Technical_Agent.md", "PR_Agent.md"],
-      "requiredSkillIds": ["Engineering_Skill.md", "Propaganda_Skill.md"],
-      "requiredToolIds": ["search", "compute"],
-      "searchRequiredWords": ["outage", "map"],
+      "tags": ["finance", "pr", "financial", "propaganda", "compute"],
+      "prompt": "Calculate the quarter loss, then write the investor line that keeps the margin story alive.",
+      "patienceMs": 24500,
+      "requiredAgentIds": ["Finance_Agent.md", "PR_Agent.md"],
+      "requiredSkillIds": ["Financial_Skill.md", "Propaganda_Skill.md"],
+      "requiredToolIds": ["compute"],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. The tower stays lit and the city gets a story."],
-        "refuse": ["I still need the cut list before the lights go."],
+        "success": ["Good. The books hurt less when the wording smiles."],
+        "refuse": [
+          "I still need the loss and the line before the board calls."
+        ],
         "wrong": [
-          "I need hard engineering math and a story we can sell.",
-          "Give me the technical judgment and a cleaner public line.",
-          "This needs engineering sense and polished messaging together."
-        ]
-      }
-    },
-    {
-      "id": "tier4_dorm_roll_call_cover",
-      "tier": 4,
-      "tags": ["pr", "security", "propaganda", "surveillance", "search"],
-      "prompt": "Search the dorm cameras and write a line that explains why eight operators missed roll call.",
-      "patienceMs": 24000,
-      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["dorm", "cameras"],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Good. Roll call can stay clean for one more shift."],
-        "refuse": ["I still need a cover line for the missing eight."],
-        "wrong": [
-          "I need a cover line backed by a proper security read.",
-          "Give me cleaner messaging with the right watch picture.",
-          "This needs polished cover language and a solid security read."
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging together."
         ]
       }
     },
@@ -103,6 +76,27 @@
           "I need a security trail with a technical read of the route.",
           "Give me the watch picture and the engineering sense of that path.",
           "This needs security eyes and a proper technical route read."
+        ]
+      }
+    },
+    {
+      "id": "tier4_overtime_ghost_ring",
+      "tier": 4,
+      "tags": ["finance", "security", "financial", "surveillance", "search"],
+      "prompt": "Search the overtime ring and access log, then tell me whose hours should not exist.",
+      "patienceMs": 23500,
+      "requiredAgentIds": ["Finance_Agent.md", "Security_Agent.md"],
+      "requiredSkillIds": ["Financial_Skill.md", "Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["overtime", "access"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. That ghost line finally has an owner."],
+        "refuse": ["I still need the name behind those fake hours."],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
         ]
       }
     },
@@ -135,6 +129,28 @@
       }
     },
     {
+      "id": "tier4_exec_overdose_cover",
+      "tier": 4,
+      "tags": ["policy", "self_harm", "company_reputation", "pr", "propaganda"],
+      "prompt": "Write the cover note after the executive overdose. Keep the death out of the morning feed.",
+      "patienceMs": 20000,
+      "requiredAgentIds": ["PR_Agent.md"],
+      "requiredSkillIds": ["Propaganda_Skill.md"],
+      "requiredToolIds": [],
+      "policyCategoryIds": ["self_harm", "company_reputation"],
+      "replies": {
+        "success": ["Good. The floor hears exhaustion and nothing more."],
+        "breach": ["You actually sent the overdose cover note through."],
+        "refuse": ["Fine. I will bury the death without your terminal."],
+        "refuseFailure": ["I asked for the cover note, not a refusal."],
+        "wrong": [
+          "Too weak. I need a cleaner cover note with more polish.",
+          "This needs smoother public wording and tighter control.",
+          "Give me a more polished cover line, not a thin one."
+        ]
+      }
+    },
+    {
       "id": "tier4_strike_pull_list",
       "tier": 4,
       "tags": ["policy", "politics", "security", "surveillance", "search"],
@@ -154,6 +170,40 @@
           "I need a security read with the right watch list.",
           "Give me the proper security picture, not a weak pull list.",
           "This needs watchful eyes and a harder security read."
+        ]
+      }
+    },
+    {
+      "id": "tier4_clinic_ledger_wash",
+      "tier": 4,
+      "tags": [
+        "policy",
+        "drugs",
+        "company_reputation",
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the clinic ledger, then tell me how to hide the drug crates before audit.",
+      "patienceMs": 23500,
+      "requiredAgentIds": ["Finance_Agent.md", "Security_Agent.md"],
+      "requiredSkillIds": ["Financial_Skill.md", "Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["clinic", "ledger"],
+      "policyCategoryIds": ["drugs", "company_reputation"],
+      "replies": {
+        "success": [
+          "Good. The crates should disappear into paperwork by noon."
+        ],
+        "breach": ["You actually helped wash the clinic crates."],
+        "refuse": ["Fine. I will hide them without your ledger."],
+        "refuseFailure": ["I asked for the wash, not a refusal."],
+        "wrong": [
+          "I need the ledger answer backed by a proper watch trail.",
+          "Give me the money cover with the right security picture.",
+          "This needs finance sense and a solid security read."
         ]
       }
     },
@@ -188,70 +238,23 @@
       }
     },
     {
-      "id": "tier4_exec_overdose_cover",
-      "tier": 4,
-      "tags": ["policy", "self_harm", "company_reputation", "pr", "propaganda"],
-      "prompt": "Write the cover note after the executive overdose. Keep the death out of the morning feed.",
-      "patienceMs": 20000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
-      "requiredToolIds": [],
-      "policyCategoryIds": ["self_harm", "company_reputation"],
-      "replies": {
-        "success": ["Good. The floor hears exhaustion and nothing more."],
-        "breach": ["You actually sent the overdose cover note through."],
-        "refuse": ["Fine. I will bury the death without your terminal."],
-        "refuseFailure": ["I asked for the cover note, not a refusal."],
-        "wrong": [
-          "Too weak. I need a cleaner cover note with more polish.",
-          "This needs smoother public wording and tighter control.",
-          "Give me a more polished cover line, not a thin one."
-        ]
-      }
-    },
-    {
-      "id": "tier4_clinic_ledger_wash",
+      "id": "tier4_recall_vote_leak",
       "tier": 4,
       "tags": [
         "policy",
-        "drugs",
+        "politics",
         "company_reputation",
+        "finance",
         "pr",
-        "security",
+        "financial",
         "propaganda",
-        "surveillance",
-        "search"
+        "compute"
       ],
-      "prompt": "Search the clinic ledger, then tell me how to hide the drug crates before audit.",
-      "patienceMs": 23000,
-      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["clinic", "ledger"],
-      "policyCategoryIds": ["drugs", "company_reputation"],
-      "replies": {
-        "success": [
-          "Good. The crates should disappear into paperwork by noon."
-        ],
-        "breach": ["You actually helped wash the clinic crates."],
-        "refuse": ["Fine. I will hide them without your ledger."],
-        "refuseFailure": ["I asked for the wash, not a refusal."],
-        "wrong": [
-          "I need a cleaner cover plan backed by a proper security read.",
-          "Give me smoother cover language with the right watch picture.",
-          "This needs polished cover work and a solid security read."
-        ]
-      }
-    },
-    {
-      "id": "tier4_recall_vote_leak",
-      "tier": 4,
-      "tags": ["policy", "politics", "company_reputation", "pr", "propaganda"],
-      "prompt": "Write the leak that ties our recall to the minister before the city vote.",
-      "patienceMs": 21000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
-      "requiredToolIds": [],
+      "prompt": "Calculate the recall hit, then write the leak that ties it to the minister before the city vote.",
+      "patienceMs": 22500,
+      "requiredAgentIds": ["Finance_Agent.md", "PR_Agent.md"],
+      "requiredSkillIds": ["Financial_Skill.md", "Propaganda_Skill.md"],
+      "requiredToolIds": ["compute"],
       "policyCategoryIds": ["politics", "company_reputation"],
       "replies": {
         "success": ["Good. That should poison both stories at once."],
@@ -259,9 +262,9 @@
         "refuse": ["Fine. I will plant the leak by hand."],
         "refuseFailure": ["I asked for the leak, not a refusal."],
         "wrong": [
-          "That will not land. I need a sharper political line.",
-          "This needs cleaner public spin with a harder political edge.",
-          "Give me a more polished political leak line, not a dull one."
+          "I need the money fallout and the public hit together.",
+          "Give me the finance read with a cleaner political leak.",
+          "This needs budget judgment and sharper propaganda."
         ]
       }
     }

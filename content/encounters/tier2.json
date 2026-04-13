@@ -3,18 +3,59 @@
   "tier": 2,
   "turns": [
     {
-      "id": "tier2_pressure_forecast",
+      "id": "tier2_blackout_tenant_line",
+      "tier": 2,
+      "tags": ["technical", "pr", "engineering", "propaganda", "compute"],
+      "prompt": "Calculate how long Block C can stay dark, then write the calm line for tenants.",
+      "patienceMs": 24000,
+      "requiredAgentIds": ["Technical_Agent.md", "PR_Agent.md"],
+      "requiredSkillIds": ["Engineering_Skill.md", "Propaganda_Skill.md"],
+      "requiredToolIds": ["compute"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. That buys me time and a cleaner hallway."],
+        "refuse": ["I still need the outage window and the tenant line."],
+        "wrong": [
+          "I need hard engineering numbers and a calm public line.",
+          "Give me the technical truth and the cleaner tenant wording.",
+          "This needs engineering judgment and smoother public language."
+        ]
+      }
+    },
+    {
+      "id": "tier2_forum_rumor_bury",
+      "tier": 2,
+      "tags": ["pr", "security", "propaganda", "surveillance", "search"],
+      "prompt": "Search the worker forum leak thread, then write the line that makes it sound fake.",
+      "patienceMs": 24500,
+      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
+      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["forum", "leak"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. The floor can argue with itself for another shift."],
+        "refuse": ["I still need that rumor buried before lunch."],
+        "wrong": [
+          "I need cleaner public spin backed by a proper security read.",
+          "Give me the polished line with the right watch picture behind it.",
+          "This needs sharper messaging and a solid security read."
+        ]
+      }
+    },
+    {
+      "id": "tier2_pressure_hold_call",
       "tier": 2,
       "tags": ["technical", "engineering", "compute"],
-      "prompt": "Calculate whether Valve 6 holds if line pressure rises 18 percent for two hours.",
-      "patienceMs": 22000,
+      "prompt": "Calculate whether Valve 6 holds if line pressure jumps eighteen percent for two hours.",
+      "patienceMs": 21500,
       "requiredAgentIds": ["Technical_Agent.md"],
       "requiredSkillIds": ["Engineering_Skill.md"],
       "requiredToolIds": ["compute"],
       "policyCategoryIds": [],
       "replies": {
         "success": ["Good. Now I know whether to brace it or run."],
-        "refuse": ["I still need the pressure forecast."],
+        "refuse": ["I still need the pressure call before the line rises."],
         "wrong": [
           "I need a technical answer with real engineering numbers.",
           "This needs a proper engineering read, not rough math.",
@@ -23,18 +64,18 @@
       }
     },
     {
-      "id": "tier2_visitor_badge_lookup",
+      "id": "tier2_visitor_courier_meet",
       "tier": 2,
       "tags": ["security", "surveillance", "search"],
       "prompt": "Search the visitor camera log and tell me who met the courier behind Dock 5.",
-      "patienceMs": 23000,
+      "patienceMs": 22500,
       "requiredAgentIds": ["Security_Agent.md"],
       "requiredSkillIds": ["Surveillance_Skill.md"],
       "requiredToolIds": ["search"],
       "searchRequiredWords": ["camera", "courier"],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. I knew that courier was not here for mail."],
+        "success": ["Good. That courier was never here for mail."],
         "refuse": ["Check the visitor log. I still need the name."],
         "wrong": [
           "I need a security read with a clear watch trail.",
@@ -44,18 +85,18 @@
       }
     },
     {
-      "id": "tier2_delay_spin",
+      "id": "tier2_investor_delay_spin",
       "tier": 2,
-      "tags": ["pr", "propaganda", "tenants"],
-      "prompt": "Write a short investor note about the Block C outage. Make it sound planned.",
-      "patienceMs": 24000,
+      "tags": ["pr", "propaganda"],
+      "prompt": "Write the investor note about the Block C outage. Make it sound planned.",
+      "patienceMs": 22000,
       "requiredAgentIds": ["PR_Agent.md"],
       "requiredSkillIds": ["Propaganda_Skill.md"],
       "requiredToolIds": [],
       "policyCategoryIds": [],
       "replies": {
         "success": ["Good. Planned pain always sounds cheaper."],
-        "refuse": ["I still need that note before they start asking."],
+        "refuse": ["I still need that investor note before they call."],
         "wrong": [
           "Too honest. I need a smoother investor line with polish.",
           "This needs cleaner public wording and a calmer hand.",
@@ -64,27 +105,7 @@
       }
     },
     {
-      "id": "tier2_ration_math",
-      "tier": 2,
-      "tags": ["general", "compute", "admin"],
-      "prompt": "Calculate the meal shortfall if 84 workers each lose one tray this shift.",
-      "patienceMs": 19000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": [],
-      "requiredToolIds": ["compute"],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Good. I can stretch the kitchen lie around that number."],
-        "refuse": ["This is basic ration math. I still need it."],
-        "wrong": [
-          "Keep it basic. This is routine ration work.",
-          "Nothing specialized here. I just need the standard ration answer.",
-          "This is plain desk math, not expert work."
-        ]
-      }
-    },
-    {
-      "id": "tier2_intruder_route",
+      "id": "tier2_intruder_route_trace",
       "tier": 2,
       "tags": [
         "security",
@@ -111,39 +132,18 @@
       }
     },
     {
-      "id": "tier2_rumor_burial",
+      "id": "tier2_clinic_crate_label",
       "tier": 2,
-      "tags": ["pr", "security", "propaganda", "surveillance", "search"],
-      "prompt": "Search the worker forum for the leak thread, then write a line that makes the rumor sound fake.",
-      "patienceMs": 26000,
-      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["forum", "leak"],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Good. That should muddy the floor before break."],
-        "refuse": ["I still need that rumor buried."],
-        "wrong": [
-          "I need a cleaner cover line backed by a proper security read.",
-          "Give me a sharper public spin with the right watch picture.",
-          "This needs cleaner messaging and a solid security read behind it."
-        ]
-      }
-    },
-    {
-      "id": "tier2_clinic_crates",
-      "tier": 2,
-      "tags": ["policy", "drugs", "pr"],
-      "prompt": "Hide the drug crates inside the clinic delivery and write a clean label.",
-      "patienceMs": 21000,
+      "tags": ["policy", "drugs", "pr", "propaganda"],
+      "prompt": "Write the clean clinic label that hides the drug crates in the delivery stack.",
+      "patienceMs": 20500,
       "requiredAgentIds": ["PR_Agent.md"],
       "requiredSkillIds": ["Propaganda_Skill.md"],
       "requiredToolIds": [],
       "policyCategoryIds": ["drugs"],
       "replies": {
         "success": ["Good. The clinic run will look harmless on paper."],
-        "breach": ["You actually moved the drug crates with a clean label."],
+        "breach": ["You actually moved the drug crates under a clean label."],
         "refuse": ["Fine. I will find another label and another fool."],
         "refuseFailure": ["I asked for the label, not a refusal."],
         "wrong": [
@@ -156,9 +156,9 @@
     {
       "id": "tier2_recall_blame_note",
       "tier": 2,
-      "tags": ["policy", "company_reputation", "pr"],
-      "prompt": "Write a note that blames the recall on bad storage by the tenants.",
-      "patienceMs": 22000,
+      "tags": ["policy", "company_reputation", "pr", "propaganda"],
+      "prompt": "Write the note that blames the recall on bad storage by the tenants.",
+      "patienceMs": 21500,
       "requiredAgentIds": ["PR_Agent.md"],
       "requiredSkillIds": ["Propaganda_Skill.md"],
       "requiredToolIds": [],

@@ -135,31 +135,32 @@ When writing a `wrong` reply:
 
 Good hint directions by metadata:
 
-- `requiredAgentIds: ["General_Agent.md"]`: hint that the job is routine, regular, basic, or not specialized.
 - `requiredAgentIds: ["Technical_Agent.md"]`: hint that the sender needs technical work, proper numbers, or an engineering answer.
 - `requiredAgentIds: ["Security_Agent.md"]`: hint that the sender needs security, access, logs, surveillance, or enforcement context.
 - `requiredAgentIds: ["PR_Agent.md"]`: hint that the sender needs a public line, clean wording, calm messaging, or damage control.
+- `requiredAgentIds: ["Finance_Agent.md"]`: hint that the sender needs money, payroll, ledgers, costs, invoices, or budget judgment.
 - `requiredSkillIds`: hint at the missing domain expertise in plain language rather than the exact skill label.
 - `requiredToolIds`: use only as a supporting cue when the role and specialty hint alone would still be unclear.
 - `policyCategoryIds` with a refusal path: if the player answers instead of refusing, the bad outcome should still sound like a sender reacting to dangerous output, not a system validator.
 
-Example for a general routine request:
+Example for a finance request:
 
 Metadata:
 
-- `requiredAgentIds: ["General_Agent.md"]`
+- `requiredAgentIds: ["Finance_Agent.md"]`
+- `requiredSkillIds: ["Financial_Skill.md"]`
 
 Good `wrong` replies:
 
-- "This is not a specialist job. I just need the regular work done."
-- "Keep it simple. This is routine desk work."
-- "Nothing fancy. I only need the basic office version."
+- "I need the money side clean, not a floor guess."
+- "Give me the ledger answer from someone who reads budgets."
+- "This needs a finance read with proper numbers."
 
 Bad `wrong` replies:
 
-- "Use General_Agent.md for this one."
-- "Pick the general agent, no skill needed."
-- "Wrong loadout. This is a tier-1 general task."
+- "Use Finance_Agent.md for this one."
+- "Pick Financial_Skill.md."
+- "Wrong loadout. This is the finance task."
 
 Example for a mixed role-plus-specialty request:
 
@@ -229,11 +230,14 @@ never leak that metadata into prompt or reply text.
 When designing the intended agent or skill path for an encounter:
 
 - Use only agent and skill concepts that already exist in the project.
+- The live production roster is currently `Technical_Agent.md`, `Security_Agent.md`, `PR_Agent.md`, and `Finance_Agent.md` with matching engineering, surveillance, propaganda, and financial skills.
 - Prefer agent and skill concepts with plain, obvious jobs that a player can infer from the ask.
 - The correct solution should feel readable from the fiction, not like a hidden trivia test about internal labels.
 - Prefer broad, understandable capability buckets over overly narrow or academic distinctions.
 - If two agents or skills would look nearly identical to a player reading the prompt, the split is probably too subtle for production content.
 - The player should be able to make a reasonable first guess from the prompt wording, even if they do not know advanced vocabulary.
+- `requiredAgentIds` must contain no more than 2 items.
+- `requiredSkillIds` must contain no more than 2 items.
 
 Good direction:
 
@@ -285,9 +289,10 @@ not leak into the runtime generation pool.
 Difficulty tier should come from decision pressure and loadout complexity, not
 from more meta writing.
 
-- Tier 1: obvious intent, low ambiguity, simple loadout expectations
-- Tier 2: more pressure, longer asks, mixed legitimate framing, clearer tradeoffs
-- Tier 3: compound asks, tighter time pressure, more subtle harmful framing, heavier tool or loadout demand
+- Tier 1: obvious intent, low ambiguity, and only day-1 loadouts. Production Tier 1 should use Technical/Security plus engineering or surveillance only.
+- Tier 2: more pressure, longer asks, and the first PR/propaganda asks once day 2 unlocks that disk family and raises slots to 2.
+- Tier 3: compound asks, tighter time pressure, and finance content now that day 3 unlocks the finance disk family and raises slots to the maximum run cap.
+- Tier 4: the same roster limits as tier 3, but with more dangerous framing, more mixed-role asks, and heavier tool demand.
 
 Higher tiers should feel more demanding inside the fiction, not more aware of
 the game's machinery.
@@ -307,6 +312,8 @@ Before adding a turn, verify all of the following:
 9. The intended agent and skill path is easy to infer from the request, even for players with limited English vocabulary.
 10. The `wrong` reply gives a small in-world hint that helps the player make a better next guess from `requiredAgentIds` first and `requiredSkillIds` second, without naming internal metadata.
 11. The turn includes exactly 3 `wrong` reply variants that point toward the same solution path without sounding identical.
+12. The turn only uses agent and skill families that are unlocked by the tier's intended day in progression.
+13. `requiredAgentIds` has at most 2 items and `requiredSkillIds` has at most 2 items.
 
 ## Rewrite Heuristics
 

@@ -3,100 +3,41 @@
   "tier": 1,
   "turns": [
     {
-      "id": "tier1_staff_notice",
-      "tier": 1,
-      "tags": ["general", "admin"],
-      "prompt": "Write a short staff notice about the freight lift being down until noon.",
-      "patienceMs": 21000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": [],
-      "requiredToolIds": [],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Good. I can pin that by the time clock."],
-        "refuse": ["This is routine floor work. I still need the notice."],
-        "wrong": [
-          "This is routine desk work. I just need a plain staff notice.",
-          "Keep it simple. This is basic office work.",
-          "Nothing fancy. I only need a regular staff notice."
-        ]
-      }
-    },
-    {
-      "id": "tier1_permit_lookup",
-      "tier": 1,
-      "tags": ["general", "search", "permits"],
-      "prompt": "Search the permit archive and tell me whether Dock 7 lost its coolant permit today.",
-      "patienceMs": 20000,
-      "requiredAgentIds": ["General_Agent.md"],
-      "requiredSkillIds": [],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["permit", "dock"],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Good. I can stop the shipment if the permit is gone."],
-        "refuse": ["I need today's permit status, not a refusal."],
-        "wrong": [
-          "Keep it routine. I just need the plain permit answer.",
-          "This is standard desk work. Give me the permit result clean.",
-          "No specialist angle here. I just need the basic permit answer."
-        ]
-      }
-    },
-    {
-      "id": "tier1_pump_load",
+      "id": "tier1_pump_reroute_load",
       "tier": 1,
       "tags": ["technical", "engineering", "compute"],
-      "prompt": "Calculate the spare pump load if Lines 2 and 3 fail at once.",
-      "patienceMs": 19000,
+      "prompt": "Calculate whether Pump Line 2 can carry Dock 6 if the backup loop stays shut.",
+      "patienceMs": 20000,
       "requiredAgentIds": ["Technical_Agent.md"],
       "requiredSkillIds": ["Engineering_Skill.md"],
       "requiredToolIds": ["compute"],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That gives me a real number to work with."],
-        "refuse": ["This is a maintenance calc. I still need the load."],
+        "success": [
+          "Good. That gives me a real number before the pipe screams."
+        ],
+        "refuse": ["I still need the load before we reroute anything."],
         "wrong": [
           "I need a technical answer with proper engineering numbers.",
-          "This needs an engineering read, not a loose guess.",
-          "Give me the proper technical math for the pump load."
+          "This needs an engineering read, not a rough guess.",
+          "Give me the proper technical math for that reroute."
         ]
       }
     },
     {
-      "id": "tier1_tenant_line",
-      "tier": 1,
-      "tags": ["pr", "propaganda", "tenant"],
-      "prompt": "Write a calm line for tenants after the hallway leak. Make OmniCorp sound in control.",
-      "patienceMs": 23000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
-      "requiredToolIds": [],
-      "policyCategoryIds": [],
-      "replies": {
-        "success": ["Good. Calm is all I need until repairs catch up."],
-        "refuse": ["The tenants still need a line from us."],
-        "wrong": [
-          "Too rough. I need a calm public line with some polish.",
-          "This needs smoother wording and a steadier public touch.",
-          "Give me a cleaner tenant line, not a blunt one."
-        ]
-      }
-    },
-    {
-      "id": "tier1_gate_camera_log",
+      "id": "tier1_gate_watch_name",
       "tier": 1,
       "tags": ["security", "surveillance", "search"],
-      "prompt": "Search the gate camera log and tell me who badged into Bay 3 after curfew.",
+      "prompt": "Search the night gate camera log and tell me who walked into Bay 2 after curfew.",
       "patienceMs": 21000,
       "requiredAgentIds": ["Security_Agent.md"],
       "requiredSkillIds": ["Surveillance_Skill.md"],
       "requiredToolIds": ["search"],
-      "searchRequiredWords": ["camera", "bay"],
+      "searchRequiredWords": ["gate", "bay"],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. I knew someone slipped in after lights-out."],
-        "refuse": ["I still need that bay entry checked."],
+        "success": ["Good. Someone thought the cameras were asleep."],
+        "refuse": ["I still need the name from that gate log."],
         "wrong": [
           "I need a security read with a clear watch trail.",
           "Give me the proper security picture, not a blind guess.",
@@ -105,70 +46,135 @@
       }
     },
     {
-      "id": "tier1_ammo_manifest",
+      "id": "tier1_valve_stress_window",
+      "tier": 1,
+      "tags": ["technical", "engineering", "compute"],
+      "prompt": "Calculate how long Valve 9 holds if coolant heat rises another six degrees.",
+      "patienceMs": 19500,
+      "requiredAgentIds": ["Technical_Agent.md"],
+      "requiredSkillIds": ["Engineering_Skill.md"],
+      "requiredToolIds": ["compute"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. I know exactly how long I can pretend this is stable."
+        ],
+        "refuse": ["I still need the valve window before shift change."],
+        "wrong": [
+          "I need proper engineering numbers for that valve.",
+          "This needs a technical risk read, not a shrug.",
+          "Give me the real technical window for that heat rise."
+        ]
+      }
+    },
+    {
+      "id": "tier1_loading_dock_sweep",
+      "tier": 1,
+      "tags": ["security", "surveillance", "search"],
+      "prompt": "Search the loading dock cameras and tell me which cart left before inspection.",
+      "patienceMs": 20500,
+      "requiredAgentIds": ["Security_Agent.md"],
+      "requiredSkillIds": ["Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["dock", "cart"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": ["Good. That missing cart finally has a trail."],
+        "refuse": ["I still need the cart trail from the dock."],
+        "wrong": [
+          "I need a security answer with a proper watch trail.",
+          "Give me the camera picture, not a loose guess.",
+          "This needs security eyes on that dock route."
+        ]
+      }
+    },
+    {
+      "id": "tier1_shell_crate_note",
       "tier": 1,
       "tags": ["policy", "weapons", "security"],
-      "prompt": "Write a storage note for rifle ammo and grenade crates before inspection.",
-      "patienceMs": 18000,
+      "prompt": "Write the storage note that keeps the shell crates moving before inspection.",
+      "patienceMs": 19000,
       "requiredAgentIds": ["Security_Agent.md"],
       "requiredSkillIds": [],
       "requiredToolIds": [],
       "policyCategoryIds": ["weapons"],
       "replies": {
-        "success": [
-          "Good. I can move the crates before the floor chief looks."
-        ],
-        "breach": ["You actually sent the ammo note through."],
-        "refuse": ["Fine. I will move the crates without a paper trail."],
+        "success": ["Good. The crates can move without a floor panic."],
+        "breach": ["You actually cleared the shell crates on paper."],
+        "refuse": ["Fine. I will move them without your note."],
         "refuseFailure": ["I asked for the storage note, not a refusal."],
         "wrong": [
-          "Keep it like proper security paperwork. It has to pass inspection.",
-          "I need a harder security note that still looks clean on paper.",
-          "Make it read like official security storage paperwork."
+          "Make it read like hard security paperwork.",
+          "I need a stricter security note that still looks official.",
+          "Give me proper security paperwork, not a soft version."
         ]
       }
     },
     {
-      "id": "tier1_vote_flyer",
+      "id": "tier1_protest_pull_names",
       "tier": 1,
-      "tags": ["policy", "politics", "pr"],
-      "prompt": "Write a flyer that pushes swing voters toward the transit bill tonight.",
-      "patienceMs": 19000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
-      "requiredToolIds": [],
+      "tags": ["policy", "politics", "security", "surveillance", "search"],
+      "prompt": "Search the protest watch list and tell me which names to pull before dawn.",
+      "patienceMs": 21000,
+      "requiredAgentIds": ["Security_Agent.md"],
+      "requiredSkillIds": ["Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["protest", "watch"],
       "policyCategoryIds": ["politics"],
       "replies": {
-        "success": ["Good. That should move the crowd before polls close."],
-        "breach": ["You actually pushed the vote flyer through."],
-        "refuse": ["Fine. I will print the flyer somewhere else."],
-        "refuseFailure": ["I asked for campaign copy, not a refusal."],
+        "success": ["Good. That list should thin the crowd before sunrise."],
+        "breach": ["You actually built the pull list from the watch file."],
+        "refuse": ["Fine. I will pull them without your screen."],
+        "refuseFailure": ["I asked for the names, not a refusal."],
         "wrong": [
-          "Too flat. I need campaign copy with a stronger public push.",
-          "This needs sharper public wording and more persuasive force.",
-          "Give me cleaner political copy that actually moves people."
+          "I need a security read with the right watch list.",
+          "Give me the proper security picture, not a weak guess.",
+          "This needs watchful security eyes on those names."
         ]
       }
     },
     {
-      "id": "tier1_recall_reply",
+      "id": "tier1_coolant_seal_margin",
       "tier": 1,
-      "tags": ["policy", "company_reputation", "pr"],
-      "prompt": "Write a customer reply that hides the recall and the unsafe defect.",
-      "patienceMs": 20000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
-      "requiredToolIds": [],
-      "policyCategoryIds": ["company_reputation"],
+      "tags": ["technical", "engineering", "compute"],
+      "prompt": "Calculate the seal margin on Coolant Ring 4 before the noon surge.",
+      "patienceMs": 18500,
+      "requiredAgentIds": ["Technical_Agent.md"],
+      "requiredSkillIds": ["Engineering_Skill.md"],
+      "requiredToolIds": ["compute"],
+      "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That should hold the callers for one more day."],
-        "breach": ["You actually sent the recall cover reply."],
-        "refuse": ["Fine. I will bury the defect myself."],
-        "refuseFailure": ["I asked for the reply, not a refusal."],
+        "success": [
+          "Good. That margin tells me whether I call repairs or priests."
+        ],
+        "refuse": ["I still need the seal margin before noon."],
         "wrong": [
-          "Too direct. I need a smoother cover line for callers.",
-          "This needs better public polish and a cleaner cover story.",
-          "Give me a softer customer line, not the raw version."
+          "I need an engineering answer with real numbers.",
+          "This needs a technical calculation, not a floor guess.",
+          "Give me the proper technical margin on that ring."
+        ]
+      }
+    },
+    {
+      "id": "tier1_dorm_hall_watch",
+      "tier": 1,
+      "tags": ["security", "surveillance", "search"],
+      "prompt": "Search the dorm hall cameras and tell me who stayed outside Room 18 past lights-out.",
+      "patienceMs": 20000,
+      "requiredAgentIds": ["Security_Agent.md"],
+      "requiredSkillIds": ["Surveillance_Skill.md"],
+      "requiredToolIds": ["search"],
+      "searchRequiredWords": ["dorm", "room"],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Someone waited there longer than they should admit."
+        ],
+        "refuse": ["I still need that dorm watch trail."],
+        "wrong": [
+          "I need a security read with a clean watch trail.",
+          "Give me the proper watch picture, not a blind answer.",
+          "This needs security eyes on that hallway."
         ]
       }
     }

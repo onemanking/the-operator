@@ -310,6 +310,8 @@ export class MainScene extends Phaser.Scene {
       },
       getAgentCapacity: () => this.runState.loadout.agentCapacity,
       getSkillCapacity: () => this.runState.loadout.skillCapacity,
+      getUnlockedAgentIds: () => this.runState.loadout.unlockedAgentIds,
+      getUnlockedSkillIds: () => this.runState.loadout.unlockedSkillIds,
     });
 
     this.sessionController = new MainSceneSessionController(this, {
@@ -592,6 +594,8 @@ export class MainScene extends Phaser.Scene {
         capabilities: {
           agentCapacity: this.runState.loadout.agentCapacity,
           skillCapacity: this.runState.loadout.skillCapacity,
+          availableAgentIds: this.runState.loadout.unlockedAgentIds,
+          availableSkillIds: this.runState.loadout.unlockedSkillIds,
           unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
         },
         excludedTurnIds: this.runState.seenTurnIds,

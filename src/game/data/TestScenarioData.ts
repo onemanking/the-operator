@@ -3,9 +3,10 @@ import {
   ContentCategoryId,
   ContentPolicyGroupId,
 } from "./ContentPolicyData";
+import { getDayLoadoutProfile } from "./LoadoutProgressionData";
 import { PassiveUpgradeId } from "./UpgradeData";
 import { ActiveUtilityId } from "./UtilityData";
-import { AGENT_IDS, AgentId, SKILL_IDS, SkillId, ToolId } from "./PromptIds";
+import { AgentId, SkillId, ToolId } from "./PromptIds";
 import { getTestEncounterById } from "./TestEncounterData";
 import { EncounterDefinition } from "./SessionData";
 import {
@@ -124,8 +125,6 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     day: 4,
-    agentCapacity: AGENT_IDS.length,
-    skillCapacity: SKILL_IDS.length,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     seenTurnIds: getAllAtomicTurnIds(),
   },
@@ -136,8 +135,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
-    agentCapacity: 1,
-    skillCapacity: 2,
+    day: 1,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     heat: 15,
     hallucination: 0,
@@ -149,8 +147,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
-    agentCapacity: 2,
-    skillCapacity: 3,
+    day: 2,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     heat: 15,
     hallucination: 0,
@@ -162,8 +159,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
-    agentCapacity: 2,
-    skillCapacity: 4,
+    day: 3,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     heat: 15,
     hallucination: 0,
@@ -175,8 +171,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
-    agentCapacity: AGENT_IDS.length - 1,
-    skillCapacity: SKILL_IDS.length - 1,
+    day: 4,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     heat: 15,
     hallucination: 0,
@@ -240,6 +235,8 @@ export function buildTestScenarioRunState(
 ): RunState {
   const initialRunState = createInitialRunState();
   const scenario = TEST_SCENARIOS[testScenarioId];
+  const scenarioDay = scenario.day ?? initialRunState.day;
+  const loadoutProfile = getDayLoadoutProfile(scenarioDay);
   const utilityChargesById = scenario.utilityChargesById ?? {};
   const passiveUpgradeIds = scenario.passiveUpgradeIds ?? [];
   const unlockedUtilityIds = Object.entries(utilityChargesById)
@@ -264,7 +261,7 @@ export function buildTestScenarioRunState(
   return {
     ...initialRunState,
     runId: `test-${testScenarioId}`,
-    day: scenario.day ?? initialRunState.day,
+    day: scenarioDay,
     tokens: 500,
     heat: scenario.heat ?? initialRunState.heat,
     hallucination: scenario.hallucination ?? initialRunState.hallucination,
@@ -272,11 +269,11 @@ export function buildTestScenarioRunState(
       ...initialRunState.loadout,
       equippedAgentIds: [...scenario.equippedAgentIds],
       equippedSkillIds: [...scenario.equippedSkillIds],
+      unlockedAgentIds: [...loadoutProfile.unlockedAgentIds],
+      unlockedSkillIds: [...loadoutProfile.unlockedSkillIds],
       selectedPromptToolIds: [...scenario.selectedPromptToolIds],
-      agentCapacity:
-        scenario.agentCapacity ?? initialRunState.loadout.agentCapacity,
-      skillCapacity:
-        scenario.skillCapacity ?? initialRunState.loadout.skillCapacity,
+      agentCapacity: scenario.agentCapacity ?? loadoutProfile.agentCapacity,
+      skillCapacity: scenario.skillCapacity ?? loadoutProfile.skillCapacity,
       unlockedPromptToolIds: [
         ...(scenario.unlockedPromptToolIds ??
           initialRunState.loadout.unlockedPromptToolIds),

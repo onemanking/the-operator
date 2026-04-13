@@ -71,6 +71,7 @@ export interface RunState {
   toolRuntime: RunToolRuntimeState;
   maintenanceSettledDay: number | null;
   maintenanceOfferIds: string[];
+  maintenancePurchaseCount: number;
   maintenancePurchasedItemId: string | null;
   maintenancePurchasedItemType: "passive" | "utility" | null;
   seenTurnIds: string[];
@@ -168,6 +169,7 @@ export function createInitialRunState(): RunState {
     },
     maintenanceSettledDay: null,
     maintenanceOfferIds: [],
+    maintenancePurchaseCount: 0,
     maintenancePurchasedItemId: null,
     maintenancePurchasedItemType: null,
     seenTurnIds: [],
@@ -214,6 +216,7 @@ export function cloneRunState(runState: RunState): RunState {
     },
     maintenanceSettledDay: runState.maintenanceSettledDay,
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
+    maintenancePurchaseCount: runState.maintenancePurchaseCount,
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
     runEndReason: runState.runEndReason,
@@ -360,6 +363,8 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     maintenanceOfferIds: [
       ...(data.maintenanceOfferIds ?? initial.maintenanceOfferIds),
     ],
+    maintenancePurchaseCount:
+      data.maintenancePurchaseCount ?? initial.maintenancePurchaseCount,
     maintenancePurchasedItemId:
       data.maintenancePurchasedItemId ?? initial.maintenancePurchasedItemId,
     maintenancePurchasedItemType:

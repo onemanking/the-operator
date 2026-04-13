@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { RUN_CONFIG } from "../data/RunData";
+import { RUN_CONFIG, canMakeMaintenancePurchase } from "../data/RunData";
 import {
   applyPassiveUpgrade,
   canPurchasePassiveUpgrade,
@@ -342,6 +342,7 @@ export class MaintenanceScene extends Phaser.Scene {
     };
     nextRunState.maintenanceSettledDay = null;
     nextRunState.maintenanceOfferIds = [];
+    nextRunState.maintenancePurchaseCount = 0;
     nextRunState.maintenancePurchasedItemId = null;
     nextRunState.maintenancePurchasedItemType = null;
     nextRunState.shiftEncounterIds = [];
@@ -362,6 +363,7 @@ export class MaintenanceScene extends Phaser.Scene {
     this.tokens -= RUN_CONFIG.serverCostPerShift;
     this.runState.tokens = this.tokens;
     this.runState.maintenanceSettledDay = this.day;
+    this.runState.maintenancePurchaseCount = 0;
     this.runState.maintenancePurchasedItemId = null;
     this.runState.maintenancePurchasedItemType = null;
     this.runState.maintenanceOfferIds = this.drawShopOffers().map(
@@ -452,7 +454,7 @@ export class MaintenanceScene extends Phaser.Scene {
       .text(
         shell.contentX + shell.contentWidth / 2,
         641,
-        "SELECT ONE UPGRADE OR SKIP.",
+        "SELECT UP TO TWO OFFERS OR SKIP.",
         {
           ...createMonitorTextStyle({
             fontSize: "16px",
@@ -487,7 +489,7 @@ export class MaintenanceScene extends Phaser.Scene {
       .text(
         panelX + 18,
         panelY + 12,
-        "MAINTENANCE BAY // SELECT ONE SLOT",
+        "MAINTENANCE BAY // SELECT UP TO TWO SLOTS",
         createMonitorTextStyle({
           fontSize: "16px",
           fontStyle: "bold",
@@ -517,7 +519,8 @@ export class MaintenanceScene extends Phaser.Scene {
     const canBuy = offer.canPurchase;
     const isPurchased = this.runState.maintenancePurchasedItemId === offer.id;
     const isLockedBySelection =
-      Boolean(this.runState.maintenancePurchasedItemId) && !isPurchased;
+      !canMakeMaintenancePurchase(this.runState.maintenancePurchaseCount) &&
+      !isPurchased;
 
     this.add
       .rectangle(centerX, centerY, 224, 248, 0x0b160d, 0.96)

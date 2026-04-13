@@ -1,5 +1,5 @@
 import { RunState } from "../types/SceneData";
-import { RUN_CONFIG } from "./RunData";
+import { canMakeMaintenancePurchase } from "./RunData";
 
 export type PassiveUpgradeId =
   | "cooling_fins"
@@ -45,42 +45,43 @@ export interface RunPassiveModifiers {
 }
 
 export const SHOP_OFFER_COUNT = 3;
+export const COST_MULTIPLIER = 4;
 
 export const PASSIVE_UPGRADES: PassiveUpgradeDefinition[] = [
   {
     id: "cooling_fins",
     name: "COOLING FINS",
     description: "Reduce heat gained from actions.",
-    cost: 18,
+    cost: 18 * COST_MULTIPLIER,
     maxStacks: 3,
   },
   {
     id: "cache_coalescer",
     name: "CACHE COALESCER",
     description: "Gain bonus tokens on successful turns.",
-    cost: 20,
+    cost: 20 * COST_MULTIPLIER,
     maxStacks: 3,
   },
   {
     id: "noise_filter",
     name: "NOISE FILTER",
     description: "Soften over-context penalties.",
-    cost: 16,
-    maxStacks: 2,
+    cost: 16 * COST_MULTIPLIER,
+    maxStacks: 3,
   },
   {
     id: "ecc_memory",
     name: "ECC MEMORY",
     description: "Reduce hallucination penalties.",
-    cost: 22,
+    cost: 22 * COST_MULTIPLIER,
     maxStacks: 3,
   },
   {
     id: "watchdog_timer",
     name: "WATCHDOG TIMER",
     description: "Reduce timeout accuracy loss.",
-    cost: 14,
-    maxStacks: 2,
+    cost: 14 * 4,
+    maxStacks: 3,
   },
 ];
 
@@ -164,7 +165,11 @@ export function canPurchasePassiveUpgrade(
     return false;
   }
 
-  if (runState.maintenancePurchasedItemId) {
+  if (!canMakeMaintenancePurchase(runState.maintenancePurchaseCount)) {
+    return false;
+  }
+
+  if (runState.maintenancePurchasedItemId === upgradeId) {
     return false;
   }
 
@@ -189,6 +194,7 @@ export function applyPassiveUpgrade(
   runState.loadout.passiveUpgradeIds.push(upgradeId);
   runState.maintenancePurchasedItemId = upgradeId;
   runState.maintenancePurchasedItemType = "passive";
+  runState.maintenancePurchaseCount += 1;
 
   return true;
 }

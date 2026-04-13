@@ -1,4 +1,5 @@
 import type { RunState } from "../types/SceneData";
+import { canMakeMaintenancePurchase } from "./RunData";
 
 export type ActiveUtilityId =
   | "coolant_purge"
@@ -120,7 +121,11 @@ export function canPurchaseActiveUtility(
     return false;
   }
 
-  if (runState.maintenancePurchasedItemId) {
+  if (!canMakeMaintenancePurchase(runState.maintenancePurchaseCount)) {
+    return false;
+  }
+
+  if (runState.maintenancePurchasedItemId === utilityId) {
     return false;
   }
 
@@ -151,6 +156,7 @@ export function applyActiveUtilityPurchase(
     definition.purchaseChargeCount;
   runState.maintenancePurchasedItemId = utilityId;
   runState.maintenancePurchasedItemType = "utility";
+  runState.maintenancePurchaseCount += 1;
 
   return true;
 }

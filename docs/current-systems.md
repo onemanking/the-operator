@@ -79,6 +79,8 @@ and [src/game/scenes/main/encounterEvaluator.ts](../src/game/scenes/main/encount
   run's agent-slot capacity, skill-slot capacity, and unlocked prompt tools.
 - Atomic turns that already appeared earlier in the same run are excluded from
   future shift generation.
+- If the next shift cannot assemble any unseen feasible turns, the run ends
+  officially instead of reusing old prompt content.
 - The number of turns per encounter is randomized, so a single encounter can mix
   difficulty like `2 -> 3 -> 2` when the active shift profile allows it.
 - The generated encounter list is stored in `RunState` for the lifetime of the

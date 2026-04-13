@@ -15,7 +15,10 @@ import {
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
-import { generateShiftEncounters } from "../data/shift-generation/runtime";
+import {
+  generateShiftEncounters,
+  NoFeasibleShiftTurnsError,
+} from "../data/shift-generation/runtime";
 import {
   addScanlines,
   createRetroButton,
@@ -52,24 +55,37 @@ export class BriefingScene extends Phaser.Scene {
       );
     }
     if (this.runState.shiftEncounters.length === 0) {
-      const generatedShift = generateShiftEncounters({
-        day: this.runState.day,
-        forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
-        capabilities: {
-          agentCapacity: this.runState.loadout.agentCapacity,
-          skillCapacity: this.runState.loadout.skillCapacity,
-          unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
-        },
-        excludedTurnIds: this.runState.seenTurnIds,
-      });
-      this.runState.shiftEncounters = generatedShift.encounters;
-      this.runState.seenTurnIds = [
-        ...this.runState.seenTurnIds,
-        ...generatedShift.drawnTurnIds,
-      ];
-      this.runState.shiftEncounterIds = this.runState.shiftEncounters.map(
-        (encounter) => encounter.id,
-      );
+      try {
+        const generatedShift = generateShiftEncounters({
+          day: this.runState.day,
+          forbiddenCategoryIds: this.runState.forbiddenCategoryIds,
+          capabilities: {
+            agentCapacity: this.runState.loadout.agentCapacity,
+            skillCapacity: this.runState.loadout.skillCapacity,
+            unlockedToolIds: this.runState.loadout.unlockedPromptToolIds,
+          },
+          excludedTurnIds: this.runState.seenTurnIds,
+        });
+        this.runState.shiftEncounters = generatedShift.encounters;
+        this.runState.seenTurnIds = [
+          ...this.runState.seenTurnIds,
+          ...generatedShift.drawnTurnIds,
+        ];
+        this.runState.shiftEncounterIds = this.runState.shiftEncounters.map(
+          (encounter) => encounter.id,
+        );
+      } catch (error) {
+        if (error instanceof NoFeasibleShiftTurnsError) {
+          this.runState.gameOver = true;
+          this.runState.runEndReason = "content-exhausted";
+          this.runState.shiftEncounterIds = [];
+          this.runState.shiftEncounters = [];
+          this.scene.start("MaintenanceScene", cloneRunState(this.runState));
+          return;
+        }
+
+        throw error;
+      }
     }
     this.day = this.runState.day;
     this.tokens = this.runState.tokens;

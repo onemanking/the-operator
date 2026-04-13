@@ -618,6 +618,7 @@ export class MainSceneSessionController {
   private transitionToMaintenance(gameOver: boolean) {
     const runState = this.bindings.getRunState();
     runState.gameOver = gameOver;
+    runState.runEndReason = gameOver ? "system-failure" : null;
     this.scene.scene.start("MaintenanceScene", runState);
   }
 

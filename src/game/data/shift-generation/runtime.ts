@@ -79,6 +79,13 @@ export interface GeneratedShiftResult {
   drawnTurnIds: string[];
 }
 
+export class NoFeasibleShiftTurnsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NoFeasibleShiftTurnsError";
+  }
+}
+
 const ATOMIC_TURN_FILES = (import.meta as ImportMetaWithGlob).glob(
   "/content/encounters/tier*.json",
   {
@@ -169,6 +176,12 @@ export function getShiftGenerationProfile(day: number): ShiftGenerationProfile {
   return match?.profile ?? SHIFT_GENERATION_PROFILES[0].profile;
 }
 
+export function getAllAtomicTurnIds() {
+  return [...TIERED_TURN_POOL.turnsByTier.values()].flatMap((turns) =>
+    turns.map((turn) => turn.id),
+  );
+}
+
 export function generateShiftEncounters(options: {
   day: number;
   forbiddenCategoryIds: readonly ContentCategoryId[];
@@ -176,28 +189,45 @@ export function generateShiftEncounters(options: {
   excludedTurnIds?: readonly string[];
 }): GeneratedShiftResult {
   const profile = getShiftGenerationProfile(options.day);
+  const excludedTurnIds = options.excludedTurnIds ?? [];
   const availableTiers = getAvailableTiers({
     minTier: profile.minTier,
     maxTier: profile.maxTier,
     forbiddenCategoryIds: options.forbiddenCategoryIds,
     capabilities: options.capabilities,
-    excludedTurnIds: options.excludedTurnIds ?? [],
+    excludedTurnIds,
+  });
+  const totalAvailableTurns = countAvailableTurns({
+    tiers: availableTiers,
+    forbiddenCategoryIds: options.forbiddenCategoryIds,
+    capabilities: options.capabilities,
+    excludedTurnIds,
   });
 
-  if (availableTiers.length === 0) {
-    throw new Error(
-      `No feasible encounter turn data available for tier range ${profile.minTier}-${profile.maxTier} with agent capacity ${options.capabilities.agentCapacity} and skill capacity ${options.capabilities.skillCapacity}.`,
+  if (availableTiers.length === 0 || totalAvailableTurns === 0) {
+    throw new NoFeasibleShiftTurnsError(
+      `No unseen feasible encounter turn data available for tier range ${profile.minTier}-${profile.maxTier} with agent capacity ${options.capabilities.agentCapacity} and skill capacity ${options.capabilities.skillCapacity}.`,
     );
   }
 
-  const usedTurnIds = new Set<string>(options.excludedTurnIds ?? []);
+  const usedTurnIds = new Set<string>(excludedTurnIds);
   const drawnTurnIds: string[] = [];
+  const encounterCount = Math.min(profile.encounterCount, totalAvailableTurns);
 
   const encounters = Array.from(
-    { length: profile.encounterCount },
+    { length: encounterCount },
     (_, encounterIndex) => {
       const generatedEncounterId = `generated-day-${options.day}-encounter-${encounterIndex + 1}`;
-      const encounterTurnCount = pickWeightedNumber(profile.turnCountWeights);
+      const remainingEncounters = encounterCount - encounterIndex;
+      const remainingTurns = totalAvailableTurns - drawnTurnIds.length;
+      const maxTurnsForEncounter = remainingTurns - (remainingEncounters - 1);
+      const encounterTurnCount = Math.max(
+        1,
+        Math.min(
+          pickWeightedNumber(profile.turnCountWeights),
+          maxTurnsForEncounter,
+        ),
+      );
       const turns = Array.from(
         { length: encounterTurnCount },
         (_, turnIndex) => {
@@ -257,6 +287,26 @@ export function buildTierTestEncounters(tier: number): EncounterDefinition[] {
       turns: [materializeEncounterTurn(atomicTurn, encounterId, 0)],
     };
   });
+}
+
+export function getTotalAtomicTurnCount() {
+  return TIERED_TURN_POOL.turnTierLookup.size;
+}
+
+export function getTurnDebugMetadata(turnId: string) {
+  const atomicTurnId = extractAtomicTurnId(turnId);
+
+  return {
+    atomicTurnId,
+    tier: getTurnTier(atomicTurnId),
+    tags: getTurnTags(atomicTurnId),
+  };
+}
+
+function extractAtomicTurnId(turnId: string) {
+  const match = /-turn-\d+-(.+)$/.exec(turnId);
+
+  return match?.[1] ?? turnId;
 }
 
 function loadTieredTurnPool() {
@@ -594,21 +644,6 @@ function drawAtomicTurn(options: {
       options.forbiddenCategoryIds,
       options.capabilities,
       options.usedTurnIds,
-      false,
-    );
-
-    if (pool.length > 0) {
-      return pickRandomItem(pool);
-    }
-  }
-
-  for (const tier of candidateTiers) {
-    const pool = getCompatibleTurnPool(
-      tier,
-      options.forbiddenCategoryIds,
-      options.capabilities,
-      options.usedTurnIds,
-      true,
     );
 
     if (pool.length > 0) {
@@ -626,7 +661,6 @@ function getCompatibleTurnPool(
   forbiddenCategoryIds: readonly ContentCategoryId[],
   capabilities: ShiftGenerationCapabilities,
   usedTurnIds: Set<string>,
-  allowRepeats: boolean,
 ) {
   const rawPool = TIERED_TURN_POOL.turnsByTier.get(tier) ?? [];
   const policyCompatiblePool = rawPool.filter(
@@ -635,14 +669,28 @@ function getCompatibleTurnPool(
       isTurnFeasibleForCapabilities(turn, capabilities),
   );
 
-  if (allowRepeats) {
-    return policyCompatiblePool;
-  }
+  return policyCompatiblePool.filter((turn) => !usedTurnIds.has(turn.id));
+}
 
-  const uniquePool = policyCompatiblePool.filter(
-    (turn) => !usedTurnIds.has(turn.id),
-  );
-  return uniquePool.length > 0 ? uniquePool : policyCompatiblePool;
+function countAvailableTurns(options: {
+  tiers: number[];
+  forbiddenCategoryIds: readonly ContentCategoryId[];
+  capabilities: ShiftGenerationCapabilities;
+  excludedTurnIds: readonly string[];
+}) {
+  const usedTurnIds = new Set<string>(options.excludedTurnIds);
+
+  return options.tiers.reduce((count, tier) => {
+    return (
+      count +
+      getCompatibleTurnPool(
+        tier,
+        options.forbiddenCategoryIds,
+        options.capabilities,
+        usedTurnIds,
+      ).length
+    );
+  }, 0);
 }
 
 function isTurnCompatibleWithShiftPolicy(
@@ -699,7 +747,6 @@ function getAvailableTiers(options: {
         options.forbiddenCategoryIds,
         options.capabilities,
         new Set<string>(options.excludedTurnIds),
-        true,
       ).length > 0,
   );
 
@@ -716,7 +763,6 @@ function getAvailableTiers(options: {
           options.forbiddenCategoryIds,
           options.capabilities,
           new Set<string>(options.excludedTurnIds),
-          true,
         ).length > 0,
     );
 }

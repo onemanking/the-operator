@@ -4,7 +4,12 @@ import { getGameplayPolicyStickyNoteContent } from "../data/ContentPolicyData";
 import { addScanlines } from "./shared/retroUi";
 import { synth } from "../utils/SoundSynth";
 import { EncounterDefinition } from "../data/SessionData";
-import { generateShiftEncounters } from "../data/shift-generation/runtime";
+import {
+  generateShiftEncounters,
+  getTotalAtomicTurnCount,
+  getTurnDebugMetadata,
+} from "../data/shift-generation/runtime";
+import { isDebugOverlayMode } from "../runtimeMode";
 import {
   applyShiftModifiersToEncounters,
   getShiftModifierDefinitions,
@@ -93,6 +98,7 @@ interface SignalBoostRuntimeState {
 }
 
 export class MainScene extends Phaser.Scene {
+  private readonly debugOverlayEnabled = isDebugOverlayMode();
   private runState: RunState = hydrateRunState();
   private day: number = 1;
   private tokens: number = 0;
@@ -555,6 +561,8 @@ export class MainScene extends Phaser.Scene {
               .join("\n\n")
           : "NO SPECIAL SHIFT CONDITIONS.";
       },
+      isDebugOverlayEnabled: () => this.debugOverlayEnabled,
+      getDebugOverlayText: () => this.getDebugOverlayText(),
     });
 
     this.add
@@ -2552,6 +2560,53 @@ export class MainScene extends Phaser.Scene {
     return this.encounters[this.currentEncounterIndex]?.turns[
       this.currentTurnIndex
     ];
+  }
+
+  private getDebugOverlayText() {
+    const currentTurn = this.getCurrentTurnDefinition();
+    const currentEncounter = this.encounters[this.currentEncounterIndex];
+    const totalTurnCount = getTotalAtomicTurnCount();
+    const usedTurnCount = this.runState.seenTurnIds.length;
+    const shiftTurnCount = this.encounters.reduce(
+      (sum, encounter) => sum + encounter.turns.length,
+      0,
+    );
+    const shiftTurnIndex =
+      this.encounters
+        .slice(0, this.currentEncounterIndex)
+        .reduce((sum, encounter) => sum + encounter.turns.length, 0) +
+      this.currentTurnIndex +
+      1;
+
+    if (!currentTurn || !currentEncounter) {
+      return [
+        `DAY ${this.day}`,
+        `TURNS ${usedTurnCount}/${totalTurnCount}`,
+        "SHIFT --/--",
+        "TURN NONE",
+      ].join("\n");
+    }
+
+    const debugMeta = getTurnDebugMetadata(currentTurn.id);
+    const agentText =
+      currentTurn.requirements.agentIds
+        .map((agentId) => agentId.replace(/_Agent\.md$/, ""))
+        .join(" | ") || "NONE";
+    const skillText =
+      currentTurn.requirements.skillIds
+        .map((skillId) => skillId.replace(/_Skill\.md$/, ""))
+        .join(" | ") || "NONE";
+
+    return [
+      `DAY ${this.day}`,
+      `TURNS ${usedTurnCount}/${totalTurnCount}`,
+      `SHIFT ${shiftTurnIndex}/${shiftTurnCount}`,
+      `ENC ${this.currentEncounterIndex + 1}/${this.encounters.length}`,
+      `TIER ${debugMeta.tier}`,
+      `TURN ${debugMeta.atomicTurnId}`,
+      `AGT ${agentText}`,
+      `SKL ${skillText}`,
+    ].join("\n");
   }
 
   private getElapsedSessionTime() {

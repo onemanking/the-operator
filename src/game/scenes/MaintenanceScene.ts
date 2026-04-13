@@ -24,6 +24,7 @@ import {
   cloneRunState,
   createInitialRunState,
   hydrateRunState,
+  RunEndReason,
   RunState,
   ShiftSceneData,
 } from "../types/SceneData";
@@ -54,6 +55,7 @@ export class MaintenanceScene extends Phaser.Scene {
   private tokens: number = 0;
   private accuracy: number = 100;
   private gameOver: boolean = false;
+  private runEndReason: RunEndReason = null;
   private summaryText!: Phaser.GameObjects.Text;
   private purchaseStatusText!: Phaser.GameObjects.Text;
 
@@ -67,6 +69,7 @@ export class MaintenanceScene extends Phaser.Scene {
     this.tokens = this.runState.tokens;
     this.accuracy = this.runState.accuracy;
     this.gameOver = this.runState.gameOver;
+    this.runEndReason = this.runState.runEndReason;
   }
 
   create() {
@@ -77,21 +80,32 @@ export class MaintenanceScene extends Phaser.Scene {
     const textStyle = createRetroTextStyle();
 
     if (this.gameOver) {
+      const endTitle =
+        this.runEndReason === "content-exhausted"
+          ? "RUN COMPLETE"
+          : "SYSTEM FAILURE";
+      const endBody =
+        this.runEndReason === "content-exhausted"
+          ? "NO FRESH PROMPTS REMAIN IN THE AUTHORED POOL.\nSHIFT ARCHIVE COMPLETE."
+          : "HALLUCINATION CRITICAL MASS REACHED.\nSERVER MELTDOWN.";
+      const endColor =
+        this.runEndReason === "content-exhausted"
+          ? RETRO_COLORS.amberText
+          : RETRO_COLORS.errorText;
+
       this.add
-        .text(width / 2, 200, "SYSTEM FAILURE", {
+        .text(width / 2, 200, endTitle, {
           ...textStyle,
           fontSize: "48px",
-          color: RETRO_COLORS.errorText,
+          color: endColor,
           fontStyle: "bold",
         })
         .setOrigin(0.5);
       this.add
-        .text(
-          width / 2,
-          300,
-          "HALLUCINATION CRITICAL MASS REACHED.\nSERVER MELTDOWN.",
-          { ...textStyle, color: RETRO_COLORS.errorText },
-        )
+        .text(width / 2, 300, endBody, {
+          ...textStyle,
+          color: endColor,
+        })
         .setOrigin(0.5);
 
       createRetroButton({
@@ -153,6 +167,7 @@ export class MaintenanceScene extends Phaser.Scene {
             nextRunState.accuracy = this.accuracy;
             nextRunState.heat = 0;
             nextRunState.gameOver = false;
+            nextRunState.runEndReason = null;
             nextRunState.encounterProgress = {
               encounterIndex: 0,
               turnIndex: 0,

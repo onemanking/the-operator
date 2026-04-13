@@ -49,6 +49,8 @@ export interface RunUtilityRuntimeState {
   signalBoostLayoutIndex: number;
 }
 
+export type RunEndReason = "system-failure" | "content-exhausted" | null;
+
 export interface RunState {
   runId: string;
   day: number;
@@ -57,6 +59,7 @@ export interface RunState {
   heat: number;
   hallucination: number;
   gameOver: boolean;
+  runEndReason: RunEndReason;
   loadout: RunLoadoutState;
   utilityInventory: RunUtilityInventoryState;
   utilityRuntime: RunUtilityRuntimeState;
@@ -127,6 +130,7 @@ export function createInitialRunState(): RunState {
     heat: RUN_CONFIG.initialHeat,
     hallucination: RUN_CONFIG.initialHallucination,
     gameOver: false,
+    runEndReason: null,
     loadout: {
       equippedAgentIds: [],
       equippedSkillIds: [],
@@ -205,6 +209,7 @@ export function cloneRunState(runState: RunState): RunState {
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
+    runEndReason: runState.runEndReason,
     seenTurnIds: [...runState.seenTurnIds],
     shiftEncounterIds: [...runState.shiftEncounterIds],
     shiftEncounters: cloneEncounterDefinitions(runState.shiftEncounters),
@@ -333,6 +338,7 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
       data.maintenancePurchasedItemId ?? initial.maintenancePurchasedItemId,
     maintenancePurchasedItemType:
       data.maintenancePurchasedItemType ?? initial.maintenancePurchasedItemType,
+    runEndReason: data.runEndReason ?? initial.runEndReason,
     seenTurnIds: [...(data.seenTurnIds ?? initial.seenTurnIds)],
     shiftEncounterIds: [
       ...(data.shiftEncounterIds ?? initial.shiftEncounterIds),

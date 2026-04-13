@@ -8,6 +8,8 @@ import { GameplayPolicyStickyNoteContent } from "../../data/ContentPolicyData";
 interface StickyNotesBindings {
   getPolicyContent: () => GameplayPolicyStickyNoteContent;
   getShiftEventText: () => string;
+  isDebugOverlayEnabled: () => boolean;
+  getDebugOverlayText: () => string;
 }
 
 type ScrollableTerminalBody =
@@ -25,6 +27,8 @@ interface TerminalPanelState {
 export class MainSceneStickyNotesController {
   private readonly panelStates: TerminalPanelState[] = [];
   private bodyScrollTimer?: Phaser.Time.TimerEvent;
+  private debugRefreshTimer?: Phaser.Time.TimerEvent;
+  private debugText?: Phaser.GameObjects.Text;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -66,14 +70,106 @@ export class MainSceneStickyNotesController {
       body: this.bindings.getShiftEventText(),
     });
 
+    if (this.bindings.isDebugOverlayEnabled()) {
+      this.createDebugPanel({
+        x: panelX,
+        y: 48 + (panelHeight + panelGap) * 2,
+        width: panelWidth,
+        height: 240,
+      });
+    }
+
     this.ensureBodyScrollTimer();
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.bodyScrollTimer?.destroy();
       this.bodyScrollTimer = undefined;
+      this.debugRefreshTimer?.destroy();
+      this.debugRefreshTimer = undefined;
     });
     this.scene.events.once(Phaser.Scenes.Events.DESTROY, () => {
       this.bodyScrollTimer?.destroy();
       this.bodyScrollTimer = undefined;
+      this.debugRefreshTimer?.destroy();
+      this.debugRefreshTimer = undefined;
+    });
+  }
+
+  private createDebugPanel(options: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) {
+    const { x, y, width, height } = options;
+    const screenHeight = height - 56;
+    const screenY = y + 30 + screenHeight / 2;
+
+    this.scene.add
+      .rectangle(
+        x + width / 2 + 5,
+        y + height / 2 + 6,
+        width,
+        height,
+        0x090909,
+        0.52,
+      )
+      .setOrigin(0.5)
+      .setStrokeStyle(1, 0x040404);
+
+    this.scene.add
+      .rectangle(x + width / 2, y + height / 2, width, height, 0x232323)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x111111);
+
+    this.scene.add
+      .rectangle(x + width / 2, y + 18, width - 8, 18, 0x111111)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, 0x2f2f2f);
+
+    this.scene.add
+      .text(x + 10, y + 12, "OPS_DEBUG.EXE", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "10px",
+        color: "#9fb39f",
+        fontStyle: "bold",
+      })
+      .setOrigin(0, 0);
+
+    this.scene.add
+      .rectangle(x + width / 2, screenY, width - 16, screenHeight, 0x071607)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x33ff33);
+
+    this.scene.add
+      .text(x + 10, y + 36, "> RUN DEBUG", {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "13px",
+        color: "#5ffb6d",
+        fontStyle: "bold",
+      })
+      .setOrigin(0, 0);
+
+    this.scene.add
+      .rectangle(x + width / 2, y + 54, width - 20, 2, 0x1b5b1b, 0.8)
+      .setOrigin(0.5)
+      .setStrokeStyle(0);
+
+    this.debugText = this.scene.add
+      .text(x + 10, y + 63, this.bindings.getDebugOverlayText(), {
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: "12px",
+        color: "#99f5a5",
+        wordWrap: { width: width - 22 },
+        lineSpacing: 4,
+      })
+      .setOrigin(0, 0);
+
+    this.debugRefreshTimer = this.scene.time.addEvent({
+      delay: 120,
+      loop: true,
+      callback: () => {
+        this.debugText?.setText(this.bindings.getDebugOverlayText());
+      },
     });
   }
 

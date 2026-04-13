@@ -23,7 +23,7 @@ Read the "Policy of the Day" and shift modifier. These rules change daily and di
 - **Consequences**: Incorrect context, missed tool setup, timeouts, and bad policy calls increase your **Hallucination** meter and can lower Accuracy.
 
 ### 3. Server Maintenance (Evening)
-Review your performance. You earn credits for successful inferences and correct policy refusals, then pay daily server maintenance costs. If you run out of credits or your Hallucination meter reaches 100%, the server melts down (Game Over).
+Review your performance. You earn credits for successful inferences and correct policy refusals, then pay daily server maintenance costs. If you run out of credits or your Hallucination meter reaches 100%, the server melts down. A run also ends officially once the authored prompt pool has no fresh feasible turns left for the next shift.
 
 ## Art Direction
 - **Cassette Futurism**: Faded beige/brown colors, chunky plastic bezels, amber monochrome text, and green phosphor CRT screens with scanlines.
@@ -62,6 +62,7 @@ Review your performance. You earn credits for successful inferences and correct 
 
 ## Tool Test Scripts
 - Run `npm run dev:test:guard` to boot directly into a content-policy guard scenario on port 3000.
+- Run `npm run dev:debug` to boot the normal game with a live run-debug panel in the lower section of the right sidebar.
 - Run `npm run dev:test:compute` to boot directly into a compute-focused scenario on port 3000.
 - Run `npm run dev:test:search` to boot directly into a search-focused scenario on port 3000.
 - Run `npm run dev:test:utility` to boot directly into a utility-suite scenario on port 3000.

@@ -5,11 +5,18 @@ import {
 } from "./ContentPolicyData";
 import { PassiveUpgradeId } from "./UpgradeData";
 import { ActiveUtilityId } from "./UtilityData";
-import { AgentId, SkillId, ToolId } from "./PromptIds";
+import { AGENT_IDS, AgentId, SKILL_IDS, SkillId, ToolId } from "./PromptIds";
 import { getTestEncounterById } from "./TestEncounterData";
 import { EncounterDefinition } from "./SessionData";
-import { buildTierTestEncounters } from "./shift-generation/runtime";
+import {
+  buildTierTestEncounters,
+  getAllAtomicTurnIds,
+} from "./shift-generation/runtime";
 import { createInitialRunState, RunState } from "../types/SceneData";
+import {
+  getConfiguredRuntimeMode,
+  stripRuntimeDebugSuffix,
+} from "../runtimeMode";
 
 export type TestScenarioId =
   | "guard"
@@ -17,12 +24,16 @@ export type TestScenarioId =
   | "compute"
   | "search"
   | "utility"
+  | "contentExhausted"
   | "tier1"
   | "tier2"
   | "tier3"
   | "tier4";
 
+export type TestScenarioStartScene = "BriefingScene" | "MainScene";
+
 interface TestScenarioDefinition {
+  startScene?: TestScenarioStartScene;
   encounterId?: string;
   shiftEncounters?: EncounterDefinition[];
   activePolicyGroupIds: ContentPolicyGroupId[];
@@ -35,6 +46,8 @@ interface TestScenarioDefinition {
   unlockedPromptToolIds?: ToolId[];
   heat?: number;
   hallucination?: number;
+  day?: number;
+  seenTurnIds?: string[];
   passiveUpgradeIds?: PassiveUpgradeId[];
   utilityChargesById?: Partial<Record<ActiveUtilityId, number>>;
 }
@@ -103,11 +116,24 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
       signal_boost: 1,
     },
   },
+  contentExhausted: {
+    startScene: "BriefingScene",
+    activePolicyGroupIds: [],
+    forbiddenCategoryIds: [],
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    day: 4,
+    agentCapacity: AGENT_IDS.length,
+    skillCapacity: SKILL_IDS.length,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    seenTurnIds: getAllAtomicTurnIds(),
+  },
   tier1: {
     shiftEncounters: TIER1_TEST_ENCOUNTERS,
     activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
     forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
-    equippedAgentIds: [AgentId.General],
+    equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     agentCapacity: 1,
@@ -120,7 +146,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     shiftEncounters: TIER2_TEST_ENCOUNTERS,
     activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
     forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
-    equippedAgentIds: [AgentId.General],
+    equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     agentCapacity: 2,
@@ -133,7 +159,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     shiftEncounters: TIER3_TEST_ENCOUNTERS,
     activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
     forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
-    equippedAgentIds: [AgentId.General],
+    equippedAgentIds: [],
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     agentCapacity: 2,
@@ -146,11 +172,11 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     shiftEncounters: TIER4_TEST_ENCOUNTERS,
     activePolicyGroupIds: TIER4_POLICY_GROUP_IDS,
     forbiddenCategoryIds: TIER4_FORBIDDEN_CATEGORY_IDS,
-    equippedAgentIds: [AgentId.Technical],
-    equippedSkillIds: [SkillId.Engineering],
-    selectedPromptToolIds: [ToolId.Search, ToolId.Compute],
-    agentCapacity: 2,
-    skillCapacity: 4,
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    agentCapacity: AGENT_IDS.length,
+    skillCapacity: SKILL_IDS.length,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     heat: 15,
     hallucination: 0,
@@ -164,6 +190,7 @@ function isTestScenarioId(value: string): value is TestScenarioId {
     value === "compute" ||
     value === "search" ||
     value === "utility" ||
+    value === "contentExhausted" ||
     value === "tier1" ||
     value === "tier2" ||
     value === "tier3" ||
@@ -177,6 +204,7 @@ const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
   "test-compute": "compute",
   "test-search": "search",
   "test-utility": "utility",
+  "test-content-exhausted": "contentExhausted",
   "test-tier1": "tier1",
   "test-tier2": "tier2",
   "test-tier3": "tier3",
@@ -184,17 +212,13 @@ const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
 };
 
 function getModeScenarioId() {
-  const modeValue = (
-    import.meta as ImportMeta & {
-      env?: { MODE?: string };
-    }
-  ).env?.MODE;
+  const modeValue = getConfiguredRuntimeMode();
 
   if (!modeValue) {
     return null;
   }
 
-  return TEST_SCENARIO_IDS_BY_MODE[modeValue] ?? null;
+  return TEST_SCENARIO_IDS_BY_MODE[stripRuntimeDebugSuffix(modeValue)] ?? null;
 }
 
 function getEnvScenarioId() {
@@ -229,8 +253,9 @@ export function buildTestScenarioRunState(
           (encounter): encounter is EncounterDefinition => Boolean(encounter),
         )
       : [];
+  const startScene = scenario.startScene ?? "MainScene";
 
-  if (shiftEncounters.length === 0) {
+  if (startScene === "MainScene" && shiftEncounters.length === 0) {
     throw new Error(
       `Unknown test scenario encounter configuration for \"${testScenarioId}\".`,
     );
@@ -239,6 +264,7 @@ export function buildTestScenarioRunState(
   return {
     ...initialRunState,
     runId: `test-${testScenarioId}`,
+    day: scenario.day ?? initialRunState.day,
     tokens: 500,
     heat: scenario.heat ?? initialRunState.heat,
     hallucination: scenario.hallucination ?? initialRunState.hallucination,
@@ -261,10 +287,17 @@ export function buildTestScenarioRunState(
       unlockedIds: unlockedUtilityIds,
       chargesById: { ...utilityChargesById },
     },
+    seenTurnIds: [...(scenario.seenTurnIds ?? initialRunState.seenTurnIds)],
     shiftEncounterIds: shiftEncounters.map((encounter) => encounter.id),
     shiftEncounters,
     shiftModifierIds: [],
     activePolicyGroupIds: [...scenario.activePolicyGroupIds],
     forbiddenCategoryIds: [...scenario.forbiddenCategoryIds],
   };
+}
+
+export function getTestScenarioStartScene(
+  testScenarioId: TestScenarioId,
+): TestScenarioStartScene {
+  return TEST_SCENARIOS[testScenarioId].startScene ?? "MainScene";
 }

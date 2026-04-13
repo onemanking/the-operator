@@ -3,6 +3,7 @@ import { GENERATED_TEXTURES } from "./boot/generatedTextures";
 import { INITIAL_SHIFT_STATE } from "../types/SceneData";
 import {
   buildTestScenarioRunState,
+  getTestScenarioStartScene,
   resolveConfiguredTestScenario,
 } from "../data/TestScenarioData";
 
@@ -21,7 +22,10 @@ export class BootScene extends Phaser.Scene {
     const testScenarioId = resolveConfiguredTestScenario();
 
     if (testScenarioId) {
-      this.scene.start("MainScene", buildTestScenarioRunState(testScenarioId));
+      this.scene.start(
+        getTestScenarioStartScene(testScenarioId),
+        buildTestScenarioRunState(testScenarioId),
+      );
       return;
     }
 

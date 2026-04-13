@@ -45,6 +45,11 @@ export class BriefingScene extends Phaser.Scene {
 
   init(data: ShiftSceneData) {
     this.runState = hydrateRunState(data);
+    this.sequenceController?.destroy();
+    this.sequenceController = undefined;
+    this.primaryCommand = undefined;
+    this.statusHint = undefined;
+    this.isTransitioning = false;
     if (this.runState.shiftModifierIds.length === 0) {
       this.runState.shiftModifierIds = drawShiftModifiersForDay(
         this.runState.day,

@@ -89,6 +89,14 @@ export class MaintenanceScene extends Phaser.Scene {
 
   init(data: ShiftSceneData) {
     this.runState = hydrateRunState(data);
+    this.sequenceController?.destroy();
+    this.sequenceController = undefined;
+    this.primaryCommand = undefined;
+    this.statusHint = undefined;
+    this.readyAction = undefined;
+    this.readyCommandLabel = "";
+    this.transitionStatusText = "";
+    this.isTransitioning = false;
     this.day = this.runState.day;
     this.tokens = this.runState.tokens;
     this.accuracy = this.runState.accuracy;

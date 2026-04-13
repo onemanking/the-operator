@@ -1,4 +1,4 @@
-# Prompt, Please
+# The Operator
 
 A "Papers, Please" style simulation game about managing an LLM server, built with Phaser 3 and React.
 

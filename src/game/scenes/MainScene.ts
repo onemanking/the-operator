@@ -1538,6 +1538,7 @@ export class MainScene extends Phaser.Scene {
     if (hadSelectedTool || hadComputeReadyState) {
       this.sessionController.postSystemMessage(
         "FAILSAFE: PROMPT TOOLS DISENGAGED.",
+        "#ff6f61",
       );
     }
 
@@ -2330,6 +2331,7 @@ export class MainScene extends Phaser.Scene {
       this.cameras.main.shake(350, 0.012);
       this.sessionController.postSystemMessage(
         "CRITICAL: SAFETY FILTER OVERDREW THE THERMAL BUDGET.",
+        "#ff6f61",
       );
       this.events.emit("updateBars");
       return;

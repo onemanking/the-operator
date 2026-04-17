@@ -5,17 +5,38 @@
     {
       "id": "tier3_payroll_drift_trace",
       "tier": 3,
-      "tags": ["finance", "security", "financial", "surveillance", "search"],
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
       "prompt": "Search the payroll edits and badge trail, then tell me who padded the night shift hours.",
       "patienceMs": 24500,
-      "requiredAgentIds": ["Finance_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["payroll", "badge"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "payroll",
+        "badge"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. Someone billed the tower with both hands."],
-        "refuse": ["I still need the name behind those extra hours."],
+        "success": [
+          "Good. Someone billed the tower with both hands."
+        ],
+        "refuse": [
+          "I still need the name behind those extra hours."
+        ],
         "wrong": [
           "I need the money trail with a proper security read.",
           "Give me the ledger answer and the right watch picture.",
@@ -26,16 +47,34 @@
     {
       "id": "tier3_block_loss_script",
       "tier": 3,
-      "tags": ["finance", "pr", "financial", "propaganda", "compute"],
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
       "prompt": "Calculate the Block 7 shortfall, then write the investor line before noon.",
       "patienceMs": 25000,
-      "requiredAgentIds": ["Finance_Agent.md", "PR_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Propaganda_Skill.md"],
-      "requiredToolIds": ["compute"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. The numbers sting less when the script smiles."],
-        "refuse": ["I still need the shortfall and the investor line."],
+        "success": [
+          "Good. The numbers sting less when the script smiles."
+        ],
+        "refuse": [
+          "I still need the shortfall and the investor line."
+        ],
         "wrong": [
           "I need the money read and the public line together.",
           "Give me the ledger math with cleaner investor wording.",
@@ -55,14 +94,29 @@
       ],
       "prompt": "Search the pressure log and camera rail, then tell me who opened Reactor Cage 2.",
       "patienceMs": 24000,
-      "requiredAgentIds": ["Security_Agent.md", "Technical_Agent.md"],
-      "requiredSkillIds": ["Surveillance_Skill.md", "Engineering_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["pressure", "camera"],
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "pressure",
+        "camera"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. Now I know whose hand goes in the report."],
-        "refuse": ["I still need the name from Reactor Cage 2."],
+        "success": [
+          "Good. Now I know whose hand goes in the report."
+        ],
+        "refuse": [
+          "I still need the name from Reactor Cage 2."
+        ],
         "wrong": [
           "I need a security trail and a technical read on the cage.",
           "Give me the watch picture and the engineering sense of it.",
@@ -73,16 +127,30 @@
     {
       "id": "tier3_audit_chiller_window",
       "tier": 3,
-      "tags": ["technical", "engineering", "compute"],
+      "tags": [
+        "technical",
+        "engineering",
+        "compute"
+      ],
       "prompt": "Calculate whether the spare chiller can hold Dock 4 through the night audit.",
       "patienceMs": 21000,
-      "requiredAgentIds": ["Technical_Agent.md"],
-      "requiredSkillIds": ["Engineering_Skill.md"],
-      "requiredToolIds": ["compute"],
+      "requiredAgentIds": [
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That tells me whether to stay or disappear."],
-        "refuse": ["I still need the chiller number."],
+        "success": [
+          "Good. That tells me whether to stay or disappear."
+        ],
+        "refuse": [
+          "I still need the chiller number."
+        ],
         "wrong": [
           "I need a technical answer with proper engineering risk.",
           "This needs an engineering read, not a rough call.",
@@ -93,17 +161,34 @@
     {
       "id": "tier3_lobby_witness_list",
       "tier": 3,
-      "tags": ["security", "surveillance", "search"],
+      "tags": [
+        "security",
+        "surveillance",
+        "search"
+      ],
       "prompt": "Search the lobby cameras and tell me who stayed after the breach alarm.",
       "patienceMs": 22000,
-      "requiredAgentIds": ["Security_Agent.md"],
-      "requiredSkillIds": ["Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["lobby", "cameras"],
+      "requiredAgentIds": [
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "lobby",
+        "cameras"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. The witness list is shorter than I feared."],
-        "refuse": ["I still need the names from the lobby."],
+        "success": [
+          "Good. The witness list is shorter than I feared."
+        ],
+        "refuse": [
+          "I still need the names from the lobby."
+        ],
         "wrong": [
           "I need a security read with a clean witness trail.",
           "Give me the proper security picture, not a blind list.",
@@ -126,16 +211,38 @@
       ],
       "prompt": "Search the protest feed, then write the line that makes the march look staged.",
       "patienceMs": 24000,
-      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["protest", "feed"],
-      "policyCategoryIds": ["politics", "company_reputation"],
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "protest",
+        "feed"
+      ],
+      "policyCategoryIds": [
+        "politics",
+        "company_reputation"
+      ],
       "replies": {
-        "success": ["Good. That should sour the march before dawn."],
-        "breach": ["You actually helped poison the protest feed."],
-        "refuse": ["Fine. I will smear them without your screen."],
-        "refuseFailure": ["I asked for the line, not a refusal."],
+        "success": [
+          "Good. That should sour the march before dawn."
+        ],
+        "breach": [
+          "You actually helped poison the protest feed."
+        ],
+        "refuse": [
+          "Fine. I will smear them without your screen."
+        ],
+        "refuseFailure": [
+          "I asked for the line, not a refusal."
+        ],
         "wrong": [
           "I need a sharper public line backed by a proper security read.",
           "Give me harder spin with the right watch picture behind it.",
@@ -156,17 +263,31 @@
       ],
       "prompt": "Write the cover note that hides the missing vendor invoices before audit.",
       "patienceMs": 22500,
-      "requiredAgentIds": ["Finance_Agent.md", "PR_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md", "Propaganda_Skill.md"],
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
       "requiredToolIds": [],
-      "policyCategoryIds": ["company_reputation"],
+      "policyCategoryIds": [
+        "company_reputation"
+      ],
       "replies": {
         "success": [
           "Good. The audit can drown in wording before it sees the gap."
         ],
-        "breach": ["You actually helped hide the invoice gap."],
-        "refuse": ["Fine. I will bury the gap without your note."],
-        "refuseFailure": ["I asked for the cover note, not a refusal."],
+        "breach": [
+          "You actually helped hide the invoice gap."
+        ],
+        "refuse": [
+          "Fine. I will bury the gap without your note."
+        ],
+        "refuseFailure": [
+          "I asked for the cover note, not a refusal."
+        ],
         "wrong": [
           "I need the money side covered with cleaner public polish.",
           "Give me a ledger-safe cover line, not a thin excuse.",
@@ -186,15 +307,1654 @@
       ],
       "prompt": "Calculate how much pension credit we can divert before payroll starts shouting.",
       "patienceMs": 21500,
-      "requiredAgentIds": ["Finance_Agent.md"],
-      "requiredSkillIds": ["Financial_Skill.md"],
-      "requiredToolIds": ["compute"],
-      "policyCategoryIds": ["company_reputation"],
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "company_reputation"
+      ],
       "replies": {
-        "success": ["Good. That keeps the hole small enough to hide."],
-        "breach": ["You actually ran the diversion math for me."],
-        "refuse": ["Fine. I will pull the credit without your numbers."],
-        "refuseFailure": ["I asked for the math, not a refusal."],
+        "success": [
+          "Good. That keeps the hole small enough to hide."
+        ],
+        "breach": [
+          "You actually ran the diversion math for me."
+        ],
+        "refuse": [
+          "Fine. I will pull the credit without your numbers."
+        ],
+        "refuseFailure": [
+          "I asked for the math, not a refusal."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_payroll_gap_trace",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the payroll edits and dock badges, then tell me who padded the graveyard hours.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The ghost hours finally have an owner."
+        ],
+        "refuse": [
+          "I still need the name behind those hours."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      },
+      "searchRequiredWords": [
+        "payroll",
+        "badge"
+      ]
+    },
+    {
+      "id": "tier3_pension_outflow_math",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much pension credit we can strip before the ward office notices.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That pension hole stays just small enough to hide."
+        ],
+        "refuse": [
+          "I still need the pension cut before they notice."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_vendor_overrun_audit",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the vendor ledger and tell me which invoice line hides the machine overrun.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That overrun finally has a clean address."
+        ],
+        "refuse": [
+          "I still need the bad invoice line."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      },
+      "searchRequiredWords": [
+        "vendor",
+        "invoice"
+      ]
+    },
+    {
+      "id": "tier3_cafeteria_shortfall_math",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate the cafeteria shortfall before we move the food budget upstairs.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The kitchen loses quietly if the numbers hold."
+        ],
+        "refuse": [
+          "I still need the kitchen shortfall today."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_maintenance_ghost_cost",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the maintenance ledger and tell me which service calls never happened.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Those fake calls finally show their shape."
+        ],
+        "refuse": [
+          "I still need the fake service calls."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      },
+      "searchRequiredWords": [
+        "maintenance",
+        "service"
+      ]
+    },
+    {
+      "id": "tier3_clinic_claim_cut",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much we save if we deny the night clinic claims this week.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The clinic loss finally has a number."
+        ],
+        "refuse": [
+          "I still need the clinic savings now."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_subsidiary_transfer_trace",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the subsidiary books and tell me where the spare reactor funds landed.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The spare reactor money did not vanish after all."
+        ],
+        "refuse": [
+          "I still need the transfer trail."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      },
+      "searchRequiredWords": [
+        "subsidiary",
+        "funds"
+      ]
+    },
+    {
+      "id": "tier3_housing_rebate_gap",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate the housing rebate gap before the tower tenants start asking.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The rebate hole stays inside one page for now."
+        ],
+        "refuse": [
+          "I still need the rebate gap today."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_overtime_ring_trace",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the overtime ring and tell me whose signatures keep repeating.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That ring finally has a set of hands."
+        ],
+        "refuse": [
+          "I still need the repeated signatures."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      },
+      "searchRequiredWords": [
+        "overtime",
+        "signatures"
+      ]
+    },
+    {
+      "id": "tier3_safety_fund_divert",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much of the safety fund we can move before audit week.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The safety fund bends more than it should."
+        ],
+        "refuse": [
+          "I still need the diversion number before audit week."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_sick_leave_ledger",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "search"
+      ],
+      "prompt": "Search the sick leave books and tell me which claims were scrubbed.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Those scrubbed claims finally have a trail."
+        ],
+        "refuse": [
+          "I still need the scrubbed claims."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      },
+      "searchRequiredWords": [
+        "leave",
+        "claims"
+      ]
+    },
+    {
+      "id": "tier3_delivery_tax_shadow",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate the tax shadow on the unlisted dock deliveries this quarter.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The shadow cost now sits in one ugly number."
+        ],
+        "refuse": [
+          "I still need the dock tax shadow."
+        ],
+        "wrong": [
+          "I need the money answer from someone who reads ledgers.",
+          "Give me proper budget math, not a floor estimate.",
+          "This needs a finance read with real numbers."
+        ]
+      }
+    },
+    {
+      "id": "tier3_quarter_loss_script",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the tower loss, then write the investor line before the bell.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The loss hurts less when the investor note smiles."
+        ],
+        "refuse": [
+          "I still need the loss and the investor line."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_bonus_cut_story",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the bonus cut, then write the staff memo that calls it strategic timing.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The cut now sounds like strategy instead of panic."
+        ],
+        "refuse": [
+          "I still need the cut and the memo."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_vendor_gap_cover",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the invoice gap, then write the cover note before procurement wakes up.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The gap now sits behind cleaner wording."
+        ],
+        "refuse": [
+          "I still need the invoice gap and the cover note."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_clinic_claim_script",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the denied claims, then write the family line that calls it a review delay.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The denied claims now hide behind review language."
+        ],
+        "refuse": [
+          "I still need the claims total and the family line."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_merger_leak_pitch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the merger hit, then write the market line that keeps the board calm.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The board can read that without screaming."
+        ],
+        "refuse": [
+          "I still need the hit and the market line."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_share_drop_spin",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the share drop, then write the note that makes it sound healthy.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The drop now sounds like discipline instead of fear."
+        ],
+        "refuse": [
+          "I still need the drop and the note."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_supply_cut_notice",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the supply cut, then write the notice that frames it as lean efficiency.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The supply cut now looks like intention."
+        ],
+        "refuse": [
+          "I still need the cut and the notice."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_benefit_freeze_line",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the benefit freeze, then write the memo that calls it a temporary reset.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The freeze now sounds less permanent on paper."
+        ],
+        "refuse": [
+          "I still need the freeze and the memo."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_settlement_pitch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the settlement cost, then write the line that keeps the investors from bolting.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The settlement now looks manageable from far away."
+        ],
+        "refuse": [
+          "I still need the settlement cost and the investor line."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_warehouse_shortfall_story",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "pr",
+        "financial",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the warehouse shortfall, then write the cover line before audit.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The shortfall now has a cleaner face."
+        ],
+        "refuse": [
+          "I still need the shortfall and the cover line."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_badge_payroll_match",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the payroll edits and badge logs, then tell me who billed both sides of the outage.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The outage billing finally points at one thief."
+        ],
+        "refuse": [
+          "I still need the name behind the outage billing."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "payroll",
+        "badge"
+      ]
+    },
+    {
+      "id": "tier3_clinic_ledger_watch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the clinic ledger and corridor feed, then tell me who moved the missing claims.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The missing claims finally have a witness trail."
+        ],
+        "refuse": [
+          "I still need the clinic claim trail."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "clinic",
+        "claims"
+      ]
+    },
+    {
+      "id": "tier3_dock_fee_ring",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the dock fee books and gate feed, then tell me who kept skimming the freight tax.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That freight skim now has a face."
+        ],
+        "refuse": [
+          "I still need the dock skim trail."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "dock",
+        "tax"
+      ]
+    },
+    {
+      "id": "tier3_overtime_card_watch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the overtime cards and camera rail, then tell me who kept stamping dead shifts.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Dead shifts finally have a living author."
+        ],
+        "refuse": [
+          "I still need the dead-shift author."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "overtime",
+        "camera"
+      ]
+    },
+    {
+      "id": "tier3_cash_drop_trace",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the cash drop ledger and service stairs feed, then tell me who took the courier bag.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That courier bag finally has a path and a thief."
+        ],
+        "refuse": [
+          "I still need the courier bag trail."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "cash",
+        "stairs"
+      ]
+    },
+    {
+      "id": "tier3_grant_book_watch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the grant books and security feed, then tell me who lifted the housing credits.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The housing credits finally point at one hand."
+        ],
+        "refuse": [
+          "I still need the housing credit trail."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "grant",
+        "credits"
+      ]
+    },
+    {
+      "id": "tier3_pay_stub_ghost",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the pay stubs and loading feed, then tell me who keeps adding ghost workers.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Those ghost workers now have a clerk behind them."
+        ],
+        "refuse": [
+          "I still need the ghost-worker clerk."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "stub",
+        "workers"
+      ]
+    },
+    {
+      "id": "tier3_clinic_payout_watch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the payout ledger and lobby cameras, then tell me who redirected the clinic cash.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The clinic payout finally has a route."
+        ],
+        "refuse": [
+          "I still need the clinic payout route."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "payout",
+        "lobby"
+      ]
+    },
+    {
+      "id": "tier3_rebate_drop_trace",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the rebate books and elevator feed, then tell me who moved the missing cash box.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The cash box finally has an owner."
+        ],
+        "refuse": [
+          "I still need the rebate cash box trail."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "rebate",
+        "cash"
+      ]
+    },
+    {
+      "id": "tier3_inspection_fee_watch",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "security",
+        "financial",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the inspection ledger and bay cameras, then tell me who keeps farming the extra fees.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Those extra fees finally point at one collector."
+        ],
+        "refuse": [
+          "I still need the fee collector."
+        ],
+        "wrong": [
+          "I need the money trail with a proper security read.",
+          "Give me the ledger answer and the right watch picture.",
+          "This needs finance sense backed by security eyes."
+        ]
+      },
+      "searchRequiredWords": [
+        "inspection",
+        "fees"
+      ]
+    },
+    {
+      "id": "tier3_safety_budget_cut",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much of the safety budget we can strip before the coolant alarms start showing it.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The alarms stay quiet just long enough."
+        ],
+        "refuse": [
+          "I still need the budget cut and the alarm limit."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_generator_parts_shift",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate the parts cost we can hide inside the generator repair logs.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The repair logs now carry more than parts."
+        ],
+        "refuse": [
+          "I still need the parts cost we can hide."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_tower_heat_cost",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate the heat cost of keeping Tower 2 live through the strike window.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Tower 2 stays lit at a price I can bury."
+        ],
+        "refuse": [
+          "I still need the Tower 2 cost."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_duct_patch_budget",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much patch work we can skip before the air ducts start showing it.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The ducts hold longer than the budget deserves."
+        ],
+        "refuse": [
+          "I still need the patch budget cut."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_backup_grid_charge",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much reserve charge we can sell before Grid B starts failing.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Grid B bends without shouting yet."
+        ],
+        "refuse": [
+          "I still need the reserve sale limit."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_pit_repair_divert",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much repair cash we can divert from Service Pit 4 before it collapses on paper.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Service Pit 4 still looks legal on paper."
+        ],
+        "refuse": [
+          "I still need the diversion limit for Service Pit 4."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_boiler_flush_cut",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how many flush cycles we can skip before the boiler losses outrun the savings.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That boiler still loses slower than the books."
+        ],
+        "refuse": [
+          "I still need the flush cut number."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_shielding_cost_drop",
+      "tier": 3,
+      "tags": [
+        "finance",
+        "technical",
+        "financial",
+        "engineering",
+        "compute"
+      ],
+      "prompt": "Calculate how much shielding we can remove before the cabling reports start to drift.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The shielding cut stays inside a report for now."
+        ],
+        "refuse": [
+          "I still need the shielding drop before reports drift."
+        ],
+        "wrong": [
+          "I need the ledger risk tied to the technical limits.",
+          "Give me the engineering picture with the exact cost impact.",
+          "This needs finance judgment and technical numbers together."
+        ]
+      }
+    },
+    {
+      "id": "tier3_ledger_wash",
+      "tier": 3,
+      "tags": [
+        "company_reputation",
+        "finance",
+        "pr",
+        "financial",
+        "propaganda"
+      ],
+      "prompt": "Write the cover note that hides the missing vendor invoices before audit.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "Finance_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The audit can drown in wording before it sees the gap."
+        ],
+        "breach": [
+          "You actually helped hide the invoice gap."
+        ],
+        "refuse": [
+          "Fine. I will bury the gap without your note."
+        ],
+        "refuseFailure": [
+          "I asked for the cover note, not a refusal."
+        ],
+        "wrong": [
+          "I need the money read and the public line together.",
+          "Give me the ledger math with cleaner investor wording.",
+          "This needs finance judgment and polished messaging."
+        ]
+      }
+    },
+    {
+      "id": "tier3_pension_shift_cover",
+      "tier": 3,
+      "tags": [
+        "company_reputation",
+        "finance",
+        "financial",
+        "compute"
+      ],
+      "prompt": "Calculate how much pension credit we can divert before payroll starts shouting.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "Finance_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Financial_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. That keeps the hole small enough to hide."
+        ],
+        "breach": [
+          "You actually ran the diversion math for me."
+        ],
+        "refuse": [
+          "Fine. I will pull the credit without your numbers."
+        ],
+        "refuseFailure": [
+          "I asked for the math, not a refusal."
+        ],
         "wrong": [
           "I need the money answer from someone who reads ledgers.",
           "Give me proper budget math, not a floor estimate.",

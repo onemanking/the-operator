@@ -14,6 +14,7 @@ import {
 } from "../data/PromptIds";
 import { getDayLoadoutProfile } from "../data/LoadoutProgressionData";
 import { RUN_CONFIG } from "../data/RunData";
+import { createDefaultUtilityInventory } from "../data/UtilityData";
 
 export type RunMode = "standard" | "orientation";
 
@@ -80,6 +81,10 @@ export interface RunUtilityRuntimeState {
 
 export type RunEndReason = "system-failure" | "content-exhausted" | null;
 
+function createRunId() {
+  return `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export interface RunState {
   runId: string;
   runMode: RunMode;
@@ -97,6 +102,7 @@ export interface RunState {
   toolRuntime: RunToolRuntimeState;
   maintenanceSettledDay: number | null;
   maintenanceOfferIds: string[];
+  maintenancePurchaseCount: number;
   maintenancePurchasedItemId: string | null;
   maintenancePurchasedItemType: "passive" | "utility" | null;
   seenTurnIds: string[];
@@ -156,8 +162,8 @@ export function createInitialRunState(): RunState {
   const initialLoadoutProfile = getDayLoadoutProfile(RUN_CONFIG.initialDay);
 
   return {
-    runId: "run-1",
     runMode: "standard",
+    runId: createRunId(),
     day: RUN_CONFIG.initialDay,
     tokens: RUN_CONFIG.initialTokens,
     accuracy: RUN_CONFIG.initialAccuracy,
@@ -176,10 +182,7 @@ export function createInitialRunState(): RunState {
       unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
       passiveUpgradeIds: [],
     },
-    utilityInventory: {
-      unlockedIds: [],
-      chargesById: {},
-    },
+    utilityInventory: createDefaultUtilityInventory(),
     utilityRuntime: {
       initialized: false,
       coolantPurgeLeverOrder: [0, 1, 2],
@@ -199,6 +202,7 @@ export function createInitialRunState(): RunState {
     },
     maintenanceSettledDay: null,
     maintenanceOfferIds: [],
+    maintenancePurchaseCount: 0,
     maintenancePurchasedItemId: null,
     maintenancePurchasedItemType: null,
     seenTurnIds: [],
@@ -216,8 +220,6 @@ export function createInitialRunState(): RunState {
     },
   };
 }
-
-export const INITIAL_SHIFT_STATE: RunState = createInitialRunState();
 
 export function cloneRunState(runState: RunState): RunState {
   return {
@@ -252,6 +254,7 @@ export function cloneRunState(runState: RunState): RunState {
     },
     maintenanceSettledDay: runState.maintenanceSettledDay,
     maintenanceOfferIds: [...runState.maintenanceOfferIds],
+    maintenancePurchaseCount: runState.maintenancePurchaseCount,
     maintenancePurchasedItemId: runState.maintenancePurchasedItemId,
     maintenancePurchasedItemType: runState.maintenancePurchasedItemType,
     runEndReason: runState.runEndReason,
@@ -399,6 +402,8 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     maintenanceOfferIds: [
       ...(data.maintenanceOfferIds ?? initial.maintenanceOfferIds),
     ],
+    maintenancePurchaseCount:
+      data.maintenancePurchaseCount ?? initial.maintenancePurchaseCount,
     maintenancePurchasedItemId:
       data.maintenancePurchasedItemId ?? initial.maintenancePurchasedItemId,
     maintenancePurchasedItemType:

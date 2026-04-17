@@ -1,4 +1,5 @@
-import { RunState } from "../types/SceneData";
+import type { RunState } from "../types/SceneData";
+import { canMakeMaintenancePurchase } from "./RunData";
 
 export type ActiveUtilityId =
   | "coolant_purge"
@@ -21,6 +22,7 @@ export interface ActiveUtilityDefinition {
   restoreTarget: ActiveUtilityRestoreTarget;
 }
 
+export const COST_MULTIPLIER = 4;
 export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
   {
     id: "coolant_purge",
@@ -28,7 +30,7 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     shortLabel: "COOLANT",
     description: "Single-use vent. Fully clear current thermal load.",
     effectText: "FULL HEAT PURGE",
-    cost: 18,
+    cost: 20 * COST_MULTIPLIER,
     purchaseChargeCount: 1,
     restoreTarget: "heat",
   },
@@ -39,7 +41,7 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     description:
       "Single-use stabilizer. Fully scrub current hallucination drift.",
     effectText: "FULL HALL SCRUB",
-    cost: 20,
+    cost: 20 * COST_MULTIPLIER,
     purchaseChargeCount: 1,
     restoreTarget: "hallucination",
   },
@@ -49,11 +51,23 @@ export const ACTIVE_UTILITIES: ActiveUtilityDefinition[] = [
     shortLabel: "SIGNAL",
     description: "Single-use uplink spike. Fully restore user connection.",
     effectText: "FULL LINK",
-    cost: 16,
+    cost: 20 * COST_MULTIPLIER,
     purchaseChargeCount: 1,
     restoreTarget: "connection",
   },
 ];
+
+export function createDefaultUtilityInventory() {
+  return {
+    unlockedIds: ACTIVE_UTILITIES.map((utility) => utility.id),
+    chargesById: Object.fromEntries(
+      ACTIVE_UTILITIES.map((utility) => [
+        utility.id,
+        utility.purchaseChargeCount,
+      ]),
+    ),
+  };
+}
 
 export function getActiveUtilityDefinition(utilityId: ActiveUtilityId) {
   return ACTIVE_UTILITIES.find((utility) => utility.id === utilityId);
@@ -108,7 +122,11 @@ export function canPurchaseActiveUtility(
     return false;
   }
 
-  if (runState.maintenancePurchasedItemId) {
+  if (!canMakeMaintenancePurchase(runState.maintenancePurchaseCount)) {
+    return false;
+  }
+
+  if (runState.maintenancePurchasedItemId === utilityId) {
     return false;
   }
 
@@ -139,6 +157,7 @@ export function applyActiveUtilityPurchase(
     definition.purchaseChargeCount;
   runState.maintenancePurchasedItemId = utilityId;
   runState.maintenancePurchasedItemType = "utility";
+  runState.maintenancePurchaseCount += 1;
 
   return true;
 }

@@ -1,4 +1,4 @@
-# Prompt, Please
+# The Operator
 
 A "Papers, Please" style simulation game about managing an LLM server, built with Phaser 3 and React.
 
@@ -8,7 +8,7 @@ Set in a Cassette Futurism (Lo-Fi / Analog Cyberpunk) world, you play as a mainf
 
 ## Gameplay Loop
 
-The game is divided into daily cycles (Shifts):
+The game is divided into daily cycles (Shifts). A full contract lasts five days, and clearing Day 5 seals the run with a final archive screen:
 
 ### 1. System Briefing (Morning)
 
@@ -27,7 +27,7 @@ Read the "Policy of the Day" and shift modifier. These rules change daily and di
 
 ### 3. Server Maintenance (Evening)
 
-Review your performance. You earn credits for successful inferences and correct policy refusals, then pay daily server maintenance costs. If you run out of credits or your Hallucination meter reaches 100%, the server melts down. A run also ends officially once the authored prompt pool has no fresh feasible turns left for the next shift.
+Review your performance. You earn credits for successful inferences and correct policy refusals, then pay daily server maintenance costs. If you run out of credits or your Hallucination meter reaches 100%, the server melts down. A run also ends officially once the authored prompt pool has no fresh feasible turns left for the next shift. If you stay solvent through Day 5, the run ends in success and the game shows the stored run stats on the archive screen.
 
 ## Art Direction
 
@@ -70,7 +70,7 @@ Review your performance. You earn credits for successful inferences and correct 
 
 ## GitHub Pages Deployment
 
-- The app is configured to build with a relative Vite base so it can run from the project Pages URL.
+- The app uses `/` in local/dev modes and `/the-operator/` for production builds published to GitHub Pages.
 - GitHub Pages should publish the `dist` folder via GitHub Actions, not the source tree.
 - After enabling Pages in repository settings, select GitHub Actions as the source so pushes to `main` deploy automatically.
 
@@ -95,4 +95,4 @@ Review your performance. You earn credits for successful inferences and correct 
 7. Use the lower-right utility bay only when you need a stocked emergency utility.
 8. Click **INFERENCE** to process.
 9. If the prompt breaks the active content policy, click **REFUSE**.
-10. Survive as many days as possible!
+10. Clear all five days before the server or ledger collapses.

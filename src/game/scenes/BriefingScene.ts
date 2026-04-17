@@ -19,19 +19,25 @@ import {
   generateShiftEncounters,
   NoFeasibleShiftTurnsError,
 } from "../data/shift-generation/runtime";
+import { addScanlines, createSceneBackdrop } from "./shared/retroUi";
 import {
-  addScanlines,
-  createRetroButton,
-  createRetroTextStyle,
-  createSceneBackdrop,
-  RETRO_COLORS,
-} from "./shared/retroUi";
+  createMonitorCommandButton,
+  MONITOR_COLORS,
+  createMonitorShell,
+  createMonitorTextStyle,
+  MonitorSequenceController,
+  playMonitorSceneTransition,
+} from "./shared/monitorPresentation";
 
 export class BriefingScene extends Phaser.Scene {
   private runState: RunState = hydrateRunState();
   private day: number = 1;
   private tokens: number = 0;
   private accuracy: number = 100;
+  private sequenceController?: MonitorSequenceController;
+  private primaryCommand?: ReturnType<typeof createMonitorCommandButton>;
+  private statusHint?: Phaser.GameObjects.Text;
+  private isTransitioning: boolean = false;
 
   constructor() {
     super("BriefingScene");
@@ -39,6 +45,11 @@ export class BriefingScene extends Phaser.Scene {
 
   init(data: ShiftSceneData) {
     this.runState = hydrateRunState(data);
+    this.sequenceController?.destroy();
+    this.sequenceController = undefined;
+    this.primaryCommand = undefined;
+    this.statusHint = undefined;
+    this.isTransitioning = false;
     if (this.runState.shiftModifierIds.length === 0) {
       this.runState.shiftModifierIds = drawShiftModifiersForDay(
         this.runState.day,
@@ -95,19 +106,48 @@ export class BriefingScene extends Phaser.Scene {
   }
 
   create() {
-    const width = this.cameras.main.width;
+    createSceneBackdrop(this, 0x050805);
 
-    createSceneBackdrop(this);
+    const shell = createMonitorShell(this, {
+      title: `SHIFT BRIEFING // DAY ${this.day}`,
+      subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      footerLeft: "CHANNEL: BRIEFING.FEED",
+      footerRight: "ENTER / SPACE // ADVANCE",
+    });
 
-    const textStyle = createRetroTextStyle();
+    const headerText = this.add
+      .text(
+        shell.contentX,
+        shell.contentY,
+        "OPERATOR LINK ACCEPTED // BRIEFING FEED STAGED",
+        createMonitorTextStyle({
+          fontSize: "18px",
+          color: MONITOR_COLORS.dimText,
+        }),
+      )
+      .setOrigin(0, 0);
 
-    this.add
-      .text(width / 2, 100, `DAY ${this.day} - SYSTEM BRIEFING`, {
-        ...textStyle,
-        fontSize: "32px",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    const directiveLabel = this.add
+      .text(
+        shell.contentX,
+        headerText.y + headerText.height + 28,
+        "PRIMARY DIRECTIVE",
+        createMonitorTextStyle({ fontSize: "18px", fontStyle: "bold" }),
+      )
+      .setOrigin(0, 0);
+
+    const directiveBody = this.add
+      .text(
+        shell.contentX,
+        directiveLabel.y + directiveLabel.height + 10,
+        "",
+        createMonitorTextStyle({
+          fontSize: "22px",
+          wordWrap: { width: shell.contentWidth },
+          lineSpacing: 6,
+        }),
+      )
+      .setOrigin(0, 0);
 
     const shiftModifiers = getShiftModifierDefinitions(
       this.runState.shiftModifierIds,
@@ -123,53 +163,132 @@ export class BriefingScene extends Phaser.Scene {
             .join("\n\n")
         : "NO SPECIAL SHIFT CONDITIONS.";
 
-    let cursorY = 200;
-
-    const policyLabel = this.add
-      .text(width / 2, cursorY, "CONTENT POLICY:", {
-        ...textStyle,
-        color: RETRO_COLORS.mutedText,
-      })
-      .setOrigin(0.5, 0);
-    cursorY = policyLabel.y + policyLabel.height + 20;
-
-    const policyBody = this.add
-      .text(width / 2, cursorY, policyText, {
-        ...textStyle,
-        wordWrap: { width: 800 },
-      })
-      .setOrigin(0.5, 0);
-    cursorY = policyBody.y + policyBody.height + 26;
-
-    cursorY = policyBody.y + policyBody.height + 26;
+    directiveBody.setText(policyText);
+    const directiveBodyHeight = directiveBody.height;
+    directiveBody.setText("");
 
     const modifierLabel = this.add
-      .text(width / 2, cursorY, "SHIFT MODIFIER:", {
-        ...textStyle,
-        color: RETRO_COLORS.mutedText,
-      })
-      .setOrigin(0.5, 0);
-    cursorY = modifierLabel.y + modifierLabel.height + 18;
+      .text(
+        shell.contentX,
+        directiveBody.y + directiveBodyHeight + 28,
+        "SHIFT MODIFIER",
+        createMonitorTextStyle({
+          fontSize: "18px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.text,
+        }),
+      )
+      .setOrigin(0, 0);
 
-    this.add
-      .text(width / 2, cursorY, modifierText, {
-        ...textStyle,
-        fontSize: "20px",
-        wordWrap: { width: 760 },
-      })
-      .setOrigin(0.5, 0);
+    const modifierBody = this.add
+      .text(
+        shell.contentX,
+        modifierLabel.y + modifierLabel.height + 10,
+        "",
+        createMonitorTextStyle({
+          fontSize: "20px",
+          color: MONITOR_COLORS.text,
+          wordWrap: { width: shell.contentWidth },
+          lineSpacing: 6,
+        }),
+      )
+      .setOrigin(0, 0);
 
-    createRetroButton({
+    modifierBody.setText(modifierText);
+    const modifierBodyHeight = modifierBody.height;
+    modifierBody.setText("");
+
+    const systemsLabel = this.add
+      .text(
+        shell.contentX,
+        modifierBody.y + modifierBodyHeight + 26,
+        "SHIFT LOADOUT",
+        createMonitorTextStyle({
+          fontSize: "18px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.text,
+        }),
+      )
+      .setOrigin(0, 0);
+
+    const systemsBody = this.add
+      .text(
+        shell.contentX,
+        systemsLabel.y + systemsLabel.height + 10,
+        "",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.text,
+          wordWrap: { width: shell.contentWidth },
+          lineSpacing: 4,
+        }),
+      )
+      .setOrigin(0, 0);
+
+    this.statusHint = this.add
+      .text(
+        this.cameras.main.width / 2,
+        675,
+        "ENTER / SPACE // FAST-FORWARD FEED",
+        createMonitorTextStyle({
+          fontSize: "16px",
+          color: MONITOR_COLORS.dimText,
+        }),
+      )
+      .setOrigin(0.5);
+
+    this.primaryCommand = createMonitorCommandButton({
       scene: this,
-      x: width / 2,
-      y: 692,
-      width: 200,
-      height: 50,
-      label: "START SHIFT",
-      onPress: () => {
-        synth.playButtonPress();
-        this.scene.start("MainScene", cloneRunState(this.runState));
+      x: this.cameras.main.width / 2,
+      y: 726,
+      width: 272,
+      label: "FAST-FORWARD FEED",
+      onPress: () => this.handlePrimaryAction(),
+    });
+
+    const loadoutSummary = this.buildLoadoutSummary();
+
+    this.sequenceController = new MonitorSequenceController(this);
+    this.sequenceController.play(
+      [
+        {
+          target: directiveBody,
+          text: policyText,
+          reveal: "char",
+          speedMs: 18,
+          pauseAfterMs: 180,
+          playSound: true,
+        },
+        {
+          target: modifierBody,
+          text: modifierText,
+          reveal: "word",
+          speedMs: 78,
+          pauseAfterMs: 160,
+          playSound: true,
+        },
+        {
+          target: systemsBody,
+          text: loadoutSummary,
+          reveal: "line",
+          speedMs: 110,
+          pauseAfterMs: 0,
+          playSound: true,
+          color: MONITOR_COLORS.text,
+        },
+      ],
+      () => {
+        this.primaryCommand?.setLabel("EXECUTE SHIFT");
+        this.statusHint?.setText("ENTER / SPACE // EXECUTE SHIFT");
       },
+    );
+
+    this.input.keyboard?.on("keydown-ENTER", this.handlePrimaryAction, this);
+    this.input.keyboard?.on("keydown-SPACE", this.handlePrimaryAction, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.sequenceController?.destroy();
+      this.input.keyboard?.off("keydown-ENTER", this.handlePrimaryAction, this);
+      this.input.keyboard?.off("keydown-SPACE", this.handlePrimaryAction, this);
     });
 
     this.addCRTEffects();
@@ -177,5 +296,114 @@ export class BriefingScene extends Phaser.Scene {
 
   addCRTEffects() {
     addScanlines(this);
+  }
+
+  private formatLoadoutIdentifier(identifier: string) {
+    return identifier.replace(/\.md$/i, "").replace(/_/g, " ").toUpperCase();
+  }
+
+  private formatLoadoutLine(label: string, values: string[]) {
+    const labelWidth = 22;
+    const contentWidth = 34;
+    const linePrefix = `${label.padEnd(labelWidth, ".")} `;
+    const continuationPrefix = `${" ".repeat(labelWidth)} `;
+
+    if (values.length === 0) {
+      return `${linePrefix}NONE`;
+    }
+
+    const lines: string[] = [];
+    let currentLine = linePrefix;
+
+    values.forEach((value, index) => {
+      const segment = index === 0 ? value : ` / ${value}`;
+      const currentValueWidth = currentLine.length - linePrefix.length;
+
+      if (
+        currentValueWidth > 0 &&
+        currentValueWidth + segment.length > contentWidth
+      ) {
+        lines.push(currentLine);
+        currentLine = `${continuationPrefix}${value}`;
+        return;
+      }
+
+      currentLine += segment;
+    });
+
+    lines.push(currentLine);
+    return lines.join("\n");
+  }
+
+  private formatLoadoutGrid(label: string, values: string[]) {
+    const labelWidth = 22;
+    const linePrefix = `${label.padEnd(labelWidth, ".")} `;
+    const continuationPrefix = `${" ".repeat(labelWidth)} `;
+    const columnWidth = 19;
+
+    if (values.length === 0) {
+      return `${linePrefix}NONE`;
+    }
+
+    const lines: string[] = [];
+    for (let index = 0; index < values.length; index += 2) {
+      const leftValue = values[index] ?? "";
+      const rightValue = values[index + 1] ?? "";
+      const prefix = index === 0 ? linePrefix : continuationPrefix;
+
+      lines.push(
+        rightValue.length > 0
+          ? `${prefix}${leftValue.padEnd(columnWidth, " ")} ${rightValue}`
+          : `${prefix}${leftValue}`,
+      );
+    }
+
+    return lines.join("\n");
+  }
+
+  private buildLoadoutSummary() {
+    const agentIds = this.runState.loadout.unlockedAgentIds.map((agentId) =>
+      this.formatLoadoutIdentifier(agentId),
+    );
+    const skillIds = this.runState.loadout.unlockedSkillIds.map((skillId) =>
+      this.formatLoadoutIdentifier(skillId),
+    );
+    const toolIds = this.runState.loadout.unlockedPromptToolIds.map((toolId) =>
+      this.formatLoadoutIdentifier(toolId),
+    );
+
+    return [
+      `TOKENS IN RESERVE..... ${this.tokens}`,
+      `TARGET ACCURACY....... ${this.accuracy}%`,
+      this.formatLoadoutGrid("AGENT DISCS", agentIds),
+      this.formatLoadoutGrid("SKILL DISCS", skillIds),
+      this.formatLoadoutLine("PROMPT TOOL BUS", toolIds),
+    ].join("\n");
+  }
+
+  private handlePrimaryAction() {
+    if (this.isTransitioning) {
+      return;
+    }
+
+    if (!this.sequenceController?.isComplete()) {
+      synth.playButtonPress();
+      this.sequenceController?.skipToEnd();
+      this.primaryCommand?.setLabel("EXECUTE SHIFT");
+      this.statusHint?.setText("ENTER / SPACE // EXECUTE SHIFT");
+      return;
+    }
+
+    this.isTransitioning = true;
+    this.primaryCommand?.setEnabled(false);
+    this.statusHint?.setText("SHIFT HANDOFF IN PROGRESS...");
+    synth.playButtonPress();
+    playMonitorSceneTransition(this, {
+      variant: "dispatch",
+      statusText: "EXECUTING SHIFT PAYLOAD",
+      onComplete: () => {
+        this.scene.start("MainScene", cloneRunState(this.runState));
+      },
+    });
   }
 }

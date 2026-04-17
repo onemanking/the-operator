@@ -18,7 +18,6 @@ import {
   ACTIVE_UTILITIES,
   canUseActiveUtility,
   consumeActiveUtilityCharge,
-  getActiveUtilityCharges,
   getActiveUtilityDefinition,
   getUnlockedActiveUtilityIds,
   ActiveUtilityId,
@@ -521,13 +520,8 @@ export class MainScene extends Phaser.Scene {
         const definition = this.selectedUtilityId
           ? getActiveUtilityDefinition(this.selectedUtilityId)
           : null;
-        const charges = this.selectedUtilityId
-          ? getActiveUtilityCharges(this.runState, this.selectedUtilityId)
-          : 0;
 
-        return definition
-          ? `${definition.shortLabel}\n${charges > 0 ? definition.effectText : "OFFLINE"}\nX${charges}`
-          : "NO UTILITY\nSTOCK";
+        return definition ? definition.name : "NO UTILITY";
       },
       canCycleUtilities: () => this.getSelectableUtilityIds().length > 1,
       getProjectedToolHeat: () => this.projectedToolHeat,
@@ -1679,6 +1673,7 @@ export class MainScene extends Phaser.Scene {
     if (hadSelectedTool || hadComputeReadyState) {
       this.sessionController.postSystemMessage(
         "FAILSAFE: PROMPT TOOLS DISENGAGED.",
+        "#ff6f61",
       );
     }
 
@@ -2494,6 +2489,7 @@ export class MainScene extends Phaser.Scene {
       this.cameras.main.shake(350, 0.012);
       this.sessionController.postSystemMessage(
         "CRITICAL: SAFETY FILTER OVERDREW THE THERMAL BUDGET.",
+        "#ff6f61",
       );
       this.events.emit("updateBars");
       return;

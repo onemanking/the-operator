@@ -1,13 +1,19 @@
 export const RUN_CONFIG = {
   initialDay: 1,
+  maxDay: 5,
   initialTokens: 100,
   initialAccuracy: 100,
   initialHeat: 0,
   initialHallucination: 0,
   defaultAgentCapacity: 1,
   defaultSkillCapacity: 1,
-  serverCostPerShift: 30,
+  serverCostPerShift: 50,
+  maintenancePurchaseLimit: 2,
 } as const;
+
+export function canMakeMaintenancePurchase(purchaseCount: number) {
+  return purchaseCount < RUN_CONFIG.maintenancePurchaseLimit;
+}
 
 export interface RunRecoveryProfile {
   heatRecoveryPerSecond: number;

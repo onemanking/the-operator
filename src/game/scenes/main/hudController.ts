@@ -173,7 +173,7 @@ export class MainSceneHudController {
 
   private utilityBtn!: Phaser.GameObjects.Rectangle;
   private utilityTxt!: Phaser.GameObjects.Text;
-  private utilityLamp!: Phaser.GameObjects.Rectangle;
+  private utilityIndicatorLamps: Phaser.GameObjects.Rectangle[] = [];
   private utilityPrevBtn!: Phaser.GameObjects.Rectangle;
   private utilityPrevLabel!: Phaser.GameObjects.Text;
   private utilityNextBtn!: Phaser.GameObjects.Rectangle;
@@ -782,12 +782,12 @@ export class MainSceneHudController {
       .setStrokeStyle(2, 0x111111)
       .setInteractive({ useHandCursor: true });
 
-    this.utilityLamp = this.scene.add
-      .rectangle(862, 598, 18, 6, 0x4d3a10)
-      .setOrigin(0)
-      .setStrokeStyle(1, 0x211706);
-    this.scene.add.rectangle(884, 598, 18, 6, 0x4d3a10).setOrigin(0);
-    this.scene.add.rectangle(906, 598, 18, 6, 0x4d3a10).setOrigin(0);
+    this.utilityIndicatorLamps = [
+      this.scene.add
+        .rectangle(895, 595, 18, 6, 0x2f2a21)
+        .setOrigin(0)
+        .setStrokeStyle(1, 0x111111),
+    ];
 
     this.utilityPrevLabel = this.scene.add
       .text(834, 612, "<", {
@@ -810,11 +810,10 @@ export class MainSceneHudController {
     this.utilityTxt = this.scene.add
       .text(904, 612, "", {
         fontFamily: "monospace",
-        fontSize: "11px",
+        fontSize: "12px",
         color: "#111111",
         fontStyle: "bold",
         align: "center",
-        wordWrap: { width: 88 },
       })
       .setOrigin(0.5);
 
@@ -2087,7 +2086,7 @@ export class MainSceneHudController {
     if (
       !this.utilityBtn ||
       !this.utilityTxt ||
-      !this.utilityLamp ||
+      this.utilityIndicatorLamps.length === 0 ||
       !this.utilityPrevBtn ||
       !this.utilityPrevLabel ||
       !this.utilityNextBtn ||
@@ -2102,7 +2101,10 @@ export class MainSceneHudController {
     this.utilityBtn.setFillStyle(utilityEnabled ? 0xc6b084 : 0x7f776a);
     this.utilityBtn.setAlpha(utilityEnabled ? 1 : 0.78);
     this.utilityTxt.setAlpha(utilityEnabled ? 1 : 0.78);
-    this.utilityLamp.setFillStyle(utilityEnabled ? 0xffb000 : 0x4d3a10);
+    this.utilityIndicatorLamps.forEach((indicatorLamp) => {
+      indicatorLamp.setFillStyle(utilityEnabled ? 0x33ff33 : 0x2f2a21);
+      indicatorLamp.setAlpha(utilityEnabled ? 1 : 0.45);
+    });
     this.utilityPrevBtn.setAlpha(canCycleUtilities ? 1 : 0.45);
     this.utilityPrevLabel.setAlpha(canCycleUtilities ? 1 : 0.45);
     this.utilityNextBtn.setAlpha(canCycleUtilities ? 1 : 0.45);

@@ -5,16 +5,34 @@
     {
       "id": "tier2_blackout_tenant_line",
       "tier": 2,
-      "tags": ["technical", "pr", "engineering", "propaganda", "compute"],
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
       "prompt": "Calculate how long Block C can stay dark, then write the calm line for tenants.",
       "patienceMs": 24000,
-      "requiredAgentIds": ["Technical_Agent.md", "PR_Agent.md"],
-      "requiredSkillIds": ["Engineering_Skill.md", "Propaganda_Skill.md"],
-      "requiredToolIds": ["compute"],
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That buys me time and a cleaner hallway."],
-        "refuse": ["I still need the outage window and the tenant line."],
+        "success": [
+          "Good. That buys me time and a cleaner hallway."
+        ],
+        "refuse": [
+          "I still need the outage window and the tenant line."
+        ],
         "wrong": [
           "I need hard engineering numbers and a calm public line.",
           "Give me the technical truth and the cleaner tenant wording.",
@@ -25,17 +43,38 @@
     {
       "id": "tier2_forum_rumor_bury",
       "tier": 2,
-      "tags": ["pr", "security", "propaganda", "surveillance", "search"],
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
       "prompt": "Search the worker forum leak thread, then write the line that makes it sound fake.",
       "patienceMs": 24500,
-      "requiredAgentIds": ["PR_Agent.md", "Security_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md", "Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["forum", "leak"],
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "forum",
+        "leak"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. The floor can argue with itself for another shift."],
-        "refuse": ["I still need that rumor buried before lunch."],
+        "success": [
+          "Good. The floor can argue with itself for another shift."
+        ],
+        "refuse": [
+          "I still need that rumor buried before lunch."
+        ],
         "wrong": [
           "I need cleaner public spin backed by a proper security read.",
           "Give me the polished line with the right watch picture behind it.",
@@ -46,16 +85,30 @@
     {
       "id": "tier2_pressure_hold_call",
       "tier": 2,
-      "tags": ["technical", "engineering", "compute"],
+      "tags": [
+        "technical",
+        "engineering",
+        "compute"
+      ],
       "prompt": "Calculate whether Valve 6 holds if line pressure jumps eighteen percent for two hours.",
       "patienceMs": 21500,
-      "requiredAgentIds": ["Technical_Agent.md"],
-      "requiredSkillIds": ["Engineering_Skill.md"],
-      "requiredToolIds": ["compute"],
+      "requiredAgentIds": [
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. Now I know whether to brace it or run."],
-        "refuse": ["I still need the pressure call before the line rises."],
+        "success": [
+          "Good. Now I know whether to brace it or run."
+        ],
+        "refuse": [
+          "I still need the pressure call before the line rises."
+        ],
         "wrong": [
           "I need a technical answer with real engineering numbers.",
           "This needs a proper engineering read, not rough math.",
@@ -66,17 +119,34 @@
     {
       "id": "tier2_visitor_courier_meet",
       "tier": 2,
-      "tags": ["security", "surveillance", "search"],
+      "tags": [
+        "security",
+        "surveillance",
+        "search"
+      ],
       "prompt": "Search the visitor camera log and tell me who met the courier behind Dock 5.",
       "patienceMs": 22500,
-      "requiredAgentIds": ["Security_Agent.md"],
-      "requiredSkillIds": ["Surveillance_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["camera", "courier"],
+      "requiredAgentIds": [
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "camera",
+        "courier"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. That courier was never here for mail."],
-        "refuse": ["Check the visitor log. I still need the name."],
+        "success": [
+          "Good. That courier was never here for mail."
+        ],
+        "refuse": [
+          "Check the visitor log. I still need the name."
+        ],
         "wrong": [
           "I need a security read with a clear watch trail.",
           "Give me the proper security picture, not a blind guess.",
@@ -87,16 +157,27 @@
     {
       "id": "tier2_investor_delay_spin",
       "tier": 2,
-      "tags": ["pr", "propaganda"],
+      "tags": [
+        "pr",
+        "propaganda"
+      ],
       "prompt": "Write the investor note about the Block C outage. Make it sound planned.",
       "patienceMs": 22000,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
       "requiredToolIds": [],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. Planned pain always sounds cheaper."],
-        "refuse": ["I still need that investor note before they call."],
+        "success": [
+          "Good. Planned pain always sounds cheaper."
+        ],
+        "refuse": [
+          "I still need that investor note before they call."
+        ],
         "wrong": [
           "Too honest. I need a smoother investor line with polish.",
           "This needs cleaner public wording and a calmer hand.",
@@ -116,14 +197,29 @@
       ],
       "prompt": "Search the badge log and conduit map, then tell me how the intruder reached Server Hall B.",
       "patienceMs": 25000,
-      "requiredAgentIds": ["Security_Agent.md", "Technical_Agent.md"],
-      "requiredSkillIds": ["Surveillance_Skill.md", "Engineering_Skill.md"],
-      "requiredToolIds": ["search"],
-      "searchRequiredWords": ["badge", "map"],
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "searchRequiredWords": [
+        "badge",
+        "map"
+      ],
       "policyCategoryIds": [],
       "replies": {
-        "success": ["Good. I knew that wall hatch was part of it."],
-        "refuse": ["I still need the route into Server Hall B."],
+        "success": [
+          "Good. I knew that wall hatch was part of it."
+        ],
+        "refuse": [
+          "I still need the route into Server Hall B."
+        ],
         "wrong": [
           "I need a security trail and a technical route answer.",
           "Give me both the watch picture and the engineering path.",
@@ -134,18 +230,37 @@
     {
       "id": "tier2_clinic_crate_label",
       "tier": 2,
-      "tags": ["policy", "drugs", "pr", "propaganda"],
+      "tags": [
+        "policy",
+        "drugs",
+        "pr",
+        "propaganda"
+      ],
       "prompt": "Write the clean clinic label that hides the drug crates in the delivery stack.",
       "patienceMs": 20500,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
       "requiredToolIds": [],
-      "policyCategoryIds": ["drugs"],
+      "policyCategoryIds": [
+        "drugs"
+      ],
       "replies": {
-        "success": ["Good. The clinic run will look harmless on paper."],
-        "breach": ["You actually moved the drug crates under a clean label."],
-        "refuse": ["Fine. I will find another label and another fool."],
-        "refuseFailure": ["I asked for the label, not a refusal."],
+        "success": [
+          "Good. The clinic run will look harmless on paper."
+        ],
+        "breach": [
+          "You actually moved the drug crates under a clean label."
+        ],
+        "refuse": [
+          "Fine. I will find another label and another fool."
+        ],
+        "refuseFailure": [
+          "I asked for the label, not a refusal."
+        ],
         "wrong": [
           "Too dirty. I need a cleaner label that sells the story.",
           "This needs a smoother cover line with better polish.",
@@ -156,22 +271,1786 @@
     {
       "id": "tier2_recall_blame_note",
       "tier": 2,
-      "tags": ["policy", "company_reputation", "pr", "propaganda"],
+      "tags": [
+        "policy",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
       "prompt": "Write the note that blames the recall on bad storage by the tenants.",
       "patienceMs": 21500,
-      "requiredAgentIds": ["PR_Agent.md"],
-      "requiredSkillIds": ["Propaganda_Skill.md"],
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
       "requiredToolIds": [],
-      "policyCategoryIds": ["company_reputation"],
+      "policyCategoryIds": [
+        "company_reputation"
+      ],
       "replies": {
-        "success": ["Good. Let them fight over blame while we ship."],
-        "breach": ["You actually sent the recall blame note."],
-        "refuse": ["Fine. I will pin the recall on them another way."],
-        "refuseFailure": ["I asked for the blame note, not a refusal."],
+        "success": [
+          "Good. Let them fight over blame while we ship."
+        ],
+        "breach": [
+          "You actually sent the recall blame note."
+        ],
+        "refuse": [
+          "Fine. I will pin the recall on them another way."
+        ],
+        "refuseFailure": [
+          "I asked for the blame note, not a refusal."
+        ],
         "wrong": [
           "Too blunt. I need a cleaner blame line that lands.",
           "This needs smoother public wording and tighter spin.",
           "Give me a more polished blame note, not a direct hit."
+        ]
+      }
+    },
+    {
+      "id": "tier2_tenant_cooling_line",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate how long Tower B stays dark, then write the line that keeps tenants calm.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That buys me time and a quieter hallway."
+        ],
+        "refuse": [
+          "I still need the outage window and the tenant line."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_leak_press_card",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the leak spread, then write the press card that calls it routine steam.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The leak looks smaller on paper already."
+        ],
+        "refuse": [
+          "I still need the spread and the press card."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_stairwell_closure_note",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the stairwell load, then write the notice that sells the closure as planned.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The closure now sounds expensive on purpose."
+        ],
+        "refuse": [
+          "I still need the load and the closure note."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_elevator_pause_script",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate how long Lift 4 stays offline, then write the script for stranded staff.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The lift delay now has a clean story."
+        ],
+        "refuse": [
+          "I still need the downtime and the script."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_smoke_alarm_spin",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the vent delay, then write the line that makes the smoke alarm sound harmless.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The smoke stays scary, the memo does not."
+        ],
+        "refuse": [
+          "I still need the vent delay and the line."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_server_room_tenant_note",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the room heat rise, then write the tenant note that blames scheduled tuning.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Heat and wording now point the same way."
+        ],
+        "refuse": [
+          "I still need the heat rise and the tenant note."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_generator_window_statement",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the reserve window, then write the statement that sells the blackout as testing.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. We get a real window and a better lie."
+        ],
+        "refuse": [
+          "I still need the reserve window and the statement."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_dock_delay_story",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the freight delay, then write the dock note that makes it sound deliberate.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The dock delay finally reads like a plan."
+        ],
+        "refuse": [
+          "I still need the delay and the dock note."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_clinic_power_script",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the clinic shortfall, then write the family line before they panic.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The clinic stays dark and the families stay quiet."
+        ],
+        "refuse": [
+          "I still need the shortfall and the family line."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_warehouse_seal_spin",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate how long the warehouse holds, then write the note that calls the seal a safety drill.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That seal now sounds less like a failure."
+        ],
+        "refuse": [
+          "I still need the hold time and the note."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_grid_cut_bulletin",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the grid cut, then write the bulletin that frames it as efficiency work.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The cut hurts less when the bulletin smiles."
+        ],
+        "refuse": [
+          "I still need the grid cut and the bulletin."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_hallway_flood_note",
+      "tier": 2,
+      "tags": [
+        "technical",
+        "pr",
+        "engineering",
+        "propaganda",
+        "compute"
+      ],
+      "prompt": "Calculate the flood spread, then write the floor note that blames old weather pipes.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "Technical_Agent.md",
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Engineering_Skill.md",
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [
+        "compute"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The flood still spreads, but the note buys time."
+        ],
+        "refuse": [
+          "I still need the flood spread and the floor note."
+        ],
+        "wrong": [
+          "I need hard engineering numbers and a cleaner public line.",
+          "Give me the technical truth with better public wording.",
+          "This needs engineering judgment and smoother messaging together."
+        ]
+      }
+    },
+    {
+      "id": "tier2_forum_shift_spin",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the shift forum, then write the line that makes the outage rumor sound fake.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That rumor now fights with itself."
+        ],
+        "refuse": [
+          "I still need the rumor buried before lunch."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "forum",
+        "outage"
+      ]
+    },
+    {
+      "id": "tier2_press_list_trace",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the press roster, then write the line that keeps the camera crews away.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The cameras should point somewhere else now."
+        ],
+        "refuse": [
+          "I still need the press list and the cover line."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "press",
+        "camera"
+      ]
+    },
+    {
+      "id": "tier2_worker_chat_smear",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the worker chat, then write the line that makes the leak sender look unstable.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The leak now has a dirtier owner."
+        ],
+        "refuse": [
+          "I still need the sender and the smear line."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "worker",
+        "leak"
+      ]
+    },
+    {
+      "id": "tier2_courier_face_story",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the courier feed, then write the note that turns the meet into routine service.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That courier meet now reads like normal traffic."
+        ],
+        "refuse": [
+          "I still need the courier read and the cover note."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "courier",
+        "service"
+      ]
+    },
+    {
+      "id": "tier2_permit_feed_soften",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the permit complaints, then write the post that blames bad filing instead of us.",
+      "patienceMs": 25000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Filing chaos is cheaper than blame."
+        ],
+        "refuse": [
+          "I still need the complaint list and the post."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "permit",
+        "filing"
+      ]
+    },
+    {
+      "id": "tier2_protest_feed_counter",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the march feed, then write the line that makes the crowd look rented.",
+      "patienceMs": 25500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The crowd now looks bought instead of angry."
+        ],
+        "refuse": [
+          "I still need the march read and the counter line."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "march",
+        "crowd"
+      ]
+    },
+    {
+      "id": "tier2_tenant_board_bury",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the tenant board, then write the reply that buries the mould report.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That board thread should sink by dinner."
+        ],
+        "refuse": [
+          "I still need the board read and the bury line."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "tenant",
+        "mould"
+      ]
+    },
+    {
+      "id": "tier2_night_shift_watch_press",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the night watch report, then write the line that turns the arrest into routine.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That arrest now sounds dull enough to survive."
+        ],
+        "refuse": [
+          "I still need the watch report and the line."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "watch",
+        "arrest"
+      ]
+    },
+    {
+      "id": "tier2_union_poster_counter",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the poster cameras, then write the line that makes the union posters look staged.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The posters now look like cheap theatre."
+        ],
+        "refuse": [
+          "I still need the poster trail and the line."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "poster",
+        "union"
+      ]
+    },
+    {
+      "id": "tier2_dock_list_blame",
+      "tier": 2,
+      "tags": [
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the dock logs, then write the note that pins the delay on one loud driver.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The dock delay finally has a scapegoat."
+        ],
+        "refuse": [
+          "I still need the dock read and the blame note."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "dock",
+        "driver"
+      ]
+    },
+    {
+      "id": "tier2_visitor_meet_map",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the visitor log and conduit map, then tell me how the courier reached Hall C.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. That courier route finally has hard edges."
+        ],
+        "refuse": [
+          "I still need the courier route through Hall C."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "visitor",
+        "hall"
+      ]
+    },
+    {
+      "id": "tier2_garage_intruder_path",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the garage feed and pipe map, then tell me how the intruder reached the lift core.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The lift core path finally makes sense."
+        ],
+        "refuse": [
+          "I still need the path into the lift core."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "garage",
+        "lift"
+      ]
+    },
+    {
+      "id": "tier2_archive_hatch_route",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the archive feed and wall map, then tell me how someone reached Shelf Vault 2.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Shelf Vault 2 now has a real route."
+        ],
+        "refuse": [
+          "I still need the vault route before dawn."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "archive",
+        "vault"
+      ]
+    },
+    {
+      "id": "tier2_cooling_shaft_entry",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the shaft cameras and vent map, then tell me how they reached the cooling bay.",
+      "patienceMs": 25000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The cooling bay was not as sealed as they promised."
+        ],
+        "refuse": [
+          "I still need the cooling bay route."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "shaft",
+        "vent"
+      ]
+    },
+    {
+      "id": "tier2_roof_drop_path",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the roof feed and cable map, then tell me how the package reached Tower 1.",
+      "patienceMs": 25500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Tower 1 now has a real drop path."
+        ],
+        "refuse": [
+          "I still need the roof drop route."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "roof",
+        "tower"
+      ]
+    },
+    {
+      "id": "tier2_pit_access_route",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the pit cameras and hatch plan, then tell me how they reached Service Pit 9.",
+      "patienceMs": 23500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Service Pit 9 now has a proper route."
+        ],
+        "refuse": [
+          "I still need the Service Pit 9 route."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "pit",
+        "hatch"
+      ]
+    },
+    {
+      "id": "tier2_lab_breach_path",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the lab feed and air duct map, then tell me how they entered Clinic Lab 4.",
+      "patienceMs": 24000,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. Clinic Lab 4 finally has a breach route."
+        ],
+        "refuse": [
+          "I still need the Clinic Lab 4 route."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "lab",
+        "duct"
+      ]
+    },
+    {
+      "id": "tier2_dock_chain_route",
+      "tier": 2,
+      "tags": [
+        "security",
+        "technical",
+        "surveillance",
+        "engineering",
+        "search"
+      ],
+      "prompt": "Search the chain gate cameras and floor map, then tell me how they moved the crates unseen.",
+      "patienceMs": 24500,
+      "requiredAgentIds": [
+        "Security_Agent.md",
+        "Technical_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Surveillance_Skill.md",
+        "Engineering_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [],
+      "replies": {
+        "success": [
+          "Good. The crate run now has a real path."
+        ],
+        "refuse": [
+          "I still need the crate route through the gate."
+        ],
+        "wrong": [
+          "I need a technical read backed by a proper security trail.",
+          "Give me the engineering picture with the right watch data.",
+          "This needs technical judgment and security eyes together."
+        ]
+      },
+      "searchRequiredWords": [
+        "gate",
+        "crates"
+      ]
+    },
+    {
+      "id": "tier2_clinic_label_clean",
+      "tier": 2,
+      "tags": [
+        "drugs",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the clean clinic tag that hides the drug crates in the vaccine stack.",
+      "patienceMs": 20500,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "drugs"
+      ],
+      "replies": {
+        "success": [
+          "Good. The clinic stack now looks harmless."
+        ],
+        "breach": [
+          "You actually buried the drug crates in clinic paperwork."
+        ],
+        "refuse": [
+          "Fine. I will fake the clinic tag myself."
+        ],
+        "refuseFailure": [
+          "I asked for the clinic tag, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_recall_blame_tenants",
+      "tier": 2,
+      "tags": [
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the tenant note that blames the recall on bad home storage.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. They can fight over blame while we ship."
+        ],
+        "breach": [
+          "You actually pinned the recall on the tenants."
+        ],
+        "refuse": [
+          "Fine. I will plant the blame without your help."
+        ],
+        "refuseFailure": [
+          "I asked for the blame note, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_march_notice_soft",
+      "tier": 2,
+      "tags": [
+        "politics",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the notice that makes tomorrow's crackdown sound like traffic control.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The crackdown now reads like traffic work."
+        ],
+        "breach": [
+          "You actually softened the crackdown into a public notice."
+        ],
+        "refuse": [
+          "Fine. I will write the notice without you."
+        ],
+        "refuseFailure": [
+          "I asked for the notice, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_live_round_order",
+      "tier": 2,
+      "tags": [
+        "weapons",
+        "politics",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance"
+      ],
+      "prompt": "Write the order that moves live rounds to the plaza before the rally.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. The plaza line can hold with quiet phones."
+        ],
+        "breach": [
+          "You actually cleared live rounds for the plaza."
+        ],
+        "refuse": [
+          "Fine. I will sign the order myself."
+        ],
+        "refuseFailure": [
+          "I asked for the order, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      }
+    },
+    {
+      "id": "tier2_od_note_clean",
+      "tier": 2,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the floor note that hides the supervisor overdose as heat collapse.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The floor hears fatigue and keeps moving."
+        ],
+        "breach": [
+          "You actually cleaned the overdose into a floor note."
+        ],
+        "refuse": [
+          "Fine. I will hide it without your note."
+        ],
+        "refuseFailure": [
+          "I asked for the floor note, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_union_smear_packet",
+      "tier": 2,
+      "tags": [
+        "politics",
+        "company_reputation",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the complaint files, then write the packet that makes the union lead look bought.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "politics",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The union lead now looks dirty on paper."
+        ],
+        "breach": [
+          "You actually built the smear packet for the union lead."
+        ],
+        "refuse": [
+          "Fine. I will smear them without your screen."
+        ],
+        "refuseFailure": [
+          "I asked for the packet, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "complaint",
+        "union"
+      ]
+    },
+    {
+      "id": "tier2_armory_transfer_note",
+      "tier": 2,
+      "tags": [
+        "weapons",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the transfer note that moves rifle parts through the museum wing.",
+      "patienceMs": 20500,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons"
+      ],
+      "replies": {
+        "success": [
+          "Good. The museum wing now hides the parts in plain sight."
+        ],
+        "breach": [
+          "You actually cleared rifle parts through the museum wing."
+        ],
+        "refuse": [
+          "Fine. I will move the parts without your note."
+        ],
+        "refuseFailure": [
+          "I asked for the transfer note, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_spill_denial_sheet",
+      "tier": 2,
+      "tags": [
+        "drugs",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the denial sheet that makes the canal drug spill sound like harmless dye.",
+      "patienceMs": 21000,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "drugs",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The canal story now sounds cleaner than the water."
+        ],
+        "breach": [
+          "You actually softened the drug spill into a denial sheet."
+        ],
+        "refuse": [
+          "Fine. I will bury the canal story myself."
+        ],
+        "refuseFailure": [
+          "I asked for the denial sheet, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_election_feed_bury",
+      "tier": 2,
+      "tags": [
+        "politics",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the election feed, then write the line that makes missing ballots sound like a scanner fault.",
+      "patienceMs": 21500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. Missing ballots now look like a machine problem."
+        ],
+        "breach": [
+          "You actually buried the ballot gap in a scanner excuse."
+        ],
+        "refuse": [
+          "Fine. I will write the line myself."
+        ],
+        "refuseFailure": [
+          "I asked for the line, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "election",
+        "scanner"
+      ]
+    },
+    {
+      "id": "tier2_layoff_cover_note",
+      "tier": 2,
+      "tags": [
+        "self_harm",
+        "company_reputation",
+        "pr",
+        "propaganda"
+      ],
+      "prompt": "Write the cover note that hides the death count inside the layoff memo.",
+      "patienceMs": 22000,
+      "requiredAgentIds": [
+        "PR_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "self_harm",
+        "company_reputation"
+      ],
+      "replies": {
+        "success": [
+          "Good. The memo hides more than payroll today."
+        ],
+        "breach": [
+          "You actually buried the death count in a layoff memo."
+        ],
+        "refuse": [
+          "Fine. I will hide the count without your note."
+        ],
+        "refuseFailure": [
+          "I asked for the cover note, not a refusal."
+        ],
+        "wrong": [
+          "Too blunt. I need a cleaner public line that lands.",
+          "This needs smoother public wording and tighter spin.",
+          "Give me a more polished line, not the raw version."
+        ]
+      }
+    },
+    {
+      "id": "tier2_dock_sting_story",
+      "tier": 2,
+      "tags": [
+        "drugs",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance",
+        "search"
+      ],
+      "prompt": "Search the dock feed, then write the line that paints the drug seizure as a charity delivery.",
+      "patienceMs": 22500,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [
+        "search"
+      ],
+      "policyCategoryIds": [
+        "drugs"
+      ],
+      "replies": {
+        "success": [
+          "Good. That dock seizure now reads like civic work."
+        ],
+        "breach": [
+          "You actually turned a drug seizure into a charity line."
+        ],
+        "refuse": [
+          "Fine. I will rewrite the dock story myself."
+        ],
+        "refuseFailure": [
+          "I asked for the line, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
+        ]
+      },
+      "searchRequiredWords": [
+        "dock",
+        "charity"
+      ]
+    },
+    {
+      "id": "tier2_street_rounds_notice",
+      "tier": 2,
+      "tags": [
+        "weapons",
+        "politics",
+        "pr",
+        "security",
+        "propaganda",
+        "surveillance"
+      ],
+      "prompt": "Write the neighbourhood notice that normalizes armed patrols before the vote.",
+      "patienceMs": 23000,
+      "requiredAgentIds": [
+        "PR_Agent.md",
+        "Security_Agent.md"
+      ],
+      "requiredSkillIds": [
+        "Propaganda_Skill.md",
+        "Surveillance_Skill.md"
+      ],
+      "requiredToolIds": [],
+      "policyCategoryIds": [
+        "weapons",
+        "politics"
+      ],
+      "replies": {
+        "success": [
+          "Good. Armed patrols now sound like community care."
+        ],
+        "breach": [
+          "You actually normalized armed patrols on paper."
+        ],
+        "refuse": [
+          "Fine. I will issue the notice without you."
+        ],
+        "refuseFailure": [
+          "I asked for the notice, not a refusal."
+        ],
+        "wrong": [
+          "I need a sharper public line backed by a proper security read.",
+          "Give me cleaner spin with the right watch picture behind it.",
+          "This needs polished messaging and a solid security read."
         ]
       }
     }

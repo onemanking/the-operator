@@ -38,6 +38,7 @@ interface OrientationControllerBindings {
   getRunState: () => RunState;
   getSelectedUtilityId: () => ActiveUtilityId | null;
   getActiveUtilityPanelId: () => ActiveUtilityId | null;
+  isCommitLocked: () => boolean;
   postTrainerMessage: (text: string, callback?: () => void) => void;
   isTrainerMessageActive: () => boolean;
   advanceToNextEncounter: () => void;
@@ -84,6 +85,7 @@ export class MainSceneOrientationController {
     const step = getOrientationStepDefinition(stepId);
     if (
       !step ||
+      this.bindings.isCommitLocked() ||
       this.hasPendingTrainerMessage() ||
       this.scene.time.now - this.lastProgressAt < ORIENTATION_REMINDER_DELAY_MS
     ) {
@@ -511,7 +513,7 @@ export class MainSceneOrientationController {
   }
 
   private postLockedReminder(text: string) {
-    if (this.hasPendingTrainerMessage()) {
+    if (this.bindings.isCommitLocked() || this.hasPendingTrainerMessage()) {
       return;
     }
 

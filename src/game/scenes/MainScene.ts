@@ -456,6 +456,7 @@ export class MainScene extends Phaser.Scene {
         getRunState: () => this.runState,
         getSelectedUtilityId: () => this.selectedUtilityId,
         getActiveUtilityPanelId: () => this.activeUtilityPanelId,
+        isCommitLocked: () => this.isCommitLocked,
         postTrainerMessage: (text, callback) =>
           this.sessionController.postChatMessage(
             ORIENTATION_PROMPT_SENDER_LABEL,

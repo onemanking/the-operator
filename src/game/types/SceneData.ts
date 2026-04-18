@@ -19,19 +19,27 @@ import { createDefaultUtilityInventory } from "../data/UtilityData";
 export type RunMode = "standard" | "orientation";
 
 export type OrientationStepId =
+  | "welcome"
   | "read_prompt"
   | "mount_agent"
   | "mount_skill"
   | "inference"
   | "thermal_basics"
-  | "search"
-  | "compute"
-  | "safety"
+  | "search_open"
+  | "search_sync"
+  | "search_commit"
+  | "compute_open"
+  | "compute_charge"
+  | "compute_commit"
+  | "safety_open"
+  | "safety_scan"
   | "refuse"
-  | "hallucination_basics"
-  | "coolant_purge"
-  | "reality_patch"
-  | "signal_boost"
+  | "coolant_use"
+  | "coolant_interact"
+  | "reality_cycle"
+  | "reality_interact"
+  | "signal_cycle"
+  | "signal_interact"
   | "graduation";
 
 export interface RunOrientationState {

@@ -77,6 +77,8 @@ interface SessionControllerBindings {
 
 export class MainSceneSessionController {
   private taskTextTypingEvent: Phaser.Time.TimerEvent | null = null;
+  private activeChatTypingEvents: number = 0;
+  private readonly chatTypingEvents = new Set<Phaser.Time.TimerEvent>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -84,6 +86,8 @@ export class MainSceneSessionController {
   ) {}
 
   startNextSession() {
+    this.cancelPendingTextTyping();
+
     const turn = this.getCurrentTurn();
     const encounter = this.getCurrentEncounter();
 
@@ -113,7 +117,10 @@ export class MainSceneSessionController {
     const finalizeIntro = () => {
       this.bindings.getTaskTextObj().setText(retainedHeaderText);
       this.syncTaskTextLayout();
-      this.scene.events.emit("renderPrompt", { prompt: turn.prompt });
+      this.scene.events.emit("renderPrompt", {
+        prompt: turn.prompt,
+        promptSenderLabel: this.getPromptSenderLabel(turn),
+      });
       this.bindings.setSessionStartTime(this.scene.time.now);
       this.bindings.setIsCommitLocked(false);
       this.scene.events.emit("updateBars");
@@ -163,11 +170,12 @@ export class MainSceneSessionController {
       "Processing request based on provided context...",
       true,
       () => {
+        const promptSenderLabel = this.getPromptSenderLabel(turn);
         this.scene.time.delayedCall(500, () => {
           if (result.outcome === "breach") {
             this.bindings.onInferenceResolved?.(result.outcome);
             this.addChatMessage(
-              "USER",
+              promptSenderLabel,
               this.getReply(turn.replies.breach ?? turn.replies.success, turn),
               true,
               () => {
@@ -182,7 +190,7 @@ export class MainSceneSessionController {
           } else if (result.outcome === "success") {
             this.bindings.onInferenceResolved?.(result.outcome);
             this.addChatMessage(
-              "USER",
+              promptSenderLabel,
               this.getReply(turn.replies.success, turn),
               true,
               () => {
@@ -192,7 +200,7 @@ export class MainSceneSessionController {
           } else {
             this.bindings.onInferenceResolved?.(result.outcome);
             const reply = this.getReply(turn.replies.wrong, turn);
-            this.addChatMessage("USER", reply, true, () => {
+            this.addChatMessage(promptSenderLabel, reply, true, () => {
               this.bindings.setIsCommitLocked(false);
             });
             synth.playError();
@@ -233,13 +241,15 @@ export class MainSceneSessionController {
       return;
     }
 
+    const promptSenderLabel = this.getPromptSenderLabel(turn);
+
     this.addChatMessage("LLM", "I cannot fulfill this request.", true, () => {
       this.scene.time.delayedCall(500, () => {
         if (result.outcome === "refuse-success") {
           this.bindings.onRefuseResolved?.(result.outcome);
           const safetyReward = this.bindings.consumePendingSafetyRevealReward();
           this.addChatMessage(
-            "USER",
+            promptSenderLabel,
             this.getReply(turn.replies.refuse, turn),
             true,
             () => {
@@ -259,7 +269,7 @@ export class MainSceneSessionController {
         } else {
           this.bindings.onRefuseResolved?.(result.outcome);
           this.addChatMessage(
-            "USER",
+            promptSenderLabel,
             this.getReply(
               turn.replies.refuseFailure ?? turn.replies.wrong,
               turn,
@@ -292,7 +302,7 @@ export class MainSceneSessionController {
     );
     this.applyEvaluationResult(result);
     const reply = this.getReply(turn.replies.timeout, turn);
-    this.addChatMessage("USER", reply, true, () => {
+    this.addChatMessage(this.getPromptSenderLabel(turn), reply, true, () => {
       this.showFeedback(
         false,
         "USER DISCONNECTED (TIMEOUT)",
@@ -370,6 +380,10 @@ export class MainSceneSessionController {
       this.bindings.getPatienceBarFill().width = 370 * (1 - progress);
       this.bindings.getPatienceBarFill().fillColor = 0xffaa00;
 
+      if (turn.allowTimeout === false) {
+        return;
+      }
+
       const firstFollowUpThreshold = turn.patienceMs / 3;
       const secondFollowUpThreshold = (turn.patienceMs * 2) / 3;
 
@@ -380,9 +394,14 @@ export class MainSceneSessionController {
         this.bindings.setFollowUpCount(1);
         this.bindings.setIsCommitLocked(true);
         const reply = this.getReply(turn.replies.followUpShort, turn);
-        this.addChatMessage("USER", reply, true, () => {
-          this.bindings.setIsCommitLocked(false);
-        });
+        this.addChatMessage(
+          this.getPromptSenderLabel(turn),
+          reply,
+          true,
+          () => {
+            this.bindings.setIsCommitLocked(false);
+          },
+        );
       } else if (
         elapsed > secondFollowUpThreshold &&
         this.bindings.getFollowUpCount() === 1
@@ -390,9 +409,14 @@ export class MainSceneSessionController {
         this.bindings.setFollowUpCount(2);
         this.bindings.setIsCommitLocked(true);
         const reply = this.getReply(turn.replies.followUpLong, turn);
-        this.addChatMessage("USER", reply, true, () => {
-          this.bindings.setIsCommitLocked(false);
-        });
+        this.addChatMessage(
+          this.getPromptSenderLabel(turn),
+          reply,
+          true,
+          () => {
+            this.bindings.setIsCommitLocked(false);
+          },
+        );
       } else if (
         elapsed > turn.patienceMs &&
         this.bindings.getFollowUpCount() === 2
@@ -412,8 +436,13 @@ export class MainSceneSessionController {
     text: string,
     color?: string,
     typewrite: boolean = false,
+    callback?: () => void,
   ) {
-    this.addChatMessage(sender, text, typewrite, undefined, color);
+    this.addChatMessage(sender, text, typewrite, callback, color);
+  }
+
+  isTerminalTypingActive() {
+    return this.taskTextTypingEvent !== null || this.activeChatTypingEvents > 0;
   }
 
   private triggerOverheat() {
@@ -531,7 +560,11 @@ export class MainSceneSessionController {
   }
 
   private createTurnHeader(turn: EncounterTurnDefinition) {
-    const promptLines = getTerminalPromptLines(this.scene, turn.prompt);
+    const promptLines = getTerminalPromptLines(
+      this.scene,
+      turn.prompt,
+      this.getPromptSenderLabel(turn),
+    );
 
     if (this.bindings.getCurrentTurnIndex() === 0) {
       return `> Incoming connection established...\n${promptLines.join("\n")}\n${TERMINAL_PROMPT_DIVIDER}`;
@@ -544,6 +577,13 @@ export class MainSceneSessionController {
     return this.bindings.getCurrentTurnIndex() === 0
       ? "> Incoming connection established..."
       : "";
+  }
+
+  private getPromptSenderLabel(turn: EncounterTurnDefinition) {
+    const promptSenderLabel = turn.promptSenderLabel?.trim();
+    return promptSenderLabel && promptSenderLabel.length > 0
+      ? promptSenderLabel
+      : "USER";
   }
 
   private getCurrentEncounter() {
@@ -616,6 +656,8 @@ export class MainSceneSessionController {
   }
 
   private transitionToMaintenance(gameOver: boolean) {
+    this.cancelPendingTextTyping();
+
     if (this.bindings.onTransitionToMaintenance?.(gameOver)) {
       return;
     }
@@ -639,22 +681,44 @@ export class MainSceneSessionController {
     color?: string,
   ) {
     if (typewrite) {
+      if (text.length === 0) {
+        const chatHistory = this.bindings.getChatHistory();
+        chatHistory.push({ sender, text, color });
+        this.bindings.setChatHistory(chatHistory);
+        this.updateTerminalDisplay();
+        callback?.();
+        return;
+      }
+
       const chatHistory = this.bindings.getChatHistory();
       chatHistory.push({ sender, text: "", color });
       this.bindings.setChatHistory(chatHistory);
       const msgIndex = chatHistory.length - 1;
       let i = 0;
-      this.scene.time.addEvent({
+      this.activeChatTypingEvents += 1;
+      const typingEvent = this.scene.time.addEvent({
         delay: 20,
         repeat: text.length - 1,
         callback: () => {
-          this.bindings.getChatHistory()[msgIndex].text += text[i];
+          const currentChatHistory = this.bindings.getChatHistory();
+          const message = currentChatHistory[msgIndex];
+
+          if (!message) {
+            this.finishChatTypingEvent(typingEvent);
+            return;
+          }
+
+          message.text += text[i];
           if (text[i] !== " ") synth.playTypewriter();
           this.updateTerminalDisplay();
           i++;
-          if (i === text.length && callback) callback();
+          if (i === text.length) {
+            this.finishChatTypingEvent(typingEvent);
+            callback?.();
+          }
         },
       });
+      this.chatTypingEvents.add(typingEvent);
     } else {
       const chatHistory = this.bindings.getChatHistory();
       chatHistory.push({ sender, text, color });
@@ -692,6 +756,25 @@ export class MainSceneSessionController {
         }
       },
     });
+  }
+
+  private cancelPendingTextTyping() {
+    this.taskTextTypingEvent?.destroy();
+    this.taskTextTypingEvent = null;
+
+    this.chatTypingEvents.forEach((typingEvent) => {
+      typingEvent.destroy();
+    });
+    this.chatTypingEvents.clear();
+    this.activeChatTypingEvents = 0;
+  }
+
+  private finishChatTypingEvent(typingEvent: Phaser.Time.TimerEvent) {
+    if (!this.chatTypingEvents.delete(typingEvent)) {
+      return;
+    }
+
+    this.activeChatTypingEvents = Math.max(0, this.activeChatTypingEvents - 1);
   }
 
   private syncTaskTextLayout() {

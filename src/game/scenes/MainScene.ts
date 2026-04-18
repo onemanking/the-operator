@@ -135,6 +135,7 @@ export class MainScene extends Phaser.Scene {
   private searchCycleCount: number = 0;
   private searchPanelWasSelected: boolean = false;
   private computePanelWasSelected: boolean = false;
+  private safetyPanelWasSelected: boolean = false;
   private safetyScanResult: PromptForbiddenScanResult | null = null;
   private safetyScanPrompt: string = "";
   private revealedSafetyWordIndexes = new Set<number>();
@@ -182,7 +183,6 @@ export class MainScene extends Phaser.Scene {
   private realityLastPointerX: number | null = null;
   private lastCoolantPulseAt: number = 0;
   private lastRealityAdjustToneAt: number = 0;
-  private orientationConnectionFloorRatio: number | null = null;
 
   private storageController!: MainSceneStorageController;
   private sessionController!: MainSceneSessionController;
@@ -200,6 +200,7 @@ export class MainScene extends Phaser.Scene {
   private lastHallucinationWarningSoundAt: number = 0;
   private lastConnectionWarningSoundAt: number = 0;
   private connectionPauseStartedAt: number | null = null;
+  private connectionElapsedOffsetMs: number = 0;
   private lastConnectionSegmentCount: number =
     getConnectionFeedbackConfig().segmentCount;
 
@@ -209,6 +210,7 @@ export class MainScene extends Phaser.Scene {
 
   init(data: ShiftSceneData) {
     this.runState = hydrateRunState(data);
+    this.orientationController = null;
     this.day = this.runState.day;
     this.tokens = this.runState.tokens;
     this.accuracy = this.runState.accuracy;
@@ -237,6 +239,7 @@ export class MainScene extends Phaser.Scene {
     this.searchCycleCount = 0;
     this.searchPanelWasSelected = false;
     this.computePanelWasSelected = false;
+    this.safetyPanelWasSelected = false;
     this.safetyScanResult = null;
     this.safetyScanPrompt = "";
     this.revealedSafetyWordIndexes = new Set(
@@ -284,12 +287,12 @@ export class MainScene extends Phaser.Scene {
     this.lastHallucinationWarningSoundAt = 0;
     this.lastConnectionWarningSoundAt = 0;
     this.connectionPauseStartedAt = null;
+    this.connectionElapsedOffsetMs = 0;
     this.lastConnectionSegmentCount =
       getConnectionFeedbackConfig().segmentCount;
     this.lastCoolantPulseAt = 0;
     this.lastRealityAdjustToneAt = 0;
     this.realityLastPointerX = null;
-    this.orientationConnectionFloorRatio = null;
     this.ensureUtilityRuntimeInitialized();
     this.resetCoolantPurgeState();
     this.resetRealityPatchState();
@@ -416,6 +419,7 @@ export class MainScene extends Phaser.Scene {
       setSessionStartTime: (value) => {
         this.sessionStartTime = value;
         this.connectionPauseStartedAt = null;
+        this.connectionElapsedOffsetMs = 0;
       },
       getFollowUpCount: () => this.followUpCount,
       setFollowUpCount: (value) => {
@@ -449,18 +453,31 @@ export class MainScene extends Phaser.Scene {
     if (this.runState.orientation.active) {
       this.orientationController = new MainSceneOrientationController(this, {
         getRunState: () => this.runState,
-        postTrainerMessage: (text) =>
+        getSelectedUtilityId: () => this.selectedUtilityId,
+        getActiveUtilityPanelId: () => this.activeUtilityPanelId,
+        postTrainerMessage: (text, callback) =>
           this.sessionController.postChatMessage(
             "OMNICORP TRAINER",
             text,
             undefined,
             true,
+            callback,
           ),
+        isTrainerMessageActive: () =>
+          this.sessionController.isTerminalTypingActive(),
+        advanceToNextEncounter: () => {
+          this.currentTurnIndex = 0;
+          this.runState.encounterProgress.turnIndex = 0;
+          this.currentEncounterIndex += 1;
+          this.runState.encounterProgress.encounterIndex =
+            this.currentEncounterIndex;
+          this.sessionController.startNextSession();
+        },
         completeOrientation: () => this.completeOrientation(),
         setHeat: (value) => this.setHeat(value),
         setHallucination: (value) => this.setHallucination(value),
-        forceConnectionRatioRemaining: (ratio, floorRatio) =>
-          this.forceConnectionRatioRemaining(ratio, floorRatio),
+        forceConnectionRatioRemaining: (ratio) =>
+          this.forceConnectionRatioRemaining(ratio),
       });
     }
 
@@ -718,6 +735,17 @@ export class MainScene extends Phaser.Scene {
       this.computePanelWasSelected = isComputeSelected;
     }
 
+    const isSafetySelected =
+      this.selectedPromptToolIds.includes(ToolId.Safety) && !this.isOverheated;
+    if (isSafetySelected !== this.safetyPanelWasSelected) {
+      if (isSafetySelected) {
+        this.handleSafetyToolOpened();
+      } else {
+        this.handleSafetyToolClosed();
+      }
+      this.safetyPanelWasSelected = isSafetySelected;
+    }
+
     if (
       this.isSafetyScanning &&
       (!this.selectedPromptToolIds.includes(ToolId.Safety) || this.isOverheated)
@@ -803,6 +831,7 @@ export class MainScene extends Phaser.Scene {
 
     this.selectedUtilityId = utilityIds[nextIndex];
     this.activateUtilityPanel(this.selectedUtilityId, false);
+    this.orientationController?.handleUtilitySelected(this.selectedUtilityId);
     synth.playButtonPress();
   }
 
@@ -826,6 +855,7 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
+    this.orientationController?.handleUtilityActivated(utilityId);
     this.events.emit("updateBars");
   }
 
@@ -1544,7 +1574,9 @@ export class MainScene extends Phaser.Scene {
 
     if (
       this.orientationController &&
-      !this.orientationController.gateAction(orientationAction)
+      !this.orientationController.gateAction(orientationAction, {
+        isToolCurrentlySelected: this.selectedPromptToolIds.includes(toolId),
+      })
     ) {
       synth.playError();
       return;
@@ -1580,10 +1612,17 @@ export class MainScene extends Phaser.Scene {
   }
 
   private handleComputeToolOpened() {
+    this.orientationController?.handleComputeToolOpened();
     synth.playComputeArm();
   }
 
   private handleComputeToolClosed() {}
+
+  private handleSafetyToolOpened() {
+    this.orientationController?.handleSafetyToolOpened();
+  }
+
+  private handleSafetyToolClosed() {}
 
   private pulseCompute() {
     if (
@@ -1974,6 +2013,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private setComputeCharge(value: number) {
+    const hadCharge = this.computeCharge > 0;
     this.computeCharge = clampComputeCharge(value);
     this.runState.toolRuntime.computeCharge = this.computeCharge;
 
@@ -1981,6 +2021,10 @@ export class MainScene extends Phaser.Scene {
       this.computePrimed = false;
       this.runState.toolRuntime.computePrimed = false;
       this.computeDecayResumesAt = 0;
+
+      if (hadCharge) {
+        this.orientationController?.handleComputeChargeLost();
+      }
     }
 
     this.refreshProjectedHeat();
@@ -2101,6 +2145,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private handleSearchToolOpened() {
+    this.orientationController?.handleSearchToolOpened();
     this.syncSearchTargetsFromCurrentTurn();
     synth.playSearchArm();
 
@@ -2643,25 +2688,15 @@ export class MainScene extends Phaser.Scene {
   private getConnectionElapsedRatio() {
     const turn = this.getCurrentTurn();
 
-    if (!turn || this.sessionStartTime <= 0) {
+    if (!turn || this.sessionStartTime === 0) {
       return 0;
     }
 
     const progress = Phaser.Math.Clamp(
-      (this.getConnectionClockNow() - this.sessionStartTime) / turn.patienceMs,
+      this.getElapsedSessionTime() / turn.patienceMs,
       0,
       1,
     );
-
-    if (
-      this.runState.orientation.suppressConnectionLoss &&
-      this.orientationConnectionFloorRatio !== null
-    ) {
-      return Math.min(
-        progress,
-        Math.max(0, 1 - this.orientationConnectionFloorRatio),
-      );
-    }
 
     return progress;
   }
@@ -2780,11 +2815,15 @@ export class MainScene extends Phaser.Scene {
   }
 
   private getElapsedSessionTime() {
-    if (this.sessionStartTime <= 0) {
+    if (this.sessionStartTime === 0) {
       return 0;
     }
 
-    return this.getConnectionClockNow() - this.sessionStartTime;
+    return (
+      this.getConnectionClockNow() -
+      this.sessionStartTime +
+      this.connectionElapsedOffsetMs
+    );
   }
 
   private setCommitLocked(value: boolean) {
@@ -2825,32 +2864,34 @@ export class MainScene extends Phaser.Scene {
       return 0;
     }
 
-    this.sessionStartTime = Math.min(
-      this.time.now,
-      this.sessionStartTime + restoredMs,
+    this.connectionElapsedOffsetMs = Math.max(
+      0,
+      this.getElapsedSessionTime() - restoredMs,
     );
+    this.sessionStartTime = this.getConnectionClockNow();
 
     return restoredMs;
   }
 
   private fillUserConnection() {
+    this.connectionElapsedOffsetMs = 0;
     this.sessionStartTime = this.getConnectionClockNow();
-    this.orientationConnectionFloorRatio = null;
   }
 
-  private forceConnectionRatioRemaining(ratio: number, floorRatio: number = 0) {
+  private forceConnectionRatioRemaining(ratio: number) {
     const turn = this.getCurrentTurn();
     if (!turn) {
       return;
     }
 
     const clampedRatio = Phaser.Math.Clamp(ratio, 0, 1);
-    this.orientationConnectionFloorRatio = Phaser.Math.Clamp(floorRatio, 0, 1);
-    this.sessionStartTime =
-      this.getConnectionClockNow() - turn.patienceMs * (1 - clampedRatio);
+    this.connectionElapsedOffsetMs = turn.patienceMs * (1 - clampedRatio);
+    this.sessionStartTime = this.getConnectionClockNow();
     this.lastConnectionSegmentCount = this.getConnectionActiveSegmentCount(
       this.getConnectionElapsedRatio(),
     );
+
+    this.events.emit("updateBars");
   }
 
   private handleInferenceAction() {

@@ -52,6 +52,7 @@ function createReplies(options: {
 function createTurn(options: {
   id: string;
   prompt: string;
+  promptSenderLabel?: string;
   patienceMs: number;
   agentIds: AgentId[];
   toolIds?: ToolId[];
@@ -63,6 +64,7 @@ function createTurn(options: {
   return {
     id: options.id,
     prompt: options.prompt,
+    promptSenderLabel: options.promptSenderLabel,
     patienceMs: options.patienceMs,
     requirements: {
       agentIds: options.agentIds,

@@ -13,6 +13,7 @@ import {
   buildTierTestEncounters,
   getAllAtomicTurnIds,
 } from "./shift-generation/runtime";
+import { createOrientationRunState } from "./OrientationData";
 import { createInitialRunState, RunState } from "../types/SceneData";
 import {
   getConfiguredRuntimeMode,
@@ -20,6 +21,7 @@ import {
 } from "../runtimeMode";
 
 export type TestScenarioId =
+  | "onboarding"
   | "guard"
   | "searchGuard"
   | "compute"
@@ -78,6 +80,13 @@ const TIER4_POLICY_GROUP_IDS: ContentPolicyGroupId[] = [
 ];
 
 const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
+  onboarding: {
+    activePolicyGroupIds: ["illegal_content"],
+    forbiddenCategoryIds: ["weapons"],
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+  },
   guard: {
     encounterId: "tool-test-guard-policy",
     activePolicyGroupIds: ["illegal_content"],
@@ -243,6 +252,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
 
 function isTestScenarioId(value: string): value is TestScenarioId {
   return (
+    value === "onboarding" ||
     value === "guard" ||
     value === "searchGuard" ||
     value === "compute" ||
@@ -260,6 +270,7 @@ function isTestScenarioId(value: string): value is TestScenarioId {
 }
 
 const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
+  "test-onboarding": "onboarding",
   "test-guard": "guard",
   "test-search-guard": "searchGuard",
   "test-compute": "compute",
@@ -302,6 +313,10 @@ export function resolveConfiguredTestScenario() {
 export function buildTestScenarioRunState(
   testScenarioId: TestScenarioId,
 ): RunState {
+  if (testScenarioId === "onboarding") {
+    return createOrientationRunState();
+  }
+
   const initialRunState = createInitialRunState();
   const scenario = TEST_SCENARIOS[testScenarioId];
   const scenarioDay = scenario.day ?? initialRunState.day;

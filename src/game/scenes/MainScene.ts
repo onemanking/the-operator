@@ -69,6 +69,7 @@ import {
   isComputeReady,
   scanPromptForForbiddenContent,
 } from "./main/toolRuntimeHelpers";
+import { ORIENTATION_PROMPT_SENDER_LABEL } from "../data/OrientationData";
 
 type SearchPulseState =
   | "idle"
@@ -457,7 +458,7 @@ export class MainScene extends Phaser.Scene {
         getActiveUtilityPanelId: () => this.activeUtilityPanelId,
         postTrainerMessage: (text, callback) =>
           this.sessionController.postChatMessage(
-            "OMNICORP TRAINER",
+            ORIENTATION_PROMPT_SENDER_LABEL,
             text,
             undefined,
             true,
@@ -2925,7 +2926,7 @@ export class MainScene extends Phaser.Scene {
 
     if (gameOver) {
       this.sessionController.postChatMessage(
-        "OMNICORP TRAINER",
+        ORIENTATION_PROMPT_SENDER_LABEL,
         "Failure state intercepted. Continue the training protocol.",
         undefined,
         true,

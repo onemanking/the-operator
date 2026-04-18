@@ -19,7 +19,7 @@ export interface OrientationStepDefinition {
   refuseFailureMessage?: string;
 }
 
-const ORIENTATION_PROMPT_SENDER_LABEL = "OMNICORP TRAINER";
+export const ORIENTATION_PROMPT_SENDER_LABEL = "OMNICORP SUPERVISOR";
 
 const ORIENTATION_GENERIC_FAILURE_MESSAGE =
   "Incorrect synthesis. Reassemble the workstation context and retry.";
@@ -172,7 +172,7 @@ export const ORIENTATION_STEPS: OrientationStepDefinition[] = [
       "Thermal tracks thermal load inside the workstation. Activate COOLANT PURGE to dump excess heat before a meltdown.",
     reminder: "Thermals critical. Activate COOLANT PURGE immediately.",
     panelInstruction:
-      "Coolant purge live. Pull and hold each vent lever in the required order until it latches.",
+      "COOLANT PURGE live. Pull and hold each vent lever in the required order until it latches.",
   },
   {
     id: "coolant_interact",

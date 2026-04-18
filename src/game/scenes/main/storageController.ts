@@ -29,6 +29,10 @@ export class MainSceneStorageController {
   private readonly rackVisibleRows = 5;
   private readonly rackItemSpacing = 72;
   private readonly rackStartY = 132;
+  private readonly diskRestingDepth = 0.85;
+  private readonly diskHandleRestingDepth = 0.86;
+  private readonly diskDraggingDepth = 6;
+  private readonly diskHandleDraggingDepth = 6.01;
   private readonly rackBounds = new Phaser.Geom.Rectangle(18, 118, 184, 386);
   private readonly rackSwipeStepPx = 48;
   private readonly rackSwipeActivationDistance = 18;
@@ -244,6 +248,7 @@ export class MainSceneStorageController {
           this.rackSwipeMode = "pending";
         }
 
+        this.setDiskDepth(storageDisk, true);
         this.scene.children.bringToTop(storageDisk.container);
         this.scene.children.bringToTop(storageDisk.handle);
         this.activeDraggedDisk = storageDisk.container;
@@ -602,6 +607,8 @@ export class MainSceneStorageController {
         height: diskHeight,
       };
 
+      this.setDiskDepth(storageDisk, false);
+
       handle.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         this.startRackSwipe(pointer, storageDisk);
       });
@@ -736,6 +743,15 @@ export class MainSceneStorageController {
     storageDisk.handle.setPosition(x, y);
   }
 
+  private setDiskDepth(storageDisk: StorageDiskInstance, isDragging: boolean) {
+    storageDisk.container.setDepth(
+      isDragging ? this.diskDraggingDepth : this.diskRestingDepth,
+    );
+    storageDisk.handle.setDepth(
+      isDragging ? this.diskHandleDraggingDepth : this.diskHandleRestingDepth,
+    );
+  }
+
   private prepareDiskForDrag(storageDisk: StorageDiskInstance) {
     this.scene.tweens.killTweensOf(storageDisk.container);
     this.scene.tweens.killTweensOf(storageDisk.handle);
@@ -842,6 +858,7 @@ export class MainSceneStorageController {
 
       if (this.activeDraggedDisk !== container) {
         this.setDiskPosition(storageDisk, nextPosition.x, nextPosition.y);
+        this.setDiskDepth(storageDisk, false);
         container.alpha = 1;
         container.setScale(1);
       }
@@ -1034,6 +1051,7 @@ export class MainSceneStorageController {
       this.setDriveHoverState(driveId, false, true);
       this.setDriveLampState(driveId, 0xc6543f, 0xff8d68, 0.24, 1.12);
       this.scene.cameras.main.shake(90, 0.003);
+      this.activeDraggedDisk = null;
       this.resetDiskPosition(storageDisk);
       this.scene.time.delayedCall(180, () =>
         this.refreshDriveIdleState(driveId),
@@ -1182,6 +1200,7 @@ export class MainSceneStorageController {
 
     if (!animate) {
       this.setDiskPosition(storageDisk, startX, startY);
+      this.setDiskDepth(storageDisk, false);
       storageDisk.container.setVisible(true);
       storageDisk.handle.setVisible(true);
       if (storageDisk.handle.input) storageDisk.handle.input.enabled = true;
@@ -1200,6 +1219,7 @@ export class MainSceneStorageController {
       duration: 140,
       ease: "Back.easeOut",
       onComplete: () => {
+        this.setDiskDepth(storageDisk, false);
         this.renderStorageRackItems();
       },
     });

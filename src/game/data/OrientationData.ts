@@ -74,7 +74,7 @@ export const ORIENTATION_STEPS: OrientationStepDefinition[] = [
       "Press INFERENCE to generate a response to the prompt using the mounted Agent and Skill.",
     reminder:
       "The Inference Button is idle. Press it to synthesize a response to the prompt.",
-    successMessage: "[NOTE: NO SUCCESS TEXT YET]",
+    successMessage: "Response sent. Training continues.",
   },
   {
     id: "thermal_basics",

@@ -33,6 +33,7 @@ export class MainMenuScene extends Phaser.Scene {
   private footerPrompt?: Phaser.GameObjects.Text;
   private startIndicator?: Phaser.GameObjects.Text;
   private startLabel?: Phaser.GameObjects.Text;
+  private menuHideTargets: Phaser.GameObjects.GameObject[] = [];
   private audioBusArmed = false;
   private audioBusArming = false;
   private beatPulse = 0;
@@ -65,6 +66,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.lastBeatIndex = -1;
     this.lastBarIndex = -1;
     this.transitionLocked = false;
+    this.menuHideTargets = [];
   }
 
   create() {
@@ -184,6 +186,7 @@ export class MainMenuScene extends Phaser.Scene {
       )
       .setOrigin(0)
       .setStrokeStyle(1, 0x33ff33, 0.24);
+    this.menuHideTargets.push(titleBlock);
     this.root.add(titleBlock);
 
     this.titleText = this.add
@@ -200,6 +203,7 @@ export class MainMenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     this.baseTitleY = this.titleText.y;
+    this.menuHideTargets.push(this.titleText);
     this.root.add(this.titleText);
 
     this.subtitleText = this.add
@@ -215,6 +219,7 @@ export class MainMenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     this.baseSubtitleY = this.subtitleText.y;
+    this.menuHideTargets.push(this.subtitleText);
     this.root.add(this.subtitleText);
 
     this.taglineText = this.add
@@ -230,6 +235,7 @@ export class MainMenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     this.baseTaglineY = this.taglineText.y;
+    this.menuHideTargets.push(this.taglineText);
     this.root.add(this.taglineText);
 
     this.commandContainer = this.add.container(
@@ -237,6 +243,7 @@ export class MainMenuScene extends Phaser.Scene {
       this.shell.contentY + 264,
     );
     this.baseCommandY = this.commandContainer.y;
+    this.menuHideTargets.push(this.commandContainer);
     this.root.add(this.commandContainer);
 
     this.actionHighlight = this.add
@@ -280,6 +287,7 @@ export class MainMenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     this.baseRouteY = this.routeText.y;
+    this.menuHideTargets.push(this.routeText);
     this.root.add(this.routeText);
 
     this.footerPrompt = this.add
@@ -293,6 +301,7 @@ export class MainMenuScene extends Phaser.Scene {
         }),
       )
       .setOrigin(0.5);
+    this.menuHideTargets.push(this.footerPrompt);
     this.root.add(this.footerPrompt);
   }
 
@@ -338,7 +347,15 @@ export class MainMenuScene extends Phaser.Scene {
         this.menuData.nextSceneKey === "MainScene"
           ? "TRAINING LINK ACCEPTED // ORIENTATION STAGED"
           : "OPERATOR LINK ACCEPTED // BRIEFING STAGED",
-      hideTargets: [this.root],
+      bounds: this.shell
+        ? {
+            x: this.shell.screenX,
+            y: this.shell.screenY,
+            width: this.shell.screenWidth,
+            height: this.shell.screenHeight,
+          }
+        : undefined,
+      hideTargets: this.menuHideTargets,
       onComplete: () => {
         this.scene.start(
           this.menuData.nextSceneKey,

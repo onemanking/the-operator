@@ -1,14 +1,18 @@
 export interface PlayerProfile {
   version: number;
   orientationCompleted: boolean;
+  audioEnabled: boolean;
+  reducedMotion: boolean;
 }
 
 const PROFILE_STORAGE_KEY = "prompt-please.player-profile";
-const PLAYER_PROFILE_VERSION = 1;
+const PLAYER_PROFILE_VERSION = 2;
 
 const DEFAULT_PLAYER_PROFILE: PlayerProfile = {
   version: PLAYER_PROFILE_VERSION,
   orientationCompleted: false,
+  audioEnabled: true,
+  reducedMotion: false,
 };
 
 export function createDefaultPlayerProfile(): PlayerProfile {
@@ -30,6 +34,8 @@ export function loadPlayerProfile(): PlayerProfile {
     return {
       version: PLAYER_PROFILE_VERSION,
       orientationCompleted: parsed.orientationCompleted === true,
+      audioEnabled: parsed.audioEnabled !== false,
+      reducedMotion: parsed.reducedMotion === true,
     };
   } catch {
     return createDefaultPlayerProfile();
@@ -46,6 +52,8 @@ export function savePlayerProfile(profile: PlayerProfile) {
     JSON.stringify({
       version: PLAYER_PROFILE_VERSION,
       orientationCompleted: profile.orientationCompleted,
+      audioEnabled: profile.audioEnabled,
+      reducedMotion: profile.reducedMotion,
     }),
   );
 }

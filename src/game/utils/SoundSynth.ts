@@ -1,3 +1,24 @@
+interface MenuMusicTransport {
+  bpm: number;
+  beatDurationMs: number;
+  startedAtMs: number;
+  audioStartTime: number;
+  nextStepTime: number;
+  stepIndex: number;
+  schedulerId: number | null;
+}
+
+export interface MenuMusicState {
+  active: boolean;
+  armed: boolean;
+  enabled: boolean;
+  bpm: number;
+  beatIndex: number;
+  beatPhase: number;
+  barIndex: number;
+  barPhase: number;
+}
+
 export type TypewriterSoundProfile =
   | "default"
   | "soft"
@@ -7,15 +28,36 @@ export type TypewriterSoundProfile =
 
 export class SoundSynth {
   private ctx: AudioContext | null = null;
+  private sfxBus: GainNode | null = null;
+  private musicBus: GainNode | null = null;
+  private menuTransport: MenuMusicTransport | null = null;
+  private menuMusicEnabled: boolean = true;
+  private readonly menuMusicBpm = 90;
+  private readonly menuMusicGain = 1;
 
   constructor() {
     try {
       this.ctx = new (
         window.AudioContext || (window as any).webkitAudioContext
       )();
+      this.initializeBuses();
     } catch (e) {
       console.warn("Web Audio API not supported");
     }
+  }
+
+  private initializeBuses() {
+    if (!this.ctx || this.sfxBus || this.musicBus) {
+      return;
+    }
+
+    this.sfxBus = this.ctx.createGain();
+    this.sfxBus.gain.setValueAtTime(1, this.ctx.currentTime);
+    this.sfxBus.connect(this.ctx.destination);
+
+    this.musicBus = this.ctx.createGain();
+    this.musicBus.gain.setValueAtTime(this.menuMusicGain, this.ctx.currentTime);
+    this.musicBus.connect(this.ctx.destination);
   }
 
   private ensureContext() {
@@ -24,6 +66,248 @@ export class SoundSynth {
       void this.ctx.resume().catch(() => undefined);
     }
     return true;
+  }
+
+  private getSfxBus() {
+    this.initializeBuses();
+    return this.sfxBus ?? this.ctx?.destination ?? null;
+  }
+
+  private getMusicBus() {
+    this.initializeBuses();
+    return this.musicBus;
+  }
+
+  async resumeAudio() {
+    if (!this.ctx) {
+      return false;
+    }
+
+    try {
+      await this.ctx.resume();
+      return this.ctx.state === "running";
+    } catch {
+      return false;
+    }
+  }
+
+  isAudioReady() {
+    return this.ctx?.state === "running";
+  }
+
+  setMenuMusicEnabled(enabled: boolean) {
+    this.menuMusicEnabled = enabled;
+
+    if (!enabled) {
+      this.stopMenuMusic();
+      return;
+    }
+
+    if (this.isAudioReady()) {
+      this.startMenuMusic();
+    }
+  }
+
+  startMenuMusic() {
+    if (!this.ctx || !this.menuMusicEnabled || !this.isAudioReady()) {
+      return false;
+    }
+
+    if (this.menuTransport) {
+      return true;
+    }
+
+    const startTime = this.ctx.currentTime + 0.08;
+    const beatDurationSeconds = 60 / this.menuMusicBpm;
+    this.menuTransport = {
+      bpm: this.menuMusicBpm,
+      beatDurationMs: beatDurationSeconds * 1000,
+      startedAtMs: performance.now() + 80,
+      audioStartTime: startTime,
+      nextStepTime: startTime,
+      stepIndex: 0,
+      schedulerId: null,
+    };
+
+    const musicBus = this.getMusicBus();
+    if (musicBus && this.ctx) {
+      musicBus.gain.cancelScheduledValues(this.ctx.currentTime);
+      musicBus.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+      musicBus.gain.exponentialRampToValueAtTime(
+        this.menuMusicGain,
+        this.ctx.currentTime + 0.18,
+      );
+    }
+
+    this.scheduleMenuMusicWindow();
+    this.menuTransport.schedulerId = window.setInterval(() => {
+      this.scheduleMenuMusicWindow();
+    }, 40);
+
+    return true;
+  }
+
+  stopMenuMusic() {
+    if (this.menuTransport?.schedulerId) {
+      window.clearInterval(this.menuTransport.schedulerId);
+    }
+
+    this.menuTransport = null;
+
+    if (this.musicBus && this.ctx) {
+      this.musicBus.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.musicBus.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.03);
+    }
+  }
+
+  getMenuMusicState(): MenuMusicState {
+    if (!this.menuTransport) {
+      return {
+        active: false,
+        armed: this.isAudioReady(),
+        enabled: this.menuMusicEnabled,
+        bpm: this.menuMusicBpm,
+        beatIndex: 0,
+        beatPhase: 0,
+        barIndex: 0,
+        barPhase: 0,
+      };
+    }
+
+    const elapsedMs = Math.max(
+      0,
+      performance.now() - this.menuTransport.startedAtMs,
+    );
+    const beatFloat = elapsedMs / this.menuTransport.beatDurationMs;
+    const beatIndex = Math.floor(beatFloat);
+    const barFloat = beatFloat / 4;
+
+    return {
+      active: true,
+      armed: this.isAudioReady(),
+      enabled: this.menuMusicEnabled,
+      bpm: this.menuTransport.bpm,
+      beatIndex,
+      beatPhase: beatFloat - beatIndex,
+      barIndex: Math.floor(barFloat),
+      barPhase: barFloat - Math.floor(barFloat),
+    };
+  }
+
+  private scheduleMenuMusicWindow() {
+    if (!this.ctx || !this.menuTransport) {
+      return;
+    }
+
+    const scheduleAheadTime = 0.18;
+    while (
+      this.menuTransport.nextStepTime <
+      this.ctx.currentTime + scheduleAheadTime
+    ) {
+      this.scheduleMenuStep(
+        this.menuTransport.stepIndex,
+        this.menuTransport.nextStepTime,
+      );
+      this.menuTransport.stepIndex += 1;
+      this.menuTransport.nextStepTime += 60 / this.menuTransport.bpm / 2;
+    }
+  }
+
+  private scheduleMenuStep(stepIndex: number, startTime: number) {
+    const step = stepIndex % 16;
+    const strongBeat = step === 0 || step === 4 || step === 8 || step === 12;
+    const heavyBeat = step === 0 || step === 8;
+    const musicBus = this.getMusicBus();
+
+    if (!this.ctx || !musicBus) {
+      return;
+    }
+
+    if (strongBeat) {
+      this.scheduleTone({
+        frequency: heavyBeat ? 56 : 68,
+        type: "sine",
+        startTime,
+        duration: heavyBeat ? 0.22 : 0.12,
+        volume: heavyBeat ? 0.39 : 0.165,
+        output: musicBus,
+      });
+      this.scheduleTone({
+        frequency: heavyBeat ? 112 : 136,
+        type: "triangle",
+        startTime,
+        duration: 0.05,
+        volume: heavyBeat ? 0.135 : 0.066,
+        output: musicBus,
+      });
+    }
+
+    this.scheduleTone({
+      frequency: step % 2 === 0 ? 1240 : 980,
+      type: "square",
+      startTime: startTime + 0.014,
+      duration: 0.016,
+      volume: step % 2 === 0 ? 0.036 : 0.021,
+      output: musicBus,
+    });
+
+    const motifByStep: Record<number, number> = {
+      2: 52,
+      6: 55,
+      10: 59,
+      14: 57,
+    };
+    const note = motifByStep[step];
+    if (note !== undefined) {
+      this.scheduleTone({
+        frequency: 440 * Math.pow(2, (note - 69) / 12),
+        type: "square",
+        startTime: startTime + 0.03,
+        duration: 0.14,
+        volume: 0.06,
+        output: musicBus,
+      });
+      this.scheduleTone({
+        frequency: 440 * Math.pow(2, (note - 57) / 12),
+        type: "triangle",
+        startTime: startTime + 0.03,
+        duration: 0.18,
+        volume: 0.03,
+        output: musicBus,
+      });
+    }
+  }
+
+  private scheduleTone({
+    frequency,
+    type,
+    startTime,
+    duration,
+    volume,
+    output,
+  }: {
+    frequency: number;
+    type: OscillatorType;
+    startTime: number;
+    duration: number;
+    volume: number;
+    output: AudioNode;
+  }) {
+    if (!this.ctx) {
+      return;
+    }
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, startTime);
+    gain.gain.setValueAtTime(Math.max(0.0001, volume), startTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.02);
   }
 
   playBeep(
@@ -47,7 +331,7 @@ export class SoundSynth {
     );
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getSfxBus() ?? this.ctx.destination);
 
     osc.start();
     osc.stop(this.ctx.currentTime + duration);
@@ -88,6 +372,18 @@ export class SoundSynth {
   }
 
   playButtonPress() {
+    if (this.musicBus && this.ctx && this.menuTransport) {
+      this.musicBus.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.musicBus.gain.setValueAtTime(
+        this.menuMusicGain * 0.7,
+        this.ctx.currentTime,
+      );
+      this.musicBus.gain.linearRampToValueAtTime(
+        this.menuMusicGain,
+        this.ctx.currentTime + 0.12,
+      );
+    }
+
     this.playBeep(300, "square", 0.1, 0.1);
   }
 

@@ -37,13 +37,14 @@ export const ORIENTATION_STEPS: OrientationStepDefinition[] = [
   {
     id: "welcome",
     objective:
-      "Press INFERENCE to acknowledge the training handshake and enter the onboarding simulation.",
+      "Press [INFERENCE] to proceed with training, or [REFUSE] to bypass with full liability.",
     instruction:
-      "Press INFERENCE to acknowledge the training handshake and enter the onboarding simulation.",
+      "Press [INFERENCE] to proceed with training, or [REFUSE] to bypass with full liability.",
     reminder:
-      "Training handshake pending. Press INFERENCE to begin the onboarding simulation.",
-    successMessage:
-      "Handshake accepted. Loading guided workstation onboarding now.",
+      "Awaiting operation input. Press [INFERENCE] for training or [REFUSE] to skip.",
+    successMessage: "Handshake established. Continuing to training.",
+    refuseMessage:
+      "Training bypassed. Loading live operational shift at operator's own risk.",
   },
   {
     id: "read_prompt",
@@ -328,6 +329,7 @@ export function createOrientationEncounters(): EncounterDefinition[] {
           promptSenderLabel: ORIENTATION_PROMPT_SENDER_LABEL,
           patienceMs: ORIENTATION_TUTORIAL_PATIENCE_MS,
           allowTimeout: false,
+          refuseSuccess: true,
           requirements: {
             agentIds: [],
             skillIds: [],

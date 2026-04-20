@@ -4,6 +4,7 @@ import {
 } from "../data/ContentPolicyData";
 import { PassiveUpgradeId } from "../data/UpgradeData";
 import { EncounterDefinition } from "../data/SessionData";
+import { PlayerProfile } from "../profile/profileStorage";
 import {
   AgentId,
   SkillId,
@@ -123,6 +124,12 @@ export interface RunState {
 }
 
 export type ShiftSceneData = Partial<RunState>;
+
+export interface MainMenuSceneData {
+  nextSceneKey: "BriefingScene" | "MainScene";
+  nextSceneData: ShiftSceneData;
+  playerProfile: PlayerProfile;
+}
 
 function cloneEncounterDefinitions(
   encounters: EncounterDefinition[],

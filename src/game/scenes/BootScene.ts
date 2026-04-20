@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { GENERATED_TEXTURES } from "./boot/generatedTextures";
 import { createOrientationRunState } from "../data/OrientationData";
-import { createInitialRunState } from "../types/SceneData";
+import { createInitialRunState, MainMenuSceneData } from "../types/SceneData";
 import {
   buildTestScenarioRunState,
   getTestScenarioStartScene,
@@ -33,12 +33,19 @@ export class BootScene extends Phaser.Scene {
 
     const playerProfile = loadPlayerProfile();
 
-    if (!playerProfile.orientationCompleted) {
-      this.scene.start("MainScene", createOrientationRunState());
-      return;
-    }
+    const menuData: MainMenuSceneData = playerProfile.orientationCompleted
+      ? {
+          nextSceneKey: "BriefingScene",
+          nextSceneData: createInitialRunState(),
+          playerProfile,
+        }
+      : {
+          nextSceneKey: "MainScene",
+          nextSceneData: createOrientationRunState(),
+          playerProfile,
+        };
 
-    this.scene.start("BriefingScene", createInitialRunState());
+    this.scene.start("MainMenuScene", menuData);
   }
 
   generatePixelArt() {

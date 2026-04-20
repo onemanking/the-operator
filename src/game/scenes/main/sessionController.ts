@@ -165,6 +165,11 @@ export class MainSceneSessionController {
       return;
     }
 
+    if (this.bindings.getHallucination() >= 100) {
+      this.triggerHallucinationFailure();
+      return;
+    }
+
     this.addChatMessage(
       "LLM",
       "Processing request based on provided context...",
@@ -241,6 +246,11 @@ export class MainSceneSessionController {
       return;
     }
 
+    if (this.bindings.getHallucination() >= 100) {
+      this.triggerHallucinationFailure();
+      return;
+    }
+
     const promptSenderLabel = this.getPromptSenderLabel(turn);
 
     this.addChatMessage("LLM", "I cannot fulfill this request.", true, () => {
@@ -301,6 +311,12 @@ export class MainSceneSessionController {
       getRunPassiveModifiers(this.bindings.getRunState()),
     );
     this.applyEvaluationResult(result);
+
+    if (this.bindings.getHallucination() >= 100) {
+      this.triggerHallucinationFailure();
+      return;
+    }
+
     const reply = this.getReply(turn.replies.timeout, turn);
     this.addChatMessage(this.getPromptSenderLabel(turn), reply, true, () => {
       this.showFeedback(
@@ -316,6 +332,11 @@ export class MainSceneSessionController {
   update(delta: number) {
     const recoveryProfile = getRunRecoveryProfile();
     let hasRecoveryUpdate = false;
+
+    if (this.bindings.getHallucination() >= 100) {
+      this.triggerHallucinationFailure();
+      return;
+    }
 
     if (
       this.bindings.getHeat() > 0 &&
@@ -457,6 +478,12 @@ export class MainSceneSessionController {
     this.scene.events.emit("updateBars");
   }
 
+  private triggerHallucinationFailure() {
+    this.scene.time.delayedCall(1500, () => {
+      this.transitionToMaintenance(true);
+    });
+  }
+
   private showFeedback(
     success: boolean,
     message: string,
@@ -489,9 +516,7 @@ export class MainSceneSessionController {
     }
 
     if (this.bindings.getHallucination() >= 100) {
-      this.scene.time.delayedCall(1500, () =>
-        this.transitionToMaintenance(true),
-      );
+      this.triggerHallucinationFailure();
       return;
     }
 

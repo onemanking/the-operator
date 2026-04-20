@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { BriefingScene } from "./scenes/BriefingScene";
+import { MainMenuScene } from "./scenes/MainMenuScene";
 import { MainScene } from "./scenes/MainScene";
 import { MaintenanceScene } from "./scenes/MaintenanceScene";
 import { MaintenanceArchiveScene } from "./scenes/maintenance/MaintenanceArchiveScene";
@@ -19,6 +20,7 @@ export const initGame = (parent: HTMLElement) => {
     pixelArt: true,
     scene: [
       BootScene,
+      MainMenuScene,
       BriefingScene,
       MainScene,
       MaintenanceScene,

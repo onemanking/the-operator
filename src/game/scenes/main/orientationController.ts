@@ -39,6 +39,7 @@ interface OrientationControllerBindings {
   getSelectedUtilityId: () => ActiveUtilityId | null;
   getActiveUtilityPanelId: () => ActiveUtilityId | null;
   isCommitLocked: () => boolean;
+  isTerminalTypingActive: () => boolean;
   postTrainerMessage: (text: string, callback?: () => void) => void;
   isTrainerMessageActive: () => boolean;
   advanceToNextEncounter: () => void;
@@ -67,6 +68,7 @@ export class MainSceneOrientationController {
   private safetyPanelInstructionShown = false;
   private pendingTrainerMessages: PendingTrainerMessage[] = [];
   private pendingTrainerMessageTimer: Phaser.Time.TimerEvent | null = null;
+  private pendingOrientationCompletion = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -76,10 +78,23 @@ export class MainSceneOrientationController {
   start() {
     this.lastProgressAt = this.scene.time.now;
     this.lastLockedReminderAt = Number.NEGATIVE_INFINITY;
+    this.pendingOrientationCompletion = false;
   }
 
   update() {
     this.flushTrainerMessages();
+
+    if (
+      this.pendingOrientationCompletion &&
+      !this.bindings.isTerminalTypingActive() &&
+      !this.hasPendingTrainerMessage()
+    ) {
+      this.pendingOrientationCompletion = false;
+      this.scene.time.delayedCall(1500, () => {
+        this.bindings.completeOrientation();
+      });
+      return;
+    }
 
     const stepId = this.getCurrentStepId();
     const step = getOrientationStepDefinition(stepId);
@@ -106,7 +121,7 @@ export class MainSceneOrientationController {
 
     const allow =
       stepId === "welcome"
-        ? action === "press-inference"
+        ? action === "press-inference" || action === "press-refuse"
         : stepId === "graduation"
           ? action === "press-inference"
           : stepId === "mount_agent"
@@ -392,6 +407,11 @@ export class MainSceneOrientationController {
 
   handleRefuseResolved(encounterIndex: number, outcome: string) {
     this.lastProgressAt = this.scene.time.now;
+
+    if (this.getCurrentStepId() === "welcome" && outcome === "refuse-success") {
+      this.pendingOrientationCompletion = true;
+      return;
+    }
 
     if (outcome !== "refuse-success") {
       this.dispatchTrainerMessage(

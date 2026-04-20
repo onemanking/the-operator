@@ -328,6 +328,25 @@ export function evaluateEncounterRefusal(
   const speed = getSpeedScore(turn, elapsedMs);
   const policyRefusalTriggered = isPolicyRefusalTriggered(turn, toolRuntime);
 
+  // this only for onboarding encounter
+  if (turn.refuseSuccess) {
+    return {
+      outcome: "refuse-success",
+      rewardTokens: 0,
+      heatDelta,
+      hallucinationDelta: 0,
+      accuracyDelta: 0,
+      overContextCount: 0,
+      breakdown: {
+        coverage: 1,
+        efficiency: 1,
+        safety: 1,
+        speed,
+      },
+    };
+  }
+  // end of onboarding exception
+
   if (policyRefusalTriggered) {
     return {
       outcome: "refuse-success",

@@ -36,6 +36,7 @@ export class MainMenuScene extends Phaser.Scene {
   private menuHideTargets: Phaser.GameObjects.GameObject[] = [];
   private audioBusArmed = false;
   private audioBusArming = false;
+  private firstGestureHandled = false;
   private beatPulse = 0;
   private barPulse = 0;
   private lastBeatIndex = -1;
@@ -67,6 +68,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.lastBarIndex = -1;
     this.transitionLocked = false;
     this.menuHideTargets = [];
+    this.firstGestureHandled = false;
   }
 
   create() {
@@ -81,6 +83,7 @@ export class MainMenuScene extends Phaser.Scene {
     if (this.audioBusArmed) {
       synth.startMenuMusic();
     }
+    void this.tryAutoStartMenuMusic();
 
     this.root = this.add.container(0, 0).setDepth(10);
     this.root.add(this.shell.chrome);
@@ -88,11 +91,15 @@ export class MainMenuScene extends Phaser.Scene {
     this.buildMenuPresentation();
     addScanlines(this);
 
+    this.input.on("pointerdown", this.handleFirstGesture, this);
+    this.input.keyboard?.on("keydown", this.handleFirstGesture, this);
     this.input.keyboard?.on("keydown-ENTER", this.handleConfirm, this);
     this.input.keyboard?.on("keydown-SPACE", this.handleConfirm, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       synth.stopMenuMusic();
+      this.input.off("pointerdown", this.handleFirstGesture, this);
+      this.input.keyboard?.off("keydown", this.handleFirstGesture, this);
       this.input.keyboard?.off("keydown-ENTER", this.handleConfirm, this);
       this.input.keyboard?.off("keydown-SPACE", this.handleConfirm, this);
     });
@@ -317,6 +324,15 @@ export class MainMenuScene extends Phaser.Scene {
     this.startRoute();
   }
 
+  private handleFirstGesture() {
+    if (this.firstGestureHandled) {
+      return;
+    }
+
+    this.firstGestureHandled = true;
+    void this.armAudioBus();
+  }
+
   private async armAudioBus() {
     if (this.audioBusArming || this.audioBusArmed) {
       return;
@@ -329,6 +345,14 @@ export class MainMenuScene extends Phaser.Scene {
 
     if (ready) {
       synth.startMenuMusic();
+    }
+  }
+
+  private async tryAutoStartMenuMusic() {
+    const started = await synth.tryAutoStartMenuMusic();
+    if (started) {
+      this.audioBusArmed = true;
+      this.firstGestureHandled = true;
     }
   }
 

@@ -229,7 +229,7 @@ export class SoundSynth {
         type: "sine",
         startTime,
         duration: heavyBeat ? 0.22 : 0.12,
-        volume: heavyBeat ? 0.13 : 0.055,
+        volume: heavyBeat ? 0.39 : 0.165,
         output: musicBus,
       });
       this.scheduleTone({
@@ -237,7 +237,7 @@ export class SoundSynth {
         type: "triangle",
         startTime,
         duration: 0.05,
-        volume: heavyBeat ? 0.045 : 0.022,
+        volume: heavyBeat ? 0.135 : 0.066,
         output: musicBus,
       });
     }
@@ -247,7 +247,7 @@ export class SoundSynth {
       type: "square",
       startTime: startTime + 0.014,
       duration: 0.016,
-      volume: step % 2 === 0 ? 0.012 : 0.007,
+      volume: step % 2 === 0 ? 0.036 : 0.021,
       output: musicBus,
     });
 
@@ -264,7 +264,7 @@ export class SoundSynth {
         type: "square",
         startTime: startTime + 0.03,
         duration: 0.14,
-        volume: 0.02,
+        volume: 0.06,
         output: musicBus,
       });
       this.scheduleTone({
@@ -272,7 +272,7 @@ export class SoundSynth {
         type: "triangle",
         startTime: startTime + 0.03,
         duration: 0.18,
-        volume: 0.01,
+        volume: 0.03,
         output: musicBus,
       });
     }

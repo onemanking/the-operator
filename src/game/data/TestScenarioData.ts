@@ -144,7 +144,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     day: 3,
-    tokens: 140,
+    tokens: 1000,
     accuracy: 93,
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
     passiveUpgradeIds: ["cooling_fins"],

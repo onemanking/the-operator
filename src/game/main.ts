@@ -3,6 +3,10 @@ import { BootScene } from "./scenes/BootScene";
 import { BriefingScene } from "./scenes/BriefingScene";
 import { MainScene } from "./scenes/MainScene";
 import { MaintenanceScene } from "./scenes/MaintenanceScene";
+import { MaintenanceArchiveScene } from "./scenes/maintenance/MaintenanceArchiveScene";
+import { MaintenanceFailureScene } from "./scenes/maintenance/MaintenanceFailureScene";
+import { MaintenanceRunCompleteScene } from "./scenes/maintenance/MaintenanceRunCompleteScene";
+import { MaintenanceShiftScene } from "./scenes/maintenance/MaintenanceShiftScene";
 import { GAME_CANVAS_HEIGHT, GAME_CANVAS_WIDTH } from "./layout";
 
 export const initGame = (parent: HTMLElement) => {
@@ -13,7 +17,16 @@ export const initGame = (parent: HTMLElement) => {
     height: GAME_CANVAS_HEIGHT,
     backgroundColor: "#050505",
     pixelArt: true,
-    scene: [BootScene, BriefingScene, MainScene, MaintenanceScene],
+    scene: [
+      BootScene,
+      BriefingScene,
+      MainScene,
+      MaintenanceScene,
+      MaintenanceShiftScene,
+      MaintenanceFailureScene,
+      MaintenanceRunCompleteScene,
+      MaintenanceArchiveScene,
+    ],
     physics: {
       default: "arcade",
       arcade: {

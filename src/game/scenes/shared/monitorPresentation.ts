@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { synth } from "../../utils/SoundSynth";
+import { synth, type TypewriterSoundProfile } from "../../utils/SoundSynth";
 import { createRetroTextStyle } from "./retroUi";
 
 export const MONITOR_COLORS = {
@@ -32,15 +32,24 @@ export interface TypedTextStep {
   speedMs?: number;
   pauseAfterMs?: number;
   playSound?: boolean;
+  soundProfile?: TypewriterSoundProfile;
   color?: string;
   append?: boolean;
 }
 
 export interface MonitorShell {
+  screenX: number;
+  screenY: number;
+  screenWidth: number;
+  screenHeight: number;
   contentX: number;
   contentY: number;
   contentWidth: number;
   contentHeight: number;
+  titleText: Phaser.GameObjects.Text;
+  subtitleText: Phaser.GameObjects.Text;
+  footerLeftText: Phaser.GameObjects.Text;
+  footerRightText: Phaser.GameObjects.Text;
   chrome: Phaser.GameObjects.GameObject[];
 }
 
@@ -78,10 +87,57 @@ interface MonitorCommandButtonTheme {
   hoverCursorColor: number;
 }
 
+interface MonitorFeedSectionConfig {
+  label: string;
+  text: string;
+  labelStyle?: Phaser.Types.GameObjects.Text.TextStyle;
+  bodyStyle?: Phaser.Types.GameObjects.Text.TextStyle;
+  reveal?: RevealMode;
+  speedMs?: number;
+  pauseAfterMs?: number;
+  playSound?: boolean;
+  soundProfile?: TypewriterSoundProfile;
+  color?: string;
+  gapBefore?: number;
+  gapAfter?: number;
+}
+
+interface MonitorFeedConfig {
+  headerText?: string;
+  headerStyle?: Phaser.Types.GameObjects.Text.TextStyle;
+  headerGap?: number;
+  sections: MonitorFeedSectionConfig[];
+}
+
+interface MonitorFeedSection {
+  label: Phaser.GameObjects.Text;
+  body: Phaser.GameObjects.Text;
+  config: MonitorFeedSectionConfig;
+}
+
+export interface MonitorFeedLayout {
+  headerText?: Phaser.GameObjects.Text;
+  sections: MonitorFeedSection[];
+  steps: TypedTextStep[];
+  textTargets: Phaser.GameObjects.Text[];
+  bottomY: number;
+}
+
 interface MonitorSceneTransitionConfig {
   variant: "dispatch" | "reboot";
   statusText: string;
   onComplete: () => void;
+  color?: string;
+  bounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  hideTargets?: Phaser.GameObjects.GameObject[];
+  delayMs?: number;
+  speedMs?: number;
+  holdMs?: number;
 }
 
 function tokenizeText(text: string, reveal: RevealMode) {
@@ -175,30 +231,28 @@ export function createMonitorShell(
   chrome.push(grid);
 
   const titleY = screenY + 18;
-  chrome.push(
-    scene.add
-      .text(
-        screenX + 22,
-        titleY,
-        options.title ?? "SYSTEM MONITOR",
-        createMonitorTextStyle({ fontSize: "18px", fontStyle: "bold" }),
-      )
-      .setOrigin(0, 0),
-  );
+  const titleText = scene.add
+    .text(
+      screenX + 22,
+      titleY,
+      options.title ?? "SYSTEM MONITOR",
+      createMonitorTextStyle({ fontSize: "18px", fontStyle: "bold" }),
+    )
+    .setOrigin(0, 0);
+  chrome.push(titleText);
 
-  chrome.push(
-    scene.add
-      .text(
-        screenX + screenWidth - 22,
-        titleY,
-        options.subtitle ?? "LINK STABLE",
-        createMonitorTextStyle({
-          fontSize: "16px",
-          color: MONITOR_COLORS.dimText,
-        }),
-      )
-      .setOrigin(1, 0),
-  );
+  const subtitleText = scene.add
+    .text(
+      screenX + screenWidth - 22,
+      titleY,
+      options.subtitle ?? "LINK STABLE",
+      createMonitorTextStyle({
+        fontSize: "16px",
+        color: MONITOR_COLORS.dimText,
+      }),
+    )
+    .setOrigin(1, 0);
+  chrome.push(subtitleText);
 
   chrome.push(
     scene.add
@@ -226,40 +280,136 @@ export function createMonitorShell(
       .setOrigin(0, 0.5),
   );
 
-  chrome.push(
-    scene.add
-      .text(
-        screenX + 22,
-        screenY + screenHeight - 30,
-        options.footerLeft ?? "CHANNEL: OPERATOR//CRT",
-        createMonitorTextStyle({
-          fontSize: "15px",
-          color: MONITOR_COLORS.dimText,
-        }),
-      )
-      .setOrigin(0, 0.5),
-  );
+  const footerLeftText = scene.add
+    .text(
+      screenX + 22,
+      screenY + screenHeight - 30,
+      options.footerLeft ?? "CHANNEL: OPERATOR//CRT",
+      createMonitorTextStyle({
+        fontSize: "15px",
+        color: MONITOR_COLORS.dimText,
+      }),
+    )
+    .setOrigin(0, 0.5);
+  chrome.push(footerLeftText);
 
-  chrome.push(
-    scene.add
-      .text(
-        screenX + screenWidth - 22,
-        screenY + screenHeight - 30,
-        options.footerRight ?? "INPUT: ENTER / SPACE",
-        createMonitorTextStyle({
-          fontSize: "15px",
-          color: MONITOR_COLORS.dimText,
-        }),
-      )
-      .setOrigin(1, 0.5),
-  );
+  const footerRightText = scene.add
+    .text(
+      screenX + screenWidth - 22,
+      screenY + screenHeight - 30,
+      options.footerRight ?? "INPUT: ENTER / SPACE",
+      createMonitorTextStyle({
+        fontSize: "15px",
+        color: MONITOR_COLORS.dimText,
+      }),
+    )
+    .setOrigin(1, 0.5);
+  chrome.push(footerRightText);
 
   return {
+    screenX,
+    screenY,
+    screenWidth,
+    screenHeight,
     contentX: screenX + 22,
     contentY: screenY + 66,
     contentWidth: screenWidth - 44,
     contentHeight: screenHeight - 114,
+    titleText,
+    subtitleText,
+    footerLeftText,
+    footerRightText,
     chrome,
+  };
+}
+
+export function createMonitorFeed(
+  scene: Phaser.Scene,
+  shell: MonitorShell,
+  config: MonitorFeedConfig,
+): MonitorFeedLayout {
+  const textTargets: Phaser.GameObjects.Text[] = [];
+  const sections: MonitorFeedSection[] = [];
+  const steps: TypedTextStep[] = [];
+  let currentY = shell.contentY;
+
+  let headerText: Phaser.GameObjects.Text | undefined;
+  if (config.headerText) {
+    headerText = scene.add
+      .text(
+        shell.contentX,
+        currentY,
+        config.headerText,
+        createMonitorTextStyle({
+          fontSize: "18px",
+          color: MONITOR_COLORS.dimText,
+          ...(config.headerStyle ?? {}),
+        }),
+      )
+      .setOrigin(0, 0);
+    textTargets.push(headerText);
+    currentY = headerText.y + headerText.height + (config.headerGap ?? 28);
+  }
+
+  config.sections.forEach((sectionConfig, index) => {
+    const gapBefore = sectionConfig.gapBefore ?? (index === 0 ? 0 : 26);
+    currentY += gapBefore;
+
+    const label = scene.add
+      .text(
+        shell.contentX,
+        currentY,
+        sectionConfig.label,
+        createMonitorTextStyle({
+          fontSize: "18px",
+          fontStyle: "bold",
+          color: MONITOR_COLORS.text,
+          ...(sectionConfig.labelStyle ?? {}),
+        }),
+      )
+      .setOrigin(0, 0);
+
+    const body = scene.add
+      .text(
+        shell.contentX,
+        label.y + label.height + 10,
+        "",
+        createMonitorTextStyle({
+          fontSize: "20px",
+          color: sectionConfig.color ?? MONITOR_COLORS.text,
+          wordWrap: { width: shell.contentWidth },
+          lineSpacing: 6,
+          ...(sectionConfig.bodyStyle ?? {}),
+        }),
+      )
+      .setOrigin(0, 0);
+
+    body.setText(sectionConfig.text);
+    const bodyHeight = body.height;
+    body.setText("");
+
+    sections.push({ label, body, config: sectionConfig });
+    textTargets.push(label, body);
+    steps.push({
+      target: body,
+      text: sectionConfig.text,
+      reveal: sectionConfig.reveal ?? "char",
+      speedMs: sectionConfig.speedMs,
+      pauseAfterMs: sectionConfig.pauseAfterMs,
+      playSound: sectionConfig.playSound ?? true,
+      soundProfile: sectionConfig.soundProfile,
+      color: sectionConfig.color,
+    });
+
+    currentY = body.y + bodyHeight + (sectionConfig.gapAfter ?? 0);
+  });
+
+  return {
+    headerText,
+    sections,
+    steps,
+    textTargets,
+    bottomY: currentY,
   };
 }
 
@@ -484,7 +634,7 @@ export class MonitorSequenceController {
           step.append ? `${step.target.text}${step.text}` : step.text,
         );
         if (step.playSound && isAudibleToken(step.text)) {
-          synth.playTypewriter();
+          synth.playTypewriter(step.soundProfile);
         }
         this.scheduleNext(index, step.pauseAfterMs ?? 0);
         return;
@@ -500,7 +650,7 @@ export class MonitorSequenceController {
           builtText += token;
           step.target.setText(builtText);
           if (step.playSound && isAudibleToken(token)) {
-            synth.playTypewriter();
+            synth.playTypewriter(step.soundProfile);
           }
           tokenIndex += 1;
           if (tokenIndex === tokens.length) {
@@ -555,135 +705,91 @@ export function playMonitorSceneTransition(
   config: MonitorSceneTransitionConfig,
 ) {
   const { width, height } = scene.cameras.main;
-  const isFineTuneTransition = config.statusText.includes("FINE-TUNE");
+  const bounds = config.bounds ?? { x: 0, y: 0, width, height };
+  const color =
+    config.color ??
+    (config.variant === "dispatch"
+      ? MONITOR_COLORS.text
+      : config.statusText.includes("FAIL") ||
+          config.statusText.includes("FINE-TUNE")
+        ? MONITOR_COLORS.dangerText
+        : MONITOR_COLORS.warningText);
   const overlay = scene.add.container(0, 0).setDepth(5000);
-  const blackout = scene.add
-    .rectangle(0, 0, width, height, 0x010401, 0)
-    .setOrigin(0);
-
-  if (isFineTuneTransition) {
-    const status = scene.add
-      .text(
-        54,
-        height - 104,
-        `> ${config.statusText}`,
-        createMonitorTextStyle({
-          fontSize: "22px",
-          color: MONITOR_COLORS.dangerText,
-        }),
-      )
-      .setOrigin(0, 0.5)
-      .setAlpha(0);
-    const cursor = scene.add
-      .rectangle(54, height - 62, 14, 22, 0xff0000, 0)
-      .setOrigin(0, 0.5);
-
-    overlay.add([blackout, status, cursor]);
-
-    scene.tweens.add({ targets: blackout, alpha: 1, duration: 120 });
-    scene.tweens.add({
-      targets: status,
-      alpha: 1,
-      duration: 110,
-      delay: 220,
-    });
-    scene.tweens.add({
-      targets: cursor,
-      alpha: { from: 0.18, to: 0.92 },
-      duration: 420,
-      delay: 300,
-      yoyo: true,
-      repeat: 1,
-    });
-    scene.cameras.main.shake(120, 0.0012, true);
-
-    scene.time.delayedCall(1800, () => {
-      config.onComplete();
-    });
-    return;
-  }
-
-  const tintColor =
-    config.variant === "dispatch"
-      ? 0x33ff33
-      : config.statusText.includes("FAIL")
-          ? 0xff0000
-        : 0xffb347;
-  const sweep = scene.add
+  const maskBandY = bounds.y + 62;
+  const maskBandHeight = Math.min(104, bounds.height - 108);
+  const maskBand = scene.add
     .rectangle(
-      0,
-      config.variant === "dispatch" ? 0 : height / 2,
-      width,
-      config.variant === "dispatch" ? 0 : 4,
-      tintColor,
-      config.variant === "dispatch" ? 0.22 : 0.88,
+      bounds.x + 16,
+      maskBandY,
+      bounds.width - 32,
+      maskBandHeight,
+      0x010401,
+      0.96,
     )
-    .setOrigin(0, config.variant === "dispatch" ? 0 : 0.5);
+    .setOrigin(0);
+  const maskLine = scene.add
+    .rectangle(
+      bounds.x + 16,
+      maskBandY + maskBandHeight,
+      bounds.width - 32,
+      1,
+      0x33ff33,
+      0.16,
+    )
+    .setOrigin(0, 0.5);
   const status = scene.add
     .text(
-      54,
-      height - 66,
-      `> ${config.statusText}`,
+      bounds.x + 28,
+      maskBandY + 18,
+      "",
       createMonitorTextStyle({
-        fontSize: "20px",
-        color:
-          config.variant === "dispatch"
-            ? MONITOR_COLORS.text
-            : config.statusText.includes("FAIL")
-              ? MONITOR_COLORS.dangerText
-              : MONITOR_COLORS.warningText,
+        fontSize: "22px",
+        color,
+        wordWrap: { width: bounds.width - 56 },
       }),
     )
-    .setOrigin(0, 0.5)
-    .setAlpha(0);
-  const chatter = scene.add
-    .text(
-      54,
-      height - 118,
-      config.variant === "dispatch"
-        ? "CHANNEL_LOCK......OK\nSHIFT_EXECUTE....PENDING"
-        : "SAFE_MODE........ACTIVE\nDISPLAY_RESET.....PENDING",
-      createMonitorTextStyle({
-        fontSize: "16px",
-        color: MONITOR_COLORS.mutedText,
-      }),
-    )
-    .setOrigin(0, 1)
-    .setAlpha(0);
+    .setOrigin(0, 0);
 
-  overlay.add([blackout, sweep, chatter, status]);
+  config.hideTargets?.forEach((target) => {
+    if (overlay.exists(target)) {
+      return;
+    }
 
-  scene.tweens.add({ targets: blackout, alpha: 0.94, duration: 110 });
-  scene.tweens.add({ targets: status, alpha: 1, duration: 90, delay: 40 });
-  scene.tweens.add({ targets: chatter, alpha: 1, duration: 90, delay: 60 });
-
-  if (config.variant === "dispatch") {
-    scene.tweens.add({
-      targets: sweep,
-      height,
-      alpha: { from: 0.14, to: 0.58 },
-      duration: 260,
-      ease: "Quad.easeIn",
-    });
-    scene.cameras.main.shake(110, 0.0014, true);
-  } else {
-    scene.tweens.add({
-      targets: sweep,
-      scaleX: { from: 0.12, to: 1 },
-      duration: 110,
-      ease: "Sine.easeOut",
-    });
-    scene.tweens.add({
-      targets: sweep,
-      scaleY: { from: 1, to: 0.04 },
-      alpha: { from: 0.92, to: 0.18 },
-      duration: 180,
-      delay: 110,
-      ease: "Quad.easeIn",
-    });
-  }
-
-  scene.time.delayedCall(340, () => {
-    config.onComplete();
+    if ("setVisible" in target) {
+      (
+        target as Phaser.GameObjects.GameObject & {
+          setVisible: (visible: boolean) => Phaser.GameObjects.GameObject;
+        }
+      ).setVisible(false);
+    }
   });
+
+  overlay.add([maskBand, maskLine, status]);
+
+  const sequenceController = new MonitorSequenceController(scene);
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    sequenceController.destroy();
+  });
+
+  scene.cameras.main.shake(80, 0.0008, true);
+
+  sequenceController.play(
+    [
+      {
+        target: status,
+        text: `> ${config.statusText}`,
+        reveal: "char",
+        delayMs: config.delayMs ?? 220,
+        speedMs: config.speedMs ?? 22,
+        playSound: true,
+        soundProfile: config.variant === "dispatch" ? "bright" : "warning",
+        color,
+      },
+    ],
+    () => {
+      scene.time.delayedCall(config.holdMs ?? 900, () => {
+        config.onComplete();
+      });
+    },
+  );
 }

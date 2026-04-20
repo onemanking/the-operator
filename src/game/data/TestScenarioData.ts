@@ -128,7 +128,7 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     equippedSkillIds: [],
     selectedPromptToolIds: [],
     heat: 100,
-    hallucination: 35,
+    hallucination: 99,
     passiveUpgradeIds: ["cooling_fins", "cache_coalescer", "ecc_memory"],
     utilityChargesById: {
       coolant_purge: 1,

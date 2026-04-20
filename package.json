@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "dev:debug": "vite --port=3000 --host=0.0.0.0 --mode debug",
+    "dev:test:onboarding": "vite --port=3000 --host=0.0.0.0 --mode test-onboarding",
+    "dev:test:onboarding:debug": "vite --port=3000 --host=0.0.0.0 --mode test-onboarding-debug",
     "dev:test:guard": "vite --port=3000 --host=0.0.0.0 --mode test-guard",
     "dev:test:guard:debug": "vite --port=3000 --host=0.0.0.0 --mode test-guard-debug",
     "dev:test:search-guard": "vite --port=3000 --host=0.0.0.0 --mode test-search-guard",

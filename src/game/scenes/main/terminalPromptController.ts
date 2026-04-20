@@ -75,6 +75,7 @@ export const TERMINAL_PROMPT_DIVIDER =
 const INACTIVE_SAFETY_HIGHLIGHT_FILL = 0x8d241d;
 const INACTIVE_SAFETY_HIGHLIGHT_FRAME = 0xff7e73;
 const INACTIVE_SAFETY_HIGHLIGHT_TEXT = "#ffd8d2";
+const DEFAULT_PROMPT_SENDER_LABEL = "USER";
 
 function clamp01(value: number) {
   return Phaser.Math.Clamp(value, 0, 1);
@@ -143,12 +144,24 @@ function drawDashedFrame(
   drawDashedLine(x, y + height, x, y);
 }
 
-export function getTerminalPromptLines(scene: Phaser.Scene, prompt: string) {
+function getPromptSenderLabel(promptSenderLabel?: string) {
+  const normalizedLabel = promptSenderLabel?.trim();
+  return normalizedLabel && normalizedLabel.length > 0
+    ? normalizedLabel
+    : DEFAULT_PROMPT_SENDER_LABEL;
+}
+
+export function getTerminalPromptLines(
+  scene: Phaser.Scene,
+  prompt: string,
+  promptSenderLabel?: string,
+) {
   const probeText = scene.add.text(0, 0, "", TERMINAL_TEXT_STYLE);
-  const userLabelWidth = probeText.setText("USER:").width;
+  const senderLabel = `${getPromptSenderLabel(promptSenderLabel)}:`;
+  const userLabelWidth = probeText.setText(senderLabel).width;
   let cursorX = TERMINAL_PROMPT_START_X + userLabelWidth + 8;
   const lines: string[] = [];
-  let currentLine = "USER:";
+  let currentLine = senderLabel;
 
   prompt
     .split(/\s+/)
@@ -166,7 +179,7 @@ export function getTerminalPromptLines(scene: Phaser.Scene, prompt: string) {
         return;
       }
 
-      currentLine += currentLine === "USER:" ? ` ${rawWord}` : ` ${rawWord}`;
+      currentLine += ` ${rawWord}`;
       cursorX += wordWidth + TERMINAL_PROMPT_WORD_SPACING;
     });
 
@@ -223,22 +236,32 @@ export class TerminalPromptController {
     });
   }
 
-  renderPrompt(prompt: string) {
+  renderPrompt(prompt: string, promptSenderLabel?: string) {
     this.clear();
 
     const promptStartY = this.bindings.getPromptStartY();
+    const senderLabel = `${getPromptSenderLabel(promptSenderLabel)}:`;
 
-    const promptLines = getTerminalPromptLines(this.scene, prompt);
+    const promptLines = getTerminalPromptLines(
+      this.scene,
+      prompt,
+      promptSenderLabel,
+    );
     const promptWords = prompt.split(/\s+/).filter((word) => word.length > 0);
 
     this.userLabel = this.scene.add.text(
       this.promptStartX,
       promptStartY,
-      "USER:",
+      senderLabel,
       TERMINAL_TEXT_STYLE,
     );
 
-    const probeText = this.scene.add.text(0, 0, "USER:", TERMINAL_TEXT_STYLE);
+    const probeText = this.scene.add.text(
+      0,
+      0,
+      senderLabel,
+      TERMINAL_TEXT_STYLE,
+    );
     const labelWidth = probeText.width;
     probeText.destroy();
 

@@ -17,8 +17,10 @@ export {
   normalizeToolIds,
 } from "../../data/PromptIds";
 
+export type ChatSender = string;
+
 export interface ChatMessage {
-  sender: "SYSTEM" | "USER" | "LLM";
+  sender: ChatSender;
   text: string;
   color?: string;
 }

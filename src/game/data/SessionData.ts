@@ -46,7 +46,9 @@ export interface EncounterScoringProfile {
 export interface EncounterTurnDefinition {
   id: string;
   prompt: string;
+  promptSenderLabel?: string;
   patienceMs: number;
+  allowTimeout?: boolean;
   requirements: EncounterRequirements;
   replies: EncounterReplySet;
   scoring: EncounterScoringProfile;

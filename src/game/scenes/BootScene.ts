@@ -1,11 +1,13 @@
 import Phaser from "phaser";
 import { GENERATED_TEXTURES } from "./boot/generatedTextures";
+import { createOrientationRunState } from "../data/OrientationData";
 import { createInitialRunState } from "../types/SceneData";
 import {
   buildTestScenarioRunState,
   getTestScenarioStartScene,
   resolveConfiguredTestScenario,
 } from "../data/TestScenarioData";
+import { loadPlayerProfile } from "../profile/profileStorage";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -26,6 +28,13 @@ export class BootScene extends Phaser.Scene {
         getTestScenarioStartScene(testScenarioId),
         buildTestScenarioRunState(testScenarioId),
       );
+      return;
+    }
+
+    const playerProfile = loadPlayerProfile();
+
+    if (!playerProfile.orientationCompleted) {
+      this.scene.start("MainScene", createOrientationRunState());
       return;
     }
 

@@ -16,6 +16,40 @@ import { getDayLoadoutProfile } from "../data/LoadoutProgressionData";
 import { RUN_CONFIG } from "../data/RunData";
 import { createDefaultUtilityInventory } from "../data/UtilityData";
 
+export type RunMode = "standard" | "orientation";
+
+export type OrientationStepId =
+  | "welcome"
+  | "read_prompt"
+  | "mount_agent"
+  | "mount_skill"
+  | "inference"
+  | "thermal_basics"
+  | "search_open"
+  | "search_sync"
+  | "search_commit"
+  | "compute_open"
+  | "compute_charge"
+  | "compute_commit"
+  | "safety_open"
+  | "safety_scan"
+  | "refuse"
+  | "coolant_use"
+  | "coolant_interact"
+  | "reality_cycle"
+  | "reality_interact"
+  | "signal_cycle"
+  | "signal_interact"
+  | "graduation";
+
+export interface RunOrientationState {
+  active: boolean;
+  currentStepId: OrientationStepId | null;
+  suppressHeatRecovery: boolean;
+  suppressHallucinationLoss: boolean;
+  suppressConnectionLoss: boolean;
+}
+
 export interface RunLoadoutState {
   equippedAgentIds: AgentId[];
   equippedSkillIds: SkillId[];
@@ -61,6 +95,7 @@ function createRunId() {
 
 export interface RunState {
   runId: string;
+  runMode: RunMode;
   day: number;
   tokens: number;
   accuracy: number;
@@ -84,6 +119,7 @@ export interface RunState {
   shiftModifierIds: string[];
   activePolicyGroupIds: ContentPolicyGroupId[];
   forbiddenCategoryIds: ContentCategoryId[];
+  orientation: RunOrientationState;
 }
 
 export type ShiftSceneData = Partial<RunState>;
@@ -134,6 +170,7 @@ export function createInitialRunState(): RunState {
   const initialLoadoutProfile = getDayLoadoutProfile(RUN_CONFIG.initialDay);
 
   return {
+    runMode: "standard",
     runId: createRunId(),
     day: RUN_CONFIG.initialDay,
     tokens: RUN_CONFIG.initialTokens,
@@ -182,6 +219,13 @@ export function createInitialRunState(): RunState {
     shiftModifierIds: [],
     activePolicyGroupIds: [],
     forbiddenCategoryIds: [],
+    orientation: {
+      active: false,
+      currentStepId: null,
+      suppressHeatRecovery: false,
+      suppressHallucinationLoss: false,
+      suppressConnectionLoss: false,
+    },
   };
 }
 
@@ -228,6 +272,7 @@ export function cloneRunState(runState: RunState): RunState {
     shiftModifierIds: [...runState.shiftModifierIds],
     activePolicyGroupIds: [...runState.activePolicyGroupIds],
     forbiddenCategoryIds: [...runState.forbiddenCategoryIds],
+    orientation: { ...runState.orientation },
   };
 }
 
@@ -386,5 +431,9 @@ export function hydrateRunState(data?: ShiftSceneData): RunState {
     forbiddenCategoryIds: [
       ...(data.forbiddenCategoryIds ?? initial.forbiddenCategoryIds),
     ],
+    orientation: {
+      ...initial.orientation,
+      ...data.orientation,
+    },
   };
 }

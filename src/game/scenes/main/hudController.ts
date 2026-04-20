@@ -214,7 +214,10 @@ export class MainSceneHudController {
   private utilityPanelController!: MainSceneUtilityPanelController;
   private updateBarsHandler?: () => void;
   private cleanupHandler?: () => void;
-  private renderPromptHandler?: (payload: { prompt: string }) => void;
+  private renderPromptHandler?: (payload: {
+    prompt: string;
+    promptSenderLabel?: string;
+  }) => void;
   private clearPromptHandler?: () => void;
   private thermalPulseTimer?: Phaser.Time.TimerEvent;
 
@@ -406,8 +409,7 @@ export class MainSceneHudController {
     messages.forEach((msg) => {
       let prefix = "";
       if (msg.sender === "SYSTEM") prefix = "> ";
-      else if (msg.sender === "USER") prefix = "USER: ";
-      else if (msg.sender === "LLM") prefix = "LLM: ";
+      else prefix = `${msg.sender}: `;
 
       const wrappedLines = this.wrapChatLine(prefix + msg.text, wrapWidth);
       wrappedLines.forEach((lineText, index) => {
@@ -1180,7 +1182,10 @@ export class MainSceneHudController {
     };
 
     this.renderPromptHandler = (payload) => {
-      this.terminalPromptController.renderPrompt(payload.prompt);
+      this.terminalPromptController.renderPrompt(
+        payload.prompt,
+        payload.promptSenderLabel,
+      );
     };
     this.clearPromptHandler = () => {
       this.terminalPromptController.clear();

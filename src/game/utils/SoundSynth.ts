@@ -1,3 +1,10 @@
+export type TypewriterSoundProfile =
+  | "default"
+  | "soft"
+  | "bright"
+  | "warning"
+  | "danger";
+
 export class SoundSynth {
   private ctx: AudioContext | null = null;
 
@@ -46,7 +53,27 @@ export class SoundSynth {
     osc.stop(this.ctx.currentTime + duration);
   }
 
-  playTypewriter() {
+  playTypewriter(profile: TypewriterSoundProfile = "default") {
+    if (profile === "soft") {
+      this.playBeep(620 + Math.random() * 120, "triangle", 0.04, 0.032);
+      return;
+    }
+
+    if (profile === "bright") {
+      this.playBeep(980 + Math.random() * 180, "square", 0.04, 0.05);
+      return;
+    }
+
+    if (profile === "warning") {
+      this.playBeep(420 + Math.random() * 90, "sawtooth", 0.05, 0.034);
+      return;
+    }
+
+    if (profile === "danger") {
+      this.playBeep(250 + Math.random() * 70, "sawtooth", 0.06, 0.04);
+      return;
+    }
+
     this.playBeep(800 + Math.random() * 200, "square", 0.05, 0.05);
   }
 

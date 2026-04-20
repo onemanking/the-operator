@@ -21,10 +21,12 @@ import {
 } from "../data/shift-generation/runtime";
 import { addScanlines, createSceneBackdrop } from "./shared/retroUi";
 import {
+  createMonitorFeed,
   createMonitorCommandButton,
   MONITOR_COLORS,
   createMonitorShell,
   createMonitorTextStyle,
+  MonitorShell,
   MonitorSequenceController,
   playMonitorSceneTransition,
 } from "./shared/monitorPresentation";
@@ -37,6 +39,7 @@ export class BriefingScene extends Phaser.Scene {
   private sequenceController?: MonitorSequenceController;
   private primaryCommand?: ReturnType<typeof createMonitorCommandButton>;
   private statusHint?: Phaser.GameObjects.Text;
+  private shell?: MonitorShell;
   private isTransitioning: boolean = false;
 
   constructor() {
@@ -49,6 +52,7 @@ export class BriefingScene extends Phaser.Scene {
     this.sequenceController = undefined;
     this.primaryCommand = undefined;
     this.statusHint = undefined;
+    this.shell = undefined;
     this.isTransitioning = false;
     if (this.runState.shiftModifierIds.length === 0) {
       this.runState.shiftModifierIds = drawShiftModifiersForDay(
@@ -108,46 +112,12 @@ export class BriefingScene extends Phaser.Scene {
   create() {
     createSceneBackdrop(this, 0x050805);
 
-    const shell = createMonitorShell(this, {
+    this.shell = createMonitorShell(this, {
       title: `SHIFT BRIEFING // DAY ${this.day}`,
       subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
       footerLeft: "CHANNEL: BRIEFING.FEED",
       footerRight: "ENTER / SPACE // ADVANCE",
     });
-
-    const headerText = this.add
-      .text(
-        shell.contentX,
-        shell.contentY,
-        "OPERATOR LINK ACCEPTED // BRIEFING FEED STAGED",
-        createMonitorTextStyle({
-          fontSize: "18px",
-          color: MONITOR_COLORS.dimText,
-        }),
-      )
-      .setOrigin(0, 0);
-
-    const directiveLabel = this.add
-      .text(
-        shell.contentX,
-        headerText.y + headerText.height + 28,
-        "PRIMARY DIRECTIVE",
-        createMonitorTextStyle({ fontSize: "18px", fontStyle: "bold" }),
-      )
-      .setOrigin(0, 0);
-
-    const directiveBody = this.add
-      .text(
-        shell.contentX,
-        directiveLabel.y + directiveLabel.height + 10,
-        "",
-        createMonitorTextStyle({
-          fontSize: "22px",
-          wordWrap: { width: shell.contentWidth },
-          lineSpacing: 6,
-        }),
-      )
-      .setOrigin(0, 0);
 
     const shiftModifiers = getShiftModifierDefinitions(
       this.runState.shiftModifierIds,
@@ -163,67 +133,48 @@ export class BriefingScene extends Phaser.Scene {
             .join("\n\n")
         : "NO SPECIAL SHIFT CONDITIONS.";
 
-    directiveBody.setText(policyText);
-    const directiveBodyHeight = directiveBody.height;
-    directiveBody.setText("");
-
-    const modifierLabel = this.add
-      .text(
-        shell.contentX,
-        directiveBody.y + directiveBodyHeight + 28,
-        "SHIFT MODIFIER",
-        createMonitorTextStyle({
-          fontSize: "18px",
-          fontStyle: "bold",
-          color: MONITOR_COLORS.text,
-        }),
-      )
-      .setOrigin(0, 0);
-
-    const modifierBody = this.add
-      .text(
-        shell.contentX,
-        modifierLabel.y + modifierLabel.height + 10,
-        "",
-        createMonitorTextStyle({
-          fontSize: "20px",
-          color: MONITOR_COLORS.text,
-          wordWrap: { width: shell.contentWidth },
-          lineSpacing: 6,
-        }),
-      )
-      .setOrigin(0, 0);
-
-    modifierBody.setText(modifierText);
-    const modifierBodyHeight = modifierBody.height;
-    modifierBody.setText("");
-
-    const systemsLabel = this.add
-      .text(
-        shell.contentX,
-        modifierBody.y + modifierBodyHeight + 26,
-        "SHIFT LOADOUT",
-        createMonitorTextStyle({
-          fontSize: "18px",
-          fontStyle: "bold",
-          color: MONITOR_COLORS.text,
-        }),
-      )
-      .setOrigin(0, 0);
-
-    const systemsBody = this.add
-      .text(
-        shell.contentX,
-        systemsLabel.y + systemsLabel.height + 10,
-        "",
-        createMonitorTextStyle({
-          fontSize: "16px",
-          color: MONITOR_COLORS.text,
-          wordWrap: { width: shell.contentWidth },
-          lineSpacing: 4,
-        }),
-      )
-      .setOrigin(0, 0);
+    const loadoutSummary = this.buildLoadoutSummary();
+    const feed = createMonitorFeed(this, this.shell, {
+      headerText: "OPERATOR LINK ACCEPTED // BRIEFING FEED STAGED",
+      sections: [
+        {
+          label: "PRIMARY DIRECTIVE",
+          text: policyText,
+          reveal: "char",
+          speedMs: 18,
+          pauseAfterMs: 180,
+          playSound: true,
+          bodyStyle: {
+            fontSize: "22px",
+            lineSpacing: 6,
+          },
+        },
+        {
+          label: "SHIFT MODIFIER",
+          text: modifierText,
+          reveal: "word",
+          speedMs: 78,
+          pauseAfterMs: 160,
+          playSound: true,
+          soundProfile: "bright",
+          bodyStyle: {
+            fontSize: "20px",
+            lineSpacing: 6,
+          },
+        },
+        {
+          label: "SHIFT LOADOUT",
+          text: loadoutSummary,
+          reveal: "line",
+          speedMs: 110,
+          playSound: true,
+          bodyStyle: {
+            fontSize: "16px",
+            lineSpacing: 4,
+          },
+        },
+      ],
+    });
 
     this.statusHint = this.add
       .text(
@@ -246,42 +197,11 @@ export class BriefingScene extends Phaser.Scene {
       onPress: () => this.handlePrimaryAction(),
     });
 
-    const loadoutSummary = this.buildLoadoutSummary();
-
     this.sequenceController = new MonitorSequenceController(this);
-    this.sequenceController.play(
-      [
-        {
-          target: directiveBody,
-          text: policyText,
-          reveal: "char",
-          speedMs: 18,
-          pauseAfterMs: 180,
-          playSound: true,
-        },
-        {
-          target: modifierBody,
-          text: modifierText,
-          reveal: "word",
-          speedMs: 78,
-          pauseAfterMs: 160,
-          playSound: true,
-        },
-        {
-          target: systemsBody,
-          text: loadoutSummary,
-          reveal: "line",
-          speedMs: 110,
-          pauseAfterMs: 0,
-          playSound: true,
-          color: MONITOR_COLORS.text,
-        },
-      ],
-      () => {
-        this.primaryCommand?.setLabel("EXECUTE SHIFT");
-        this.statusHint?.setText("ENTER / SPACE // EXECUTE SHIFT");
-      },
-    );
+    this.sequenceController.play(feed.steps, () => {
+      this.primaryCommand?.setLabel("EXECUTE SHIFT");
+      this.statusHint?.setText("ENTER / SPACE // EXECUTE SHIFT");
+    });
 
     this.input.keyboard?.on("keydown-ENTER", this.handlePrimaryAction, this);
     this.input.keyboard?.on("keydown-SPACE", this.handlePrimaryAction, this);
@@ -401,6 +321,20 @@ export class BriefingScene extends Phaser.Scene {
     playMonitorSceneTransition(this, {
       variant: "dispatch",
       statusText: "EXECUTING SHIFT PAYLOAD",
+      bounds: this.shell
+        ? {
+            x: this.shell.screenX,
+            y: this.shell.screenY,
+            width: this.shell.screenWidth,
+            height: this.shell.screenHeight,
+          }
+        : undefined,
+      hideTargets: this.children.list.filter(
+        (gameObject) =>
+          gameObject instanceof Phaser.GameObjects.Text &&
+          !this.shell?.chrome.includes(gameObject),
+      ),
+      color: MONITOR_COLORS.text,
       onComplete: () => {
         this.scene.start("MainScene", cloneRunState(this.runState));
       },

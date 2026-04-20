@@ -203,7 +203,7 @@ const PROMPT_TOOL_RUNTIME_CONFIG: PromptToolRuntimeConfig = {
   safety: {
     passiveHeatPerSecond: 1.5,
     scanningHeatPerSecond: 4.5,
-    tokenRewardPerReveal: 4,
+    tokenRewardPerReveal: 20,
     scanBandWidth: 104,
     scanRevealSeconds: 0.51,
     dragFriction: 0.34,

@@ -36,6 +36,14 @@ export class SoundSynth {
   private readonly menuMusicGain = 1;
 
   constructor() {
+    // AudioContext must be created from a user gesture to avoid autoplay warnings.
+  }
+
+  private createContext() {
+    if (this.ctx) {
+      return this.ctx;
+    }
+
     try {
       this.ctx = new (
         window.AudioContext || (window as any).webkitAudioContext
@@ -44,6 +52,8 @@ export class SoundSynth {
     } catch (e) {
       console.warn("Web Audio API not supported");
     }
+
+    return this.ctx;
   }
 
   private initializeBuses() {
@@ -79,13 +89,16 @@ export class SoundSynth {
   }
 
   async resumeAudio() {
-    if (!this.ctx) {
+    const ctx = this.createContext();
+    if (!ctx) {
       return false;
     }
 
     try {
-      await this.ctx.resume();
-      return this.ctx.state === "running";
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+      return ctx.state === "running";
     } catch {
       return false;
     }
@@ -93,6 +106,17 @@ export class SoundSynth {
 
   isAudioReady() {
     return this.ctx?.state === "running";
+  }
+
+  private canAttemptAutoplay() {
+    const activation = (navigator as Navigator & {
+      userActivation?: {
+        isActive?: boolean;
+        hasBeenActive?: boolean;
+      };
+    }).userActivation;
+
+    return activation?.isActive === true || activation?.hasBeenActive === true;
   }
 
   setMenuMusicEnabled(enabled: boolean) {
@@ -106,6 +130,27 @@ export class SoundSynth {
     if (this.isAudioReady()) {
       this.startMenuMusic();
     }
+  }
+
+  async tryAutoStartMenuMusic() {
+    if (!this.menuMusicEnabled) {
+      return false;
+    }
+
+    if (this.startMenuMusic()) {
+      return true;
+    }
+
+    if (!this.canAttemptAutoplay()) {
+      return false;
+    }
+
+    const ready = await this.resumeAudio();
+    if (!ready) {
+      return false;
+    }
+
+    return this.startMenuMusic();
   }
 
   startMenuMusic() {

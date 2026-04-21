@@ -1026,8 +1026,10 @@ export class MainSceneHudController {
       })
       .setOrigin(0.5);
     this.passiveChips = [];
+    const passiveChipStartX = rightColumnX + 41;
+    const passiveChipSpacing = 56;
     for (let chipIndex = 0; chipIndex < 4; chipIndex += 1) {
-      const chipX = rightColumnX + 65 + chipIndex * 58;
+      const chipX = passiveChipStartX + chipIndex * passiveChipSpacing;
       const body = this.scene.add
         .rectangle(chipX, rowTwoY + 8, 52, 16, 0x1a1713)
         .setOrigin(0.5)

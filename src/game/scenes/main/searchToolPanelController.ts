@@ -49,6 +49,7 @@ export class MainSceneSearchToolPanelController {
     | Phaser.GameObjects.Text
     | Phaser.GameObjects.Graphics
   > = [];
+  private currentPanelDepth = this.panelDepth;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -214,10 +215,16 @@ export class MainSceneSearchToolPanelController {
       this.syncButton,
       this.syncButtonLabel,
     ];
-    this.displayObjects.forEach((displayObject) => {
-      displayObject.setDepth(this.panelDepth);
-    });
+    this.applyPanelDepth(this.panelDepth);
     this.setPanelVisible(false);
+  }
+
+  setPanelDepth(panelDepth: number) {
+    if (this.currentPanelDepth === panelDepth) {
+      return;
+    }
+
+    this.applyPanelDepth(panelDepth);
   }
 
   update() {
@@ -326,6 +333,13 @@ export class MainSceneSearchToolPanelController {
   private setPanelVisible(visible: boolean) {
     this.displayObjects.forEach((displayObject) => {
       displayObject.setVisible(visible);
+    });
+  }
+
+  private applyPanelDepth(panelDepth: number) {
+    this.currentPanelDepth = panelDepth;
+    this.displayObjects.forEach((displayObject) => {
+      displayObject.setDepth(panelDepth);
     });
   }
 

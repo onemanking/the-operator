@@ -799,10 +799,8 @@ export class MainScene extends Phaser.Scene {
       return;
     }
 
-    if (
-      this.utilityFeedbackState === "success" &&
-      this.activeUtilityPanelId === utilityId
-    ) {
+    if (this.activeUtilityPanelId === utilityId) {
+      this.deactivateUtilityPanel(utilityId);
       return;
     }
 
@@ -863,6 +861,23 @@ export class MainScene extends Phaser.Scene {
     this.events.emit("updateBars");
   }
 
+  private deactivateUtilityPanel(utilityId: ActiveUtilityId) {
+    if (this.activeUtilityPanelId !== utilityId) {
+      return;
+    }
+
+    this.resetUtilityPanelRuntimeState(utilityId);
+    this.activeUtilityPanelId = null;
+    this.utilityFeedbackState = "idle";
+    this.utilityFeedbackUntil = 0;
+    this.utilityFeedbackDurationMs = 0;
+    this.utilityStatusText = this.selectedUtilityId
+      ? this.getUtilityBootStatusText(this.selectedUtilityId)
+      : "STANDBY";
+    synth.playButtonPress();
+    this.events.emit("updateBars");
+  }
+
   private updateUtilityMinigames(deltaSeconds: number) {
     const isUtilitySuccessPending = this.utilityFeedbackState === "success";
 
@@ -888,12 +903,8 @@ export class MainScene extends Phaser.Scene {
 
       if (this.utilityFeedbackState === "success") {
         this.activeUtilityPanelId = null;
-        if (completedUtilityId === "coolant_purge") {
-          this.resetCoolantPurgeState();
-        } else if (completedUtilityId === "reality_patch") {
-          this.resetRealityPatchState();
-        } else if (completedUtilityId === "signal_boost") {
-          this.resetSignalBoostState();
+        if (completedUtilityId) {
+          this.resetUtilityPanelRuntimeState(completedUtilityId);
         }
       }
 
@@ -1521,6 +1532,20 @@ export class MainScene extends Phaser.Scene {
     this.signalBoostState.draggingPointerId = null;
     this.signalBoostState.path = [];
     this.signalBoostState.visitedRequiredNodeIndexes = new Set<number>();
+  }
+
+  private resetUtilityPanelRuntimeState(utilityId: ActiveUtilityId) {
+    if (utilityId === "coolant_purge") {
+      this.resetCoolantPurgeState();
+      return;
+    }
+
+    if (utilityId === "reality_patch") {
+      this.resetRealityPatchState();
+      return;
+    }
+
+    this.resetSignalBoostState();
   }
 
   private pollUtilityPointerInteractions() {

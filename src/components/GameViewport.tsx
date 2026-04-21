@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { initGame } from '../game/main';
+import { synth } from '../game/utils/SoundSynth';
 
 declare global {
     interface Window {
@@ -9,6 +10,7 @@ declare global {
 
 export function GameViewport() {
     const gameRef = useRef<HTMLDivElement>(null);
+    const audioUnlockAttemptedRef = useRef(false);
     const isDev = Boolean(
         (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV,
     );
@@ -24,10 +26,38 @@ export function GameViewport() {
             window.__PROMPT_PLEASE_GAME__ = game;
         }
 
+        const removeUnlockListeners = () => {
+            window.removeEventListener('pointerdown', unlockAudio, true);
+            window.removeEventListener('keydown', unlockAudio, true);
+            window.removeEventListener('touchstart', unlockAudio, true);
+        };
+
+        const unlockAudio = () => {
+            if (audioUnlockAttemptedRef.current) {
+                return;
+            }
+
+            audioUnlockAttemptedRef.current = true;
+            void synth.resumeAudio().then((ready) => {
+                if (!ready) {
+                    audioUnlockAttemptedRef.current = false;
+                    return;
+                }
+
+                removeUnlockListeners();
+            });
+        };
+
+        window.addEventListener('pointerdown', unlockAudio, { capture: true });
+        window.addEventListener('keydown', unlockAudio, { capture: true });
+        window.addEventListener('touchstart', unlockAudio, { capture: true });
+
         return () => {
             if (window.__PROMPT_PLEASE_GAME__ === game) {
                 delete window.__PROMPT_PLEASE_GAME__;
             }
+
+            removeUnlockListeners();
 
             game.destroy(true);
         };

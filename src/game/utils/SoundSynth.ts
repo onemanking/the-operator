@@ -109,12 +109,14 @@ export class SoundSynth {
   }
 
   private canAttemptAutoplay() {
-    const activation = (navigator as Navigator & {
-      userActivation?: {
-        isActive?: boolean;
-        hasBeenActive?: boolean;
-      };
-    }).userActivation;
+    const activation = (
+      navigator as Navigator & {
+        userActivation?: {
+          isActive?: boolean;
+          hasBeenActive?: boolean;
+        };
+      }
+    ).userActivation;
 
     return activation?.isActive === true || activation?.hasBeenActive === true;
   }
@@ -637,9 +639,11 @@ export class SoundSynth {
     utilityId: "coolant_purge" | "reality_patch" | "signal_boost",
   ) {
     if (utilityId === "coolant_purge") {
-      this.playBeep(420, "triangle", 0.06, 0.07);
-      setTimeout(() => this.playBeep(220, "triangle", 0.08, 0.08), 44);
-      setTimeout(() => this.playBeep(88, "sawtooth", 0.16, 0.09), 98);
+      this.playBeep(520, "triangle", 0.05, 0.07);
+      setTimeout(() => this.playBeep(340, "triangle", 0.07, 0.075), 34);
+      setTimeout(() => this.playBeep(180, "sawtooth", 0.16, 0.085), 88);
+      setTimeout(() => this.playBeep(900, "sine", 0.05, 0.025), 142);
+      setTimeout(() => this.playBeep(130, "triangle", 0.22, 0.035), 220);
       return;
     }
 
@@ -647,12 +651,27 @@ export class SoundSynth {
       this.playBeep(440, "sine", 0.1, 0.06);
       this.playBeep(554, "sine", 0.1, 0.05);
       setTimeout(() => this.playBeep(659, "triangle", 0.14, 0.05), 34);
+      setTimeout(() => this.playBeep(880, "sine", 0.08, 0.04), 112);
+      setTimeout(() => this.playBeep(320, "triangle", 0.2, 0.03), 188);
       return;
     }
 
     this.playBeep(800, "sine", 0.05, 0.06);
     setTimeout(() => this.playBeep(1000, "sine", 0.05, 0.06), 34);
     setTimeout(() => this.playBeep(1220, "triangle", 0.08, 0.05), 72);
+    setTimeout(() => this.playBeep(1480, "triangle", 0.06, 0.035), 120);
+    setTimeout(() => this.playBeep(420, "sine", 0.16, 0.03), 188);
+  }
+
+  playHallucinationCollapse() {
+    this.playBeep(300, "sine", 0.24, 0.05);
+    this.playBeep(309, "triangle", 0.24, 0.04);
+    setTimeout(() => this.playBeep(318, "sine", 0.28, 0.035), 18);
+    setTimeout(() => this.playBeep(1280, "sawtooth", 0.04, 0.04), 180);
+    setTimeout(() => this.playBeep(190, "sawtooth", 0.22, 0.05), 340);
+    setTimeout(() => this.playBeep(1580, "triangle", 0.06, 0.045), 620);
+    setTimeout(() => this.playBeep(210, "square", 0.18, 0.05), 980);
+    setTimeout(() => this.playBeep(1460, "sawtooth", 0.08, 0.03), 1320);
   }
 
   playCoolantPurgeLoop(intensity: number) {

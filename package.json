@@ -24,6 +24,8 @@
     "dev:test:maintenance-victory:debug": "vite --port=3000 --host=0.0.0.0 --mode test-maintenance-victory-debug",
     "dev:test:maintenance-dead": "vite --port=3000 --host=0.0.0.0 --mode test-maintenance-dead",
     "dev:test:maintenance-dead:debug": "vite --port=3000 --host=0.0.0.0 --mode test-maintenance-dead-debug",
+    "dev:test:maintenance-negative": "vite --port=3000 --host=0.0.0.0 --mode test-maintenance-negative",
+    "dev:test:maintenance-negative:debug": "vite --port=3000 --host=0.0.0.0 --mode test-maintenance-negative-debug",
     "dev:test:content-exhausted": "vite --port=3000 --host=0.0.0.0 --mode test-content-exhausted",
     "dev:test:content-exhausted:debug": "vite --port=3000 --host=0.0.0.0 --mode test-content-exhausted-debug",
     "dev:test:tier1": "vite --port=3000 --host=0.0.0.0 --mode test-tier1",

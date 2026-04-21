@@ -157,30 +157,31 @@ export class MainSceneOrientationController {
                                   ? action === "press-refuse" ||
                                     action === "toggle-safety" ||
                                     action === "start-safety-scan"
-                                  : stepId === "coolant_use"
-                                    ? action === "cycle-utility" ||
-                                      (action === "use-utility" &&
-                                        detail?.utilityId === "coolant_purge")
-                                    : stepId === "coolant_interact"
-                                      ? (action === "use-utility" &&
-                                          detail?.utilityId ===
-                                            "coolant_purge") ||
-                                        action === "interact-coolant"
-                                      : stepId === "reality_cycle"
-                                        ? action === "cycle-utility"
-                                        : stepId === "reality_interact"
-                                          ? (action === "use-utility" &&
-                                              detail?.utilityId ===
-                                                "reality_patch") ||
-                                            action === "interact-reality"
-                                          : stepId === "signal_cycle"
-                                            ? action === "cycle-utility"
-                                            : stepId === "signal_interact"
-                                              ? (action === "use-utility" &&
-                                                  detail?.utilityId ===
-                                                    "signal_boost") ||
-                                                action === "interact-signal"
-                                              : false;
+                                  : stepId === "coolant_cycle"
+                                    ? action === "cycle-utility"
+                                    : stepId === "coolant_use"
+                                      ? action === "use-utility" &&
+                                        detail?.utilityId === "coolant_purge"
+                                      : stepId === "coolant_interact"
+                                        ? (action === "use-utility" &&
+                                            detail?.utilityId ===
+                                              "coolant_purge") ||
+                                          action === "interact-coolant"
+                                        : stepId === "reality_cycle"
+                                          ? action === "cycle-utility"
+                                          : stepId === "reality_interact"
+                                            ? (action === "use-utility" &&
+                                                detail?.utilityId ===
+                                                  "reality_patch") ||
+                                              action === "interact-reality"
+                                            : stepId === "signal_cycle"
+                                              ? action === "cycle-utility"
+                                              : stepId === "signal_interact"
+                                                ? (action === "use-utility" &&
+                                                    detail?.utilityId ===
+                                                      "signal_boost") ||
+                                                  action === "interact-signal"
+                                                : false;
     if (allow) {
       return true;
     }
@@ -220,12 +221,28 @@ export class MainSceneOrientationController {
       this.computeReadyToCommit = false;
     }
 
-    if (this.getCurrentStepId() === "coolant_use") {
+    if (this.getCurrentStepId() === "coolant_cycle") {
       const selectedUtilityId = this.bindings.getSelectedUtilityId();
       const activeUtilityPanelId = this.bindings.getActiveUtilityPanelId();
 
       if (
         selectedUtilityId === "coolant_purge" ||
+        activeUtilityPanelId === "coolant_purge"
+      ) {
+        this.dispatchTrainerActionMessage(
+          this.getStepInstructionText("coolant_use"),
+        );
+        this.advanceTo("coolant_use");
+        return;
+      }
+    }
+
+    if (this.getCurrentStepId() === "coolant_use") {
+      const selectedUtilityId = this.bindings.getSelectedUtilityId();
+      const activeUtilityPanelId = this.bindings.getActiveUtilityPanelId();
+
+      if (
+        selectedUtilityId === "coolant_purge" &&
         activeUtilityPanelId === "coolant_purge"
       ) {
         this.dispatchTrainerActionMessage(
@@ -421,7 +438,7 @@ export class MainSceneOrientationController {
     }
 
     if (this.getCurrentStepId() === "refuse" && encounterIndex === 4) {
-      this.advanceTo("coolant_use");
+      this.advanceTo("coolant_cycle");
     }
   }
 
@@ -443,6 +460,17 @@ export class MainSceneOrientationController {
 
   handleUtilitySelected(utilityId: ActiveUtilityId) {
     this.lastProgressAt = this.scene.time.now;
+
+    if (
+      this.getCurrentStepId() === "coolant_cycle" &&
+      utilityId === "coolant_purge"
+    ) {
+      this.dispatchTrainerActionMessage(
+        this.getStepInstructionText("coolant_use"),
+      );
+      this.advanceTo("coolant_use");
+      return;
+    }
 
     if (
       this.getCurrentStepId() === "reality_cycle" &&
@@ -504,7 +532,9 @@ export class MainSceneOrientationController {
     const runState = this.bindings.getRunState();
     runState.orientation.currentStepId = stepId;
     runState.orientation.suppressHeatRecovery =
-      stepId === "coolant_use" || stepId === "coolant_interact";
+      stepId === "coolant_cycle" ||
+      stepId === "coolant_use" ||
+      stepId === "coolant_interact";
     runState.orientation.suppressHallucinationLoss = true;
     runState.orientation.suppressConnectionLoss = true;
     this.searchReadyToCommit =
@@ -519,7 +549,11 @@ export class MainSceneOrientationController {
     this.lastProgressAt = this.scene.time.now;
     this.lastLockedReminderAt = Number.NEGATIVE_INFINITY;
 
-    if (stepId === "coolant_use" || stepId === "coolant_interact") {
+    if (
+      stepId === "coolant_cycle" ||
+      stepId === "coolant_use" ||
+      stepId === "coolant_interact"
+    ) {
       this.scene.time.delayedCall(5000, () => {
         this.bindings.setHeat(ORIENTATION_COOLANT_HEAT_TARGET);
       });

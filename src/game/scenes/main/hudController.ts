@@ -153,6 +153,12 @@ interface ChatLineEntry {
   color?: string;
 }
 
+interface UtilityBeatSnapshot {
+  previousHeatRatio: number;
+  previousHallucinationRatio: number;
+  previousConnectionElapsedRatio: number;
+}
+
 type FloatingPanelFocus = "prompt" | "utility";
 
 export class MainSceneHudController {
@@ -231,6 +237,17 @@ export class MainSceneHudController {
   }) => void;
   private clearPromptHandler?: () => void;
   private thermalPulseTimer?: Phaser.Time.TimerEvent;
+  private sceneFlashOverlay!: Phaser.GameObjects.Rectangle;
+  private utilityBeatId: ActiveUtilityId | null = null;
+  private utilityBeatUntil: number = 0;
+  private utilityBeatDurationMs: number = 0;
+  private utilityBeatSnapshot: UtilityBeatSnapshot = {
+    previousHeatRatio: 0,
+    previousHallucinationRatio: 0,
+    previousConnectionElapsedRatio: 0,
+  };
+  private hallucinationCollapseUntil: number = 0;
+  private hallucinationCollapseDurationMs: number = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -285,6 +302,10 @@ export class MainSceneHudController {
       .rectangle(250, 50, 524, 340, 0x47120d, 0)
       .setOrigin(0)
       .setVisible(!this.terminalSafetyShader);
+    this.sceneFlashOverlay = this.scene.add
+      .rectangle(0, 0, 1024, 768, 0xffffff, 0)
+      .setOrigin(0)
+      .setDepth(5);
 
     this.connectionLabel = this.scene.add.text(250, 20, "USER CONNECTION:", {
       fontFamily: "monospace",
@@ -1084,9 +1105,10 @@ export class MainSceneHudController {
       this.syncEconomySection();
       this.syncPassiveSection();
       this.syncUtilitySection();
-      heatBarFill.width = 246 * Math.min(1, this.bindings.getHeat() / 100);
-      hallucinationBarFill.width =
-        246 * Math.min(1, this.bindings.getHallucination() / 100);
+      const displayedHeatRatio = this.getDisplayedHeatRatio();
+      const displayedHallucinationRatio = this.getDisplayedHallucinationRatio();
+      heatBarFill.width = 246 * displayedHeatRatio;
+      hallucinationBarFill.width = 246 * displayedHallucinationRatio;
 
       const thermalConfig = getThermalFeedbackConfig();
       const thermalIntensity = this.getThermalIntensity();
@@ -1142,10 +1164,10 @@ export class MainSceneHudController {
           : this.hoveredAction === "refuse"
             ? Math.max(0, this.bindings.getProjectedRefuseHeat())
             : 0;
-      const currentHeatRatio = Math.min(1, this.bindings.getHeat() / 100);
+      const currentHeatRatio = displayedHeatRatio;
       const projectedPreviewRatio = Math.min(
         1,
-        (this.bindings.getHeat() + projectedToolHeat + hoveredActionHeat) / 100,
+        currentHeatRatio + (projectedToolHeat + hoveredActionHeat) / 100,
       );
       const currentHeatWidth = 246 * currentHeatRatio;
       const projectedPreviewWidth = 246 * projectedPreviewRatio;
@@ -1205,6 +1227,8 @@ export class MainSceneHudController {
         this.hallucinationWarningLampHalo.setFillStyle(0x8f6dff, 0);
         this.hallucinationWarningLampHalo.setScale(1);
       }
+
+      this.syncSceneFlashOverlay();
     };
 
     this.cleanupHandler = () => {
@@ -1238,6 +1262,8 @@ export class MainSceneHudController {
           this.bindings.getHallucination() >=
             getHallucinationFeedbackConfig().onsetThreshold ||
           this.bindings.getConnectionElapsedRatio() > 0 ||
+          this.utilityBeatUntil > this.scene.time.now ||
+          this.hallucinationCollapseUntil > this.scene.time.now ||
           this.scene.time.now < this.tokenPulseUntil
         ) {
           this.scene.events.emit("updateBars");
@@ -1332,6 +1358,7 @@ export class MainSceneHudController {
       1,
       this.bindings.getComputeCharge() / this.bindings.getComputeThreshold(),
     );
+    const collapseIntensity = this.getHallucinationCollapseIntensity();
 
     this.promptToolButtons.forEach((button, toolId) => {
       const isSelected = selectedPromptToolIds.has(toolId);
@@ -1382,6 +1409,11 @@ export class MainSceneHudController {
                     ? 0x294829
                     : 0x111111,
       );
+      const controlAlpha = Phaser.Math.Linear(1, 0.46, collapseIntensity);
+      button.body.setAlpha(controlAlpha);
+      button.label.setAlpha(controlAlpha);
+      button.lamp.setAlpha(controlAlpha);
+      button.shadow.setAlpha(controlAlpha);
 
       button.indicatorLamps.forEach((indicatorLamp, lampIndex) => {
         const isActive = lampIndex < activeIndicatorCount;
@@ -1389,7 +1421,8 @@ export class MainSceneHudController {
           isComputeReady ? 0x9cfb64 : isActive ? 0xffb347 : 0x2f2a21,
         );
         indicatorLamp.setAlpha(
-          this.bindings.isComputeLatched() || isActive ? 1 : 0.55,
+          (this.bindings.isComputeLatched() || isActive ? 1 : 0.55) *
+            controlAlpha,
         );
       });
     });
@@ -1401,24 +1434,51 @@ export class MainSceneHudController {
     const searchModeSelected = this.bindings.isSearchModeSelected();
     const safetyModeSelected = this.bindings.isSafetyModeSelected();
     const safetyScanning = this.bindings.isSafetyScanning();
+    const utilityBeatIntensity = this.getUtilityBeatFlashIntensity();
+    const collapseIntensity = this.getHallucinationCollapseIntensity();
     const thermalIntensity = this.getThermalIntensity();
-    const hallucinationIntensity = this.getHallucinationIntensity();
+    const hallucinationIntensity = Math.max(
+      this.getHallucinationIntensity(),
+      collapseIntensity,
+    );
     const overheatStrength = this.bindings.isOverheated() ? 1 : 0;
     const baseStrokeColor = safetyModeSelected ? 0x8c3429 : 0x33ff33;
     const perceptionStrokeColor = this.mixColor(
-      this.mixColor(baseStrokeColor, 0x8f6dff, hallucinationIntensity * 0.46),
-      0xff7c36,
-      thermalIntensity * 0.72 + overheatStrength * 0.18,
+      this.mixColor(
+        this.mixColor(baseStrokeColor, 0x8f6dff, hallucinationIntensity * 0.46),
+        0xffffff,
+        collapseIntensity * 0.42,
+      ),
+      this.utilityBeatId === "coolant_purge"
+        ? 0x9feaff
+        : this.utilityBeatId === "reality_patch"
+          ? 0xf3d2ff
+          : this.utilityBeatId === "signal_boost"
+            ? 0xffd27f
+            : 0xff7c36,
+      Math.max(
+        thermalIntensity * 0.72 + overheatStrength * 0.18,
+        utilityBeatIntensity * 0.58,
+      ),
     );
     const taskColor = this.toHexColor(
       this.mixColor(
         this.mixColor(
           safetyModeSelected ? 0x8f4232 : 0x33ff33,
           0xb89fff,
-          hallucinationIntensity * 0.34,
+          hallucinationIntensity * 0.34 + collapseIntensity * 0.28,
         ),
-        0xffb36b,
-        thermalIntensity * 0.42 + overheatStrength * 0.18,
+        this.utilityBeatId === "coolant_purge"
+          ? 0xc4f5ff
+          : this.utilityBeatId === "reality_patch"
+            ? 0xf4d8ff
+            : this.utilityBeatId === "signal_boost"
+              ? 0xffe5a6
+              : 0xffb36b,
+        Math.max(
+          thermalIntensity * 0.42 + overheatStrength * 0.18,
+          utilityBeatIntensity * 0.5,
+        ),
       ),
     );
     const chatColor = this.toHexColor(
@@ -1426,24 +1486,37 @@ export class MainSceneHudController {
         this.mixColor(
           safetyModeSelected ? 0x874032 : 0x33ff33,
           0xa78fff,
-          hallucinationIntensity * 0.38,
+          hallucinationIntensity * 0.38 + collapseIntensity * 0.3,
         ),
-        0xff9b5c,
-        thermalIntensity * 0.48 + overheatStrength * 0.2,
+        this.utilityBeatId === "coolant_purge"
+          ? 0xb7efff
+          : this.utilityBeatId === "reality_patch"
+            ? 0xe8c8ff
+            : this.utilityBeatId === "signal_boost"
+              ? 0xffd892
+              : 0xff9b5c,
+        Math.max(
+          thermalIntensity * 0.48 + overheatStrength * 0.2,
+          utilityBeatIntensity * 0.52,
+        ),
       ),
     );
     const taskAlpha = Phaser.Math.Clamp(
       (safetyModeSelected ? 0.78 : 1) -
         thermalIntensity * 0.08 -
-        hallucinationIntensity * 0.06,
-      0.7,
+        hallucinationIntensity * 0.06 -
+        utilityBeatIntensity * 0.06 -
+        collapseIntensity * 0.16,
+      0.52,
       1,
     );
     const chatAlpha = Phaser.Math.Clamp(
       (safetyModeSelected ? 0.72 : 1) -
         thermalIntensity * 0.12 -
-        hallucinationIntensity * 0.09,
-      0.62,
+        hallucinationIntensity * 0.09 -
+        utilityBeatIntensity * 0.08 -
+        collapseIntensity * 0.18,
+      0.4,
       1,
     );
 
@@ -1567,9 +1640,10 @@ export class MainSceneHudController {
 
   private syncConnectionFeedback() {
     const connectionConfig = getConnectionFeedbackConfig();
-    const progress = this.bindings.getConnectionElapsedRatio();
+    const progress = this.getDisplayedConnectionElapsedRatio();
     const isCritical = progress >= connectionConfig.criticalThreshold;
     const isImminent = progress >= connectionConfig.imminentThreshold;
+    const collapseIntensity = this.getHallucinationCollapseIntensity();
     const pulseRate = isImminent
       ? connectionConfig.imminentPulseRate
       : connectionConfig.criticalPulseRate;
@@ -1585,7 +1659,7 @@ export class MainSceneHudController {
     );
 
     this.connectionLabel.setColor("#d4c5b0");
-    this.connectionLabel.setAlpha(1);
+    this.connectionLabel.setAlpha(1 - collapseIntensity * 0.26);
 
     this.connectionSegments.forEach((segment, segmentIndex) => {
       const isActive = segmentIndex < activeSegmentCount;
@@ -1612,9 +1686,158 @@ export class MainSceneHudController {
             : 1
         : connectionConfig.inactiveSegmentAlpha;
 
-      segment.setFillStyle(0xffaa00);
+      segment.setFillStyle(
+        collapseIntensity > 0.01
+          ? this.mixColor(0xffaa00, 0xf4c9ff, collapseIntensity * 0.8)
+          : 0xffaa00,
+      );
       segment.setAlpha(alpha);
     });
+  }
+
+  playUtilitySuccessBeat(
+    utilityId: ActiveUtilityId,
+    snapshot: UtilityBeatSnapshot,
+  ) {
+    this.utilityBeatId = utilityId;
+    this.utilityBeatDurationMs = utilityId === "coolant_purge" ? 900 : 780;
+    this.utilityBeatUntil = this.scene.time.now + this.utilityBeatDurationMs;
+    this.utilityBeatSnapshot = snapshot;
+    this.scene.events.emit("updateBars");
+  }
+
+  startHallucinationCollapse(durationMs: number) {
+    this.hallucinationCollapseDurationMs = durationMs;
+    this.hallucinationCollapseUntil = this.scene.time.now + durationMs;
+    this.scene.events.emit("updateBars");
+  }
+
+  private getUtilityBeatProgress() {
+    if (
+      this.utilityBeatUntil <= this.scene.time.now ||
+      this.utilityBeatDurationMs <= 0
+    ) {
+      this.utilityBeatId = null;
+      this.utilityBeatUntil = 0;
+      this.utilityBeatDurationMs = 0;
+      return 1;
+    }
+
+    return Phaser.Math.Clamp(
+      1 -
+        (this.utilityBeatUntil - this.scene.time.now) /
+          this.utilityBeatDurationMs,
+      0,
+      1,
+    );
+  }
+
+  private getUtilityBeatFlashIntensity() {
+    if (
+      this.utilityBeatUntil <= this.scene.time.now ||
+      this.utilityBeatDurationMs <= 0
+    ) {
+      return 0;
+    }
+
+    const progress = this.getUtilityBeatProgress();
+    const envelope = 1 - progress;
+    const pulse = (Math.sin(progress * Math.PI * 4) + 1) / 2;
+    return envelope * (0.55 + pulse * 0.45);
+  }
+
+  private getHallucinationCollapseIntensity() {
+    if (
+      this.hallucinationCollapseUntil <= this.scene.time.now ||
+      this.hallucinationCollapseDurationMs <= 0
+    ) {
+      this.hallucinationCollapseUntil = 0;
+      this.hallucinationCollapseDurationMs = 0;
+      return 0;
+    }
+
+    const progress = Phaser.Math.Clamp(
+      1 -
+        (this.hallucinationCollapseUntil - this.scene.time.now) /
+          this.hallucinationCollapseDurationMs,
+      0,
+      1,
+    );
+    const pulse = (Math.sin(progress * Math.PI * 9) + 1) / 2;
+    return Phaser.Math.Clamp(progress * 0.8 + pulse * 0.22, 0, 1);
+  }
+
+  private getDisplayedHeatRatio() {
+    const currentHeatRatio = Math.min(1, this.bindings.getHeat() / 100);
+    if (this.utilityBeatId !== "coolant_purge") {
+      return currentHeatRatio;
+    }
+
+    return Phaser.Math.Linear(
+      this.utilityBeatSnapshot.previousHeatRatio,
+      currentHeatRatio,
+      this.getUtilityBeatProgress(),
+    );
+  }
+
+  private getDisplayedHallucinationRatio() {
+    const currentHallucinationRatio = Math.min(
+      1,
+      this.bindings.getHallucination() / 100,
+    );
+    if (this.utilityBeatId !== "reality_patch") {
+      return currentHallucinationRatio;
+    }
+
+    return Phaser.Math.Linear(
+      this.utilityBeatSnapshot.previousHallucinationRatio,
+      currentHallucinationRatio,
+      this.getUtilityBeatProgress(),
+    );
+  }
+
+  private getDisplayedConnectionElapsedRatio() {
+    const currentConnectionRatio = this.bindings.getConnectionElapsedRatio();
+    if (this.utilityBeatId !== "signal_boost") {
+      return currentConnectionRatio;
+    }
+
+    return Phaser.Math.Linear(
+      this.utilityBeatSnapshot.previousConnectionElapsedRatio,
+      currentConnectionRatio,
+      this.getUtilityBeatProgress(),
+    );
+  }
+
+  private syncSceneFlashOverlay() {
+    const utilityBeatIntensity = this.getUtilityBeatFlashIntensity();
+    const collapseIntensity = this.getHallucinationCollapseIntensity();
+
+    if (collapseIntensity > 0.01) {
+      const pulse = (Math.sin(this.scene.time.now * 0.048) + 1) / 2;
+      this.sceneFlashOverlay.setFillStyle(
+        pulse > 0.58 ? 0xffffff : 0xaa5cff,
+        0.05 + collapseIntensity * (0.12 + pulse * 0.12),
+      );
+      this.sceneFlashOverlay.setAlpha(
+        0.05 + collapseIntensity * (0.14 + pulse * 0.08),
+      );
+      return;
+    }
+
+    if (utilityBeatIntensity > 0.01 && this.utilityBeatId) {
+      const flashColor =
+        this.utilityBeatId === "coolant_purge"
+          ? 0x8feaff
+          : this.utilityBeatId === "reality_patch"
+            ? 0xedc4ff
+            : 0xffdc8c;
+      this.sceneFlashOverlay.setFillStyle(flashColor, utilityBeatIntensity);
+      this.sceneFlashOverlay.setAlpha(0.04 + utilityBeatIntensity * 0.12);
+      return;
+    }
+
+    this.sceneFlashOverlay.setAlpha(0);
   }
 
   private syncChatHistoryAppearance() {

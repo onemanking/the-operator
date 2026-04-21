@@ -72,6 +72,7 @@ interface SessionControllerBindings {
   onSessionReady?: () => void;
   onInferenceResolved?: (outcome: string) => void;
   onRefuseResolved?: (outcome: string) => void;
+  onHallucinationFailureStart?: () => number | void;
   onTransitionToMaintenance?: (gameOver: boolean) => boolean;
 }
 
@@ -79,6 +80,7 @@ export class MainSceneSessionController {
   private taskTextTypingEvent: Phaser.Time.TimerEvent | null = null;
   private activeChatTypingEvents: number = 0;
   private readonly chatTypingEvents = new Set<Phaser.Time.TimerEvent>();
+  private hallucinationFailurePending: boolean = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -87,6 +89,7 @@ export class MainSceneSessionController {
 
   startNextSession() {
     this.cancelPendingTextTyping();
+    this.hallucinationFailurePending = false;
 
     const turn = this.getCurrentTurn();
     const encounter = this.getCurrentEncounter();
@@ -479,7 +482,15 @@ export class MainSceneSessionController {
   }
 
   private triggerHallucinationFailure() {
-    this.scene.time.delayedCall(1500, () => {
+    if (this.hallucinationFailurePending) {
+      return;
+    }
+
+    this.hallucinationFailurePending = true;
+    const requestedDelayMs = this.bindings.onHallucinationFailureStart?.();
+    const delayMs =
+      typeof requestedDelayMs === "number" ? requestedDelayMs : 1500;
+    this.scene.time.delayedCall(delayMs, () => {
       this.transitionToMaintenance(true);
     });
   }

@@ -204,6 +204,7 @@ export class MainScene extends Phaser.Scene {
   private connectionElapsedOffsetMs: number = 0;
   private lastConnectionSegmentCount: number =
     getConnectionFeedbackConfig().segmentCount;
+  private hallucinationCollapseActive: boolean = false;
 
   constructor() {
     super("MainScene");
@@ -291,6 +292,7 @@ export class MainScene extends Phaser.Scene {
     this.connectionElapsedOffsetMs = 0;
     this.lastConnectionSegmentCount =
       getConnectionFeedbackConfig().segmentCount;
+    this.hallucinationCollapseActive = false;
     this.lastCoolantPulseAt = 0;
     this.lastRealityAdjustToneAt = 0;
     this.realityLastPointerX = null;
@@ -447,6 +449,8 @@ export class MainScene extends Phaser.Scene {
           this.currentEncounterIndex,
           outcome,
         ),
+      onHallucinationFailureStart: () =>
+        this.startHallucinationCollapseSequence(),
       onTransitionToMaintenance: (gameOver) =>
         this.handleOrientationMaintenanceTransition(gameOver),
     });
@@ -1263,6 +1267,17 @@ export class MainScene extends Phaser.Scene {
     const definition = getActiveUtilityDefinition(utilityId);
     const recoveryProfile = getRunRecoveryProfile();
     const sharedUtilityConfig = getUtilityMinigameConfig().shared;
+    const previousHeatRatio = Phaser.Math.Clamp(this.heat / 100, 0, 1);
+    const previousHallucinationRatio = Phaser.Math.Clamp(
+      this.hallucination / 100,
+      0,
+      1,
+    );
+    const previousConnectionElapsedRatio = Phaser.Math.Clamp(
+      this.getConnectionElapsedRatio(),
+      0,
+      1,
+    );
 
     if (!definition || !consumeActiveUtilityCharge(this.runState, utilityId)) {
       this.failUtilityInteraction(utilityId, "UTILITY FAULT");
@@ -1308,7 +1323,20 @@ export class MainScene extends Phaser.Scene {
           ? "REALITY LOCKED"
           : "LINK RESTORED";
     synth.playUtilitySuccess(utilityId);
+    this.hudController.playUtilitySuccessBeat(utilityId, {
+      previousHeatRatio,
+      previousHallucinationRatio,
+      previousConnectionElapsedRatio,
+    });
     this.cameras.main.shake(110, 0.0012);
+    if (utilityId === "coolant_purge") {
+      this.time.delayedCall(90, () => {
+        this.cameras.main.shake(80, 0.001);
+      });
+      this.time.delayedCall(180, () => {
+        this.cameras.main.shake(60, 0.0008);
+      });
+    }
     this.syncSelectedUtilityId(utilityId);
     this.orientationController?.handleUtilityCompleted(utilityId);
     this.events.emit("updateBars");
@@ -2650,6 +2678,36 @@ export class MainScene extends Phaser.Scene {
       synth.playHallucinationDrift(hallucinationIntensity);
       this.lastHallucinationWarningSoundAt = now;
     }
+  }
+
+  private startHallucinationCollapseSequence() {
+    if (this.hallucinationCollapseActive) {
+      return 1900;
+    }
+
+    this.hallucinationCollapseActive = true;
+    this.setCommitLocked(true);
+    this.hudController.startHallucinationCollapse(1900);
+    this.sessionController.postSystemMessage(
+      "CRITICAL: REALITY CASCADE DETECTED.",
+      "#ff9ef5",
+    );
+    this.time.delayedCall(420, () => {
+      this.sessionController.postSystemMessage(
+        "RESPONSE BUFFER CORRUPTED // SANITY LINK FAILING.",
+        "#ffd1fb",
+      );
+    });
+    synth.playHallucinationCollapse();
+    this.cameras.main.shake(220, 0.0045);
+    this.time.delayedCall(540, () => {
+      this.cameras.main.shake(260, 0.0072);
+    });
+    this.time.delayedCall(1100, () => {
+      this.cameras.main.shake(180, 0.0055);
+    });
+
+    return 1900;
   }
 
   private applyConnectionFeedback() {

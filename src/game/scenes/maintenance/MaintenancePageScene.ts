@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getLLMLabel } from "../../data/LLMVersionData";
 import {
   RunEndReason,
   RunState,
@@ -71,10 +72,14 @@ export abstract class MaintenancePageScene extends Phaser.Scene {
 
   create() {
     const shellConfig = this.getShellConfig();
+    const versionedShellConfig = {
+      ...shellConfig,
+      subtitle: `${shellConfig.subtitle} // ${getLLMLabel()}`,
+    };
 
     createSceneBackdrop(this, 0x050805);
 
-    this.shell = createMonitorShell(this, shellConfig);
+    this.shell = createMonitorShell(this, versionedShellConfig);
     this.statusHint = this.add
       .text(
         this.cameras.main.width / 2,

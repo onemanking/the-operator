@@ -1,4 +1,5 @@
 import { RUN_CONFIG } from "../../data/RunData";
+import { formatLLMVersion, LLM_NAME } from "../../data/LLMVersionData";
 import {
   ACTIVE_UTILITIES,
   ActiveUtilityDefinition,
@@ -116,11 +117,11 @@ export function resolveMaintenanceSceneKey(
 }
 
 export function formatFineTuneVersion(deathCount: number) {
-  return `v1.${String(Math.max(1, deathCount)).padStart(2, "0")}`;
+  return formatLLMVersion(deathCount);
 }
 
 export function getFineTuneRebootText(deathCount: number) {
-  return `INITIATING FINE-TUNE: OMNI-SENTINEL ${formatFineTuneVersion(deathCount)}...`;
+  return `INITIATING FINE-TUNE: ${LLM_NAME} ${formatFineTuneVersion(deathCount)}...`;
 }
 
 export function getFailureDigestText(runState: RunState) {

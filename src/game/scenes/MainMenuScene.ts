@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getLLMLabel } from "../data/LLMVersionData";
 import { MainMenuSceneData } from "../types/SceneData";
 import { synth } from "../utils/SoundSynth";
 import { addScanlines, createSceneBackdrop } from "./shared/retroUi";
@@ -75,7 +76,7 @@ export class MainMenuScene extends Phaser.Scene {
     createSceneBackdrop(this, 0x040804);
     this.shell = createMonitorShell(this, {
       title: "TERMINAL BOOT // MAIN MENU",
-      subtitle: "OPERATOR CONSOLE READY",
+      subtitle: `OPERATOR CONSOLE READY // ${getLLMLabel()}`,
       footerLeft: "CHANNEL: OPERATOR.ENTRY",
       footerRight: "ENTER / SPACE // START",
     });

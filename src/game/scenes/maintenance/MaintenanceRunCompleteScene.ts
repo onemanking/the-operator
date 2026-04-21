@@ -21,7 +21,7 @@ export class MaintenanceRunCompleteScene extends MaintenancePageScene {
   protected getShellConfig() {
     return {
       title: "SYSTEM SAFE MODE // RUN COMPLETE",
-      subtitle: `DAY ${this.day}/${RUN_CONFIG.maxDay} // TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      subtitle: `DAY ${this.day}/${RUN_CONFIG.maxDay} // TOKENS ${this.tokens}`,
       footerLeft: "CHANNEL: MAINTENANCE.BUS",
       footerRight: "ENTER / SPACE // ARCHIVE RUN",
     };

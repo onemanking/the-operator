@@ -14,7 +14,7 @@ export class MaintenanceArchiveScene extends MaintenancePageScene {
   protected getShellConfig() {
     return {
       title: "SYSTEM SAFE MODE // FAILURE REPORT",
-      subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      subtitle: `TOKENS ${this.tokens}`,
       footerLeft: "CHANNEL: MAINTENANCE.BUS",
       footerRight: "ENTER / SPACE // REBOOT SYSTEM",
     };

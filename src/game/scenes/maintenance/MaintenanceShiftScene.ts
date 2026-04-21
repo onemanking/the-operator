@@ -25,6 +25,7 @@ import {
   buildNextRunState,
   getMaintenanceOfferCards,
 } from "./runtime";
+import { getLLMLabel } from "../../data/LLMVersionData";
 
 interface MaintenanceOfferCardView {
   offerId: string;
@@ -78,7 +79,7 @@ export class MaintenanceShiftScene extends MaintenancePageScene {
   protected getShellConfig() {
     return {
       title: `SYSTEM SAFE MODE // DAY ${this.day} COMPLETE`,
-      subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      subtitle: `TOKENS ${this.tokens}`,
       footerLeft: "CHANNEL: MAINTENANCE.BUS",
       footerRight: "ENTER / SPACE // ADVANCE",
     };
@@ -360,7 +361,7 @@ export class MaintenanceShiftScene extends MaintenancePageScene {
 
   private refreshMaintenanceView() {
     this.shell?.subtitleText.setText(
-      `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      `TOKENS ${this.tokens} // ${getLLMLabel()}`,
     );
     this.diagnosticsBody?.setText(this.getDiagnosticsText());
 

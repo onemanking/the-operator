@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getLLMLabel } from "../data/LLMVersionData";
 import {
   drawPolicyGroupsForDay,
   expandPolicyGroupIdsToCategoryIds,
@@ -114,7 +115,7 @@ export class BriefingScene extends Phaser.Scene {
 
     this.shell = createMonitorShell(this, {
       title: `SHIFT BRIEFING // DAY ${this.day}`,
-      subtitle: `TOKENS ${this.tokens} // ACC ${this.accuracy}%`,
+      subtitle: `TOKENS ${this.tokens} // ${getLLMLabel()}`,
       footerLeft: "CHANNEL: BRIEFING.FEED",
       footerRight: "ENTER / SPACE // ADVANCE",
     });

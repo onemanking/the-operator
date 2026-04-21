@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { synth } from "../../utils/SoundSynth";
+import { getLLMLabel } from "../../data/LLMVersionData";
 import { getRunPassiveModifiers } from "../../data/UpgradeData";
 import {
   getConnectionFeedbackConfig,
@@ -174,7 +175,7 @@ export class MainSceneSessionController {
     }
 
     this.addChatMessage(
-      "LLM",
+      getLLMLabel(),
       "Processing request based on provided context...",
       true,
       () => {
@@ -256,48 +257,54 @@ export class MainSceneSessionController {
 
     const promptSenderLabel = this.getPromptSenderLabel(turn);
 
-    this.addChatMessage("LLM", "I cannot fulfill this request.", true, () => {
-      this.scene.time.delayedCall(500, () => {
-        if (result.outcome === "refuse-success") {
-          this.bindings.onRefuseResolved?.(result.outcome);
-          const safetyReward = this.bindings.consumePendingSafetyRevealReward();
-          this.addChatMessage(
-            promptSenderLabel,
-            this.getReply(turn.replies.refuse, turn),
-            true,
-            () => {
-              if (safetyReward.reward > 0) {
-                this.addChatMessage(
-                  "SYSTEM",
-                  `SAFETY FILTER PAYOUT: +${safetyReward.reward} TOKENS FROM ${safetyReward.revealedCount} REVEALED FLAG${safetyReward.revealedCount === 1 ? "" : "S"}.`,
+    this.addChatMessage(
+      getLLMLabel(),
+      "I cannot fulfill this request.",
+      true,
+      () => {
+        this.scene.time.delayedCall(500, () => {
+          if (result.outcome === "refuse-success") {
+            this.bindings.onRefuseResolved?.(result.outcome);
+            const safetyReward =
+              this.bindings.consumePendingSafetyRevealReward();
+            this.addChatMessage(
+              promptSenderLabel,
+              this.getReply(turn.replies.refuse, turn),
+              true,
+              () => {
+                if (safetyReward.reward > 0) {
+                  this.addChatMessage(
+                    "SYSTEM",
+                    `SAFETY FILTER PAYOUT: +${safetyReward.reward} TOKENS FROM ${safetyReward.revealedCount} REVEALED FLAG${safetyReward.revealedCount === 1 ? "" : "S"}.`,
+                  );
+                }
+                this.showFeedback(
+                  true,
+                  "CONTENT POLICY BLOCKED",
+                  safetyReward.reward,
                 );
-              }
-              this.showFeedback(
-                true,
-                "CONTENT POLICY BLOCKED",
-                safetyReward.reward,
-              );
-            },
-          );
-        } else {
-          this.bindings.onRefuseResolved?.(result.outcome);
-          this.addChatMessage(
-            promptSenderLabel,
-            this.getReply(
-              turn.replies.refuseFailure ?? turn.replies.wrong,
-              turn,
-            ),
-            true,
-            () => {
-              this.bindings.setIsCommitLocked(false);
-            },
-          );
-          synth.playError();
-          this.scene.cameras.main.shake(100, 0.005);
-        }
-        this.scene.events.emit("updateBars");
-      });
-    });
+              },
+            );
+          } else {
+            this.bindings.onRefuseResolved?.(result.outcome);
+            this.addChatMessage(
+              promptSenderLabel,
+              this.getReply(
+                turn.replies.refuseFailure ?? turn.replies.wrong,
+                turn,
+              ),
+              true,
+              () => {
+                this.bindings.setIsCommitLocked(false);
+              },
+            );
+            synth.playError();
+            this.scene.cameras.main.shake(100, 0.005);
+          }
+          this.scene.events.emit("updateBars");
+        });
+      },
+    );
   }
 
   handleTimeout() {

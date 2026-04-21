@@ -30,6 +30,7 @@ export type TestScenarioId =
   | "maintenance"
   | "maintenanceVictory"
   | "maintenanceDead"
+  | "maintenanceNegative"
   | "contentExhausted"
   | "tier1"
   | "tier2"
@@ -189,6 +190,24 @@ const TEST_SCENARIOS: Record<TestScenarioId, TestScenarioDefinition> = {
     runEndReason: "system-failure",
     unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
   },
+  maintenanceNegative: {
+    startScene: "MaintenanceScene",
+    activePolicyGroupIds: ["illegal_content"],
+    forbiddenCategoryIds: ["weapons"],
+    equippedAgentIds: [],
+    equippedSkillIds: [],
+    selectedPromptToolIds: [],
+    day: 3,
+    tokens: -10,
+    accuracy: 93,
+    unlockedPromptToolIds: [ToolId.Search, ToolId.Compute, ToolId.Safety],
+    passiveUpgradeIds: ["cooling_fins"],
+    utilityChargesById: {
+      coolant_purge: 1,
+      reality_patch: 1,
+      signal_boost: 1,
+    },
+  },
   contentExhausted: {
     startScene: "BriefingScene",
     activePolicyGroupIds: [],
@@ -261,6 +280,7 @@ function isTestScenarioId(value: string): value is TestScenarioId {
     value === "maintenance" ||
     value === "maintenanceVictory" ||
     value === "maintenanceDead" ||
+    value === "maintenanceNegative" ||
     value === "contentExhausted" ||
     value === "tier1" ||
     value === "tier2" ||
@@ -279,6 +299,7 @@ const TEST_SCENARIO_IDS_BY_MODE: Record<string, TestScenarioId> = {
   "test-maintenance": "maintenance",
   "test-maintenance-victory": "maintenanceVictory",
   "test-maintenance-dead": "maintenanceDead",
+  "test-maintenance-negative": "maintenanceNegative",
   "test-content-exhausted": "contentExhausted",
   "test-tier1": "tier1",
   "test-tier2": "tier2",

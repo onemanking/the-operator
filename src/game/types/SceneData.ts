@@ -35,6 +35,7 @@ export type OrientationStepId =
   | "safety_open"
   | "safety_scan"
   | "refuse"
+  | "coolant_cycle"
   | "coolant_use"
   | "coolant_interact"
   | "reality_cycle"

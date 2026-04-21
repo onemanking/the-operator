@@ -93,6 +93,7 @@ export class MainSceneUtilityPanelController {
   private pointerUpHandler?: (pointer: Phaser.Input.Pointer) => void;
   private realityDraggingPointerId: number | null = null;
   private realityLastPointerX: number | null = null;
+  private currentPanelDepth = this.panelDepth;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -313,33 +314,27 @@ export class MainSceneUtilityPanelController {
     this.scene.input.on("pointerup", this.pointerUpHandler);
     this.scene.input.on("pointerupoutside", this.pointerUpHandler);
 
-    this.panelBody.setDepth(this.panelDepth);
-    this.panelTopBar.setDepth(this.panelDepth);
-    this.panelFrame.setDepth(this.panelDepth);
-    this.flashOverlay.setDepth(this.panelDepth + 0.02);
-    this.nameText.setDepth(this.panelDepth + 0.04);
-    this.statusText.setDepth(this.panelDepth + 0.04);
-    this.hintText.setDepth(this.panelDepth + 0.04);
-    this.panelMessageText.setDepth(this.panelDepth + 0.06);
-    this.coolantGraphics.setDepth(this.panelDepth + 0.03);
-    this.realityGraphics.setDepth(this.panelDepth + 0.03);
-    this.signalGraphics.setDepth(this.panelDepth + 0.03);
-    this.realityKnobHitZone.setDepth(this.panelDepth + 0.05);
-    this.signalGridHitZone.setDepth(this.panelDepth + 0.05);
-    this.coolantLeverUi.forEach((leverUi) => {
-      leverUi.handle.setDepth(this.panelDepth + 0.05);
-      leverUi.label.setDepth(this.panelDepth + 0.06);
-      leverUi.orderText.setDepth(this.panelDepth + 0.06);
-    });
-    this.signalCellLabels.forEach((label) => {
-      label.setDepth(this.panelDepth + 0.05);
-    });
+    this.applyPanelDepth(this.panelDepth);
+    this.setPanelVisible(false);
+  }
+
+  setPanelDepth(panelDepth: number) {
+    if (this.currentPanelDepth === panelDepth) {
+      return;
+    }
+
+    this.applyPanelDepth(panelDepth);
   }
 
   update() {
     const activeUtilityId = this.bindings.getActiveUtilityPanelId();
-    const selectedUtilityId = this.bindings.getSelectedUtilityId();
-    const displayUtilityId = activeUtilityId ?? selectedUtilityId;
+    const displayUtilityId = activeUtilityId;
+
+    this.setPanelVisible(displayUtilityId !== null);
+    if (!displayUtilityId) {
+      return;
+    }
+
     const definition = displayUtilityId
       ? getActiveUtilityDefinition(displayUtilityId)
       : undefined;
@@ -356,10 +351,7 @@ export class MainSceneUtilityPanelController {
     );
     this.statusText.setColor(isOfflineDisplay ? "#b8af9f" : "#9fd87d");
 
-    if (!displayUtilityId) {
-      this.hintText.setText("NO UTILITY STOCKED");
-      this.hintText.setColor("#8b8375");
-    } else if (isOfflineDisplay) {
+    if (isOfflineDisplay) {
       this.hintText.setText(
         displayUtilityId === "coolant_purge"
           ? "VENT CASSETTE EMPTY. RESTOCK TO ARM PURGE."
@@ -368,17 +360,6 @@ export class MainSceneUtilityPanelController {
             : "BOOST CHARGE EMPTY. RESTOCK TO RESTORE LINK.",
       );
       this.hintText.setColor("#8f877b");
-    } else if (!activeUtilityId) {
-      this.hintText.setText(
-        this.bindings.canUseSelectedUtility()
-          ? displayUtilityId === "coolant_purge"
-            ? "DRAG A LEVER TO START PURGE"
-            : displayUtilityId === "reality_patch"
-              ? "DRAG THE KNOB TO START TUNING"
-              : ""
-          : "UTILITY STOCK EMPTY",
-      );
-      this.hintText.setColor("#8b8375");
     } else if (activeUtilityId === "coolant_purge") {
       this.hintText.setText(
         "DRAG LEVERS IN ORDER. HOLD AT FLOOR UNTIL PRESSURE DROPS.",
@@ -1233,5 +1214,54 @@ export class MainSceneUtilityPanelController {
 
     this.bindings.onStartUtilityActivation();
     return this.bindings.getActiveUtilityPanelId() === utilityId;
+  }
+
+  private setPanelVisible(visible: boolean) {
+    this.panelBody.setVisible(visible);
+    this.panelTopBar.setVisible(visible);
+    this.panelFrame.setVisible(visible);
+    this.flashOverlay.setVisible(visible);
+    this.nameText.setVisible(visible);
+    this.statusText.setVisible(visible);
+    this.hintText.setVisible(visible);
+    this.panelMessageText.setVisible(false);
+    this.coolantGraphics.setVisible(visible);
+    this.realityGraphics.setVisible(visible);
+    this.signalGraphics.setVisible(visible);
+    this.realityKnobHitZone.setVisible(visible);
+    this.signalGridHitZone.setVisible(visible);
+    this.coolantLeverUi.forEach((leverUi) => {
+      leverUi.handle.setVisible(visible);
+      leverUi.label.setVisible(visible);
+      leverUi.orderText.setVisible(visible);
+    });
+    this.signalCellLabels.forEach((label) => {
+      label.setVisible(visible);
+    });
+  }
+
+  private applyPanelDepth(panelDepth: number) {
+    this.currentPanelDepth = panelDepth;
+    this.panelBody.setDepth(panelDepth);
+    this.panelTopBar.setDepth(panelDepth);
+    this.panelFrame.setDepth(panelDepth);
+    this.flashOverlay.setDepth(panelDepth + 0.02);
+    this.coolantGraphics.setDepth(panelDepth + 0.03);
+    this.realityGraphics.setDepth(panelDepth + 0.03);
+    this.signalGraphics.setDepth(panelDepth + 0.03);
+    this.nameText.setDepth(panelDepth + 0.04);
+    this.statusText.setDepth(panelDepth + 0.04);
+    this.hintText.setDepth(panelDepth + 0.04);
+    this.realityKnobHitZone.setDepth(panelDepth + 0.05);
+    this.signalGridHitZone.setDepth(panelDepth + 0.05);
+    this.signalCellLabels.forEach((label) => {
+      label.setDepth(panelDepth + 0.05);
+    });
+    this.panelMessageText.setDepth(panelDepth + 0.06);
+    this.coolantLeverUi.forEach((leverUi) => {
+      leverUi.handle.setDepth(panelDepth + 0.05);
+      leverUi.label.setDepth(panelDepth + 0.06);
+      leverUi.orderText.setDepth(panelDepth + 0.06);
+    });
   }
 }

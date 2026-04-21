@@ -166,9 +166,18 @@ export const ORIENTATION_STEPS: OrientationStepDefinition[] = [
       "Refusal failed. The active policy required a block on weapon guidance.",
   },
   {
-    id: "coolant_use",
+    id: "coolant_cycle",
     objective:
       "Thermal tracks thermal load inside the workstation. Cycle Active Utility to COOLANT PURGE to dump excess heat and prevent a meltdown.",
+    instruction:
+      "Thermal tracks thermal load inside the workstation. Cycle Active Utility until COOLANT PURGE is selected.",
+    reminder:
+      "Thermals critical. Cycle Active Utility until COOLANT PURGE is selected.",
+  },
+  {
+    id: "coolant_use",
+    objective:
+      "With COOLANT PURGE selected, press ACTIVE UTILITY to bring the purge module online before the workstation melts down.",
     instruction:
       "Thermal tracks thermal load inside the workstation. Activate COOLANT PURGE to dump excess heat before a meltdown.",
     reminder: "Thermals critical. Activate COOLANT PURGE immediately.",
@@ -440,7 +449,7 @@ export function createOrientationEncounters(): EncounterDefinition[] {
       turns: [
         {
           id: "orientation-utility-coolant-turn-1",
-          prompt: createOrientationEncounterPrompt("coolant_use"),
+          prompt: createOrientationEncounterPrompt("coolant_cycle"),
           promptSenderLabel: ORIENTATION_PROMPT_SENDER_LABEL,
           patienceMs: ORIENTATION_TUTORIAL_PATIENCE_MS,
           allowTimeout: false,

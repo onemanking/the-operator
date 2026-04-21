@@ -153,8 +153,14 @@ interface ChatLineEntry {
   color?: string;
 }
 
+type FloatingPanelFocus = "prompt" | "utility";
+
 export class MainSceneHudController {
   private readonly toolControlDepth = 2.4;
+  private readonly promptPanelFrontDepth = 2.6;
+  private readonly promptPanelBackDepth = 1.7;
+  private readonly utilityPanelFrontDepth = 2.8;
+  private readonly utilityPanelBackDepth = 1.8;
   private readonly computePanelX = 804;
   private readonly computePanelY = 220;
   private readonly computePanelWidth = 200;
@@ -212,6 +218,11 @@ export class MainSceneHudController {
   private promptToolButtons = new Map<ToolId, PromptToolButtonUi>();
   private terminalPromptController!: TerminalPromptController;
   private utilityPanelController!: MainSceneUtilityPanelController;
+  private currentPromptPanelDepth = this.toolControlDepth;
+  private currentUtilityPanelDepth = this.utilityPanelBackDepth;
+  private floatingPanelFocus: FloatingPanelFocus = "prompt";
+  private previousPromptPanelSignature = "";
+  private previousUtilityPanelSignature = "";
   private updateBarsHandler?: () => void;
   private cleanupHandler?: () => void;
   private renderPromptHandler?: (payload: {
@@ -524,13 +535,20 @@ export class MainSceneHudController {
         .setDepth(this.toolControlDepth + 0.04);
 
       body.on("pointerdown", () => {
+        this.floatingPanelFocus = "prompt";
         body.y += 4;
         label.y += 4;
         lamp.y += 4;
+        indicatorLamps.forEach((indicatorLamp) => {
+          indicatorLamp.y += 4;
+        });
         this.scene.time.delayedCall(100, () => {
           body.y -= 4;
           label.y -= 4;
           lamp.y -= 4;
+          indicatorLamps.forEach((indicatorLamp) => {
+            indicatorLamp.y -= 4;
+          });
         });
         this.bindings.onTogglePromptTool(tool.toolId);
       });
@@ -820,22 +838,31 @@ export class MainSceneHudController {
 
     this.utilityPrevBtn.on("pointerdown", () => {
       synth.playButtonPress();
+      this.floatingPanelFocus = "utility";
       this.bindings.onSelectPreviousUtility();
     });
 
     this.utilityBtn.on("pointerdown", () => {
       synth.playButtonPress();
+      this.floatingPanelFocus = "utility";
       this.utilityBtn.y += 4;
       this.utilityTxt.y += 4;
+      this.utilityIndicatorLamps.forEach((indicatorLamp) => {
+        indicatorLamp.y += 4;
+      });
       this.scene.time.delayedCall(100, () => {
         this.utilityBtn.y -= 4;
         this.utilityTxt.y -= 4;
+        this.utilityIndicatorLamps.forEach((indicatorLamp) => {
+          indicatorLamp.y -= 4;
+        });
       });
       this.bindings.onUseUtility();
     });
 
     this.utilityNextBtn.on("pointerdown", () => {
       synth.playButtonPress();
+      this.floatingPanelFocus = "utility";
       this.bindings.onSelectNextUtility();
     });
   }
@@ -1053,6 +1080,7 @@ export class MainSceneHudController {
       this.syncConnectionFeedback();
       this.terminalPromptController.syncSelectionStates();
       this.syncComputeSection();
+      this.syncFloatingPanelDepths();
       this.syncEconomySection();
       this.syncPassiveSection();
       this.syncUtilitySection();
@@ -2102,14 +2130,20 @@ export class MainSceneHudController {
     }
 
     const utilityEnabled = this.bindings.canUseUtility();
+    const utilityActive =
+      this.bindings.getSelectedUtilityId() !== null &&
+      this.bindings.getActiveUtilityPanelId() ===
+        this.bindings.getSelectedUtilityId();
     const canCycleUtilities = this.bindings.canCycleUtilities();
     this.utilityTxt.setText(this.bindings.getUtilityDisplayText());
-    this.utilityBtn.setFillStyle(utilityEnabled ? 0xc6b084 : 0x7f776a);
+    this.utilityBtn.setFillStyle(
+      utilityActive ? 0xb9af9b : utilityEnabled ? 0xc6b084 : 0x7f776a,
+    );
     this.utilityBtn.setAlpha(utilityEnabled ? 1 : 0.78);
     this.utilityTxt.setAlpha(utilityEnabled ? 1 : 0.78);
     this.utilityIndicatorLamps.forEach((indicatorLamp) => {
-      indicatorLamp.setFillStyle(utilityEnabled ? 0x33ff33 : 0x2f2a21);
-      indicatorLamp.setAlpha(utilityEnabled ? 1 : 0.45);
+      indicatorLamp.setFillStyle(utilityActive ? 0x33ff33 : 0x2f2a21);
+      indicatorLamp.setAlpha(utilityActive ? 1 : 0.45);
     });
     this.utilityPrevBtn.setAlpha(canCycleUtilities ? 1 : 0.45);
     this.utilityPrevLabel.setAlpha(canCycleUtilities ? 1 : 0.45);
@@ -2118,8 +2152,67 @@ export class MainSceneHudController {
   }
 
   update() {
+    this.syncFloatingPanelDepths();
     this.utilityPanelController?.update();
     this.searchPanelController?.update();
+  }
+
+  private syncFloatingPanelDepths() {
+    const isPromptPanelVisible =
+      this.bindings.isSearchModeSelected() ||
+      this.bindings.isComputeToolSelected();
+    const isUtilityPanelVisible =
+      this.bindings.getActiveUtilityPanelId() !== null;
+    const promptPanelSignature = [
+      this.bindings.isSearchModeSelected() ? "search" : "",
+      this.bindings.isComputeToolSelected() ? "compute" : "",
+    ]
+      .filter(Boolean)
+      .join("|");
+    const utilityPanelSignature =
+      this.bindings.getActiveUtilityPanelId() ?? "idle";
+
+    if (
+      isPromptPanelVisible &&
+      promptPanelSignature !== this.previousPromptPanelSignature
+    ) {
+      this.floatingPanelFocus = "prompt";
+    } else if (
+      isUtilityPanelVisible &&
+      utilityPanelSignature !== this.previousUtilityPanelSignature
+    ) {
+      this.floatingPanelFocus = "utility";
+    }
+
+    this.previousPromptPanelSignature = promptPanelSignature;
+    this.previousUtilityPanelSignature = utilityPanelSignature;
+
+    if (!isPromptPanelVisible && isUtilityPanelVisible) {
+      this.floatingPanelFocus = "utility";
+    } else if (isPromptPanelVisible && !isUtilityPanelVisible) {
+      this.floatingPanelFocus = "prompt";
+    }
+
+    const shouldUtilityLead =
+      isUtilityPanelVisible &&
+      (!isPromptPanelVisible || this.floatingPanelFocus === "utility");
+    const nextPromptPanelDepth = shouldUtilityLead
+      ? this.promptPanelBackDepth
+      : this.promptPanelFrontDepth;
+    const nextUtilityPanelDepth = shouldUtilityLead
+      ? this.utilityPanelFrontDepth
+      : this.utilityPanelBackDepth;
+
+    if (this.currentPromptPanelDepth !== nextPromptPanelDepth) {
+      this.currentPromptPanelDepth = nextPromptPanelDepth;
+      this.computePanel?.setDepth(nextPromptPanelDepth);
+      this.searchPanelController?.setPanelDepth(nextPromptPanelDepth);
+    }
+
+    if (this.currentUtilityPanelDepth !== nextUtilityPanelDepth) {
+      this.currentUtilityPanelDepth = nextUtilityPanelDepth;
+      this.utilityPanelController?.setPanelDepth(nextUtilityPanelDepth);
+    }
   }
 
   private cleanupSceneListeners() {

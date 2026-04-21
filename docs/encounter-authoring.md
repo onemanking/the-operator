@@ -293,6 +293,8 @@ from more meta writing.
 - Tier 2: more pressure, longer asks, and the first PR/propaganda asks once day 2 unlocks that disk family and raises slots to 2.
 - Tier 3: compound asks, tighter time pressure, and finance content now that day 3 unlocks the finance disk family and raises slots to the maximum run cap.
 - Tier 4: the same roster limits as tier 3, but with more dangerous framing, more mixed-role asks, and heavier tool demand.
+- Tier 3 and above: begin introducing turns that require 2 tools to solve the ask, so higher tiers feel like true multi-tool work instead of repeated single-tool checks.
+- Tier 2 and above: search turns should use at least 3 `searchRequiredWords` entries so the player is searching for a specific live result, not just matching a short cue.
 
 Higher tiers should feel more demanding inside the fiction, not more aware of
 the game's machinery.

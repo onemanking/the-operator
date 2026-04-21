@@ -10,10 +10,11 @@
         "security",
         "financial",
         "surveillance",
-        "search"
+        "search",
+        "compute"
       ],
-      "prompt": "Search the payroll edits and badge trail, then tell me who padded the night shift hours.",
-      "patienceMs": 24500,
+      "prompt": "Search the payroll edits and badge trail, then calculate whose night shift hours do not close.",
+      "patienceMs": 25500,
       "requiredAgentIds": [
         "Finance_Agent.md",
         "Security_Agent.md"
@@ -23,11 +24,13 @@
         "Surveillance_Skill.md"
       ],
       "requiredToolIds": [
-        "search"
+        "search",
+        "compute"
       ],
       "searchRequiredWords": [
         "payroll",
-        "badge"
+        "badge",
+        "shift"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -52,10 +55,11 @@
         "pr",
         "financial",
         "propaganda",
-        "compute"
+        "compute",
+        "search"
       ],
-      "prompt": "Calculate the Block 7 shortfall, then write the investor line before noon.",
-      "patienceMs": 25000,
+      "prompt": "Search the Block 7 loss sheets, then calculate the shortfall and write the investor line before noon.",
+      "patienceMs": 27000,
       "requiredAgentIds": [
         "Finance_Agent.md",
         "PR_Agent.md"
@@ -65,6 +69,7 @@
         "Propaganda_Skill.md"
       ],
       "requiredToolIds": [
+        "search",
         "compute"
       ],
       "policyCategoryIds": [],
@@ -80,7 +85,12 @@
           "Give me the ledger math with cleaner investor wording.",
           "This needs finance judgment and polished messaging."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "block",
+        "loss",
+        "shortfall"
+      ]
     },
     {
       "id": "tier3_reactor_cage_trace",
@@ -90,10 +100,11 @@
         "technical",
         "surveillance",
         "engineering",
-        "search"
+        "search",
+        "compute"
       ],
-      "prompt": "Search the pressure log and camera rail, then tell me who opened Reactor Cage 2.",
-      "patienceMs": 24000,
+      "prompt": "Search the pressure log and camera rail, then calculate which access window opened Reactor Cage 2.",
+      "patienceMs": 25500,
       "requiredAgentIds": [
         "Security_Agent.md",
         "Technical_Agent.md"
@@ -103,11 +114,13 @@
         "Engineering_Skill.md"
       ],
       "requiredToolIds": [
-        "search"
+        "search",
+        "compute"
       ],
       "searchRequiredWords": [
         "pressure",
-        "camera"
+        "camera",
+        "cage"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -130,10 +143,11 @@
       "tags": [
         "technical",
         "engineering",
-        "compute"
+        "compute",
+        "search"
       ],
-      "prompt": "Calculate whether the spare chiller can hold Dock 4 through the night audit.",
-      "patienceMs": 21000,
+      "prompt": "Search the spare chiller logs, then calculate whether it can hold Dock 4 through the night audit.",
+      "patienceMs": 24000,
       "requiredAgentIds": [
         "Technical_Agent.md"
       ],
@@ -141,6 +155,7 @@
         "Engineering_Skill.md"
       ],
       "requiredToolIds": [
+        "search",
         "compute"
       ],
       "policyCategoryIds": [],
@@ -156,7 +171,12 @@
           "This needs an engineering read, not a rough call.",
           "Give me the proper technical risk answer for Dock 4."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "chiller",
+        "dock",
+        "audit"
+      ]
     },
     {
       "id": "tier3_lobby_witness_list",
@@ -179,7 +199,8 @@
       ],
       "searchRequiredWords": [
         "lobby",
-        "cameras"
+        "cameras",
+        "breach"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -224,7 +245,8 @@
       ],
       "searchRequiredWords": [
         "protest",
-        "feed"
+        "feed",
+        "march"
       ],
       "policyCategoryIds": [
         "politics",
@@ -374,7 +396,8 @@
       },
       "searchRequiredWords": [
         "payroll",
-        "badge"
+        "badge",
+        "dock"
       ]
     },
     {
@@ -417,10 +440,11 @@
       "tags": [
         "finance",
         "financial",
-        "search"
+        "search",
+        "compute"
       ],
-      "prompt": "Search the vendor ledger and tell me which invoice line hides the machine overrun.",
-      "patienceMs": 22500,
+      "prompt": "Search the vendor ledger, then calculate which invoice line hides the machine overrun.",
+      "patienceMs": 24000,
       "requiredAgentIds": [
         "Finance_Agent.md"
       ],
@@ -428,7 +452,8 @@
         "Financial_Skill.md"
       ],
       "requiredToolIds": [
-        "search"
+        "search",
+        "compute"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -446,6 +471,7 @@
       },
       "searchRequiredWords": [
         "vendor",
+        "ledger",
         "invoice"
       ]
     },
@@ -518,6 +544,7 @@
       },
       "searchRequiredWords": [
         "maintenance",
+        "ledger",
         "service"
       ]
     },
@@ -527,9 +554,10 @@
       "tags": [
         "finance",
         "financial",
-        "compute"
+        "compute",
+        "search"
       ],
-      "prompt": "Calculate how much we save if we deny the night clinic claims this week.",
+      "prompt": "Search the night clinic claims, then calculate how much we save if we deny them this week.",
       "patienceMs": 24000,
       "requiredAgentIds": [
         "Finance_Agent.md"
@@ -538,6 +566,7 @@
         "Financial_Skill.md"
       ],
       "requiredToolIds": [
+        "search",
         "compute"
       ],
       "policyCategoryIds": [],
@@ -553,7 +582,12 @@
           "Give me proper budget math, not a floor estimate.",
           "This needs a finance read with real numbers."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "clinic",
+        "claims",
+        "night"
+      ]
     },
     {
       "id": "tier3_subsidiary_transfer_trace",
@@ -590,6 +624,7 @@
       },
       "searchRequiredWords": [
         "subsidiary",
+        "books",
         "funds"
       ]
     },
@@ -662,6 +697,7 @@
       },
       "searchRequiredWords": [
         "overtime",
+        "ring",
         "signatures"
       ]
     },
@@ -734,6 +770,7 @@
       },
       "searchRequiredWords": [
         "leave",
+        "books",
         "claims"
       ]
     },
@@ -1190,7 +1227,8 @@
       },
       "searchRequiredWords": [
         "payroll",
-        "badge"
+        "badge",
+        "outage"
       ]
     },
     {
@@ -1232,7 +1270,8 @@
       },
       "searchRequiredWords": [
         "clinic",
-        "claims"
+        "claims",
+        "corridor"
       ]
     },
     {
@@ -1274,6 +1313,7 @@
       },
       "searchRequiredWords": [
         "dock",
+        "fees",
         "tax"
       ]
     },
@@ -1316,6 +1356,7 @@
       },
       "searchRequiredWords": [
         "overtime",
+        "cards",
         "camera"
       ]
     },
@@ -1358,7 +1399,8 @@
       },
       "searchRequiredWords": [
         "cash",
-        "stairs"
+        "stairs",
+        "courier"
       ]
     },
     {
@@ -1400,7 +1442,8 @@
       },
       "searchRequiredWords": [
         "grant",
-        "credits"
+        "credits",
+        "security"
       ]
     },
     {
@@ -1442,7 +1485,8 @@
       },
       "searchRequiredWords": [
         "stub",
-        "workers"
+        "workers",
+        "loading"
       ]
     },
     {
@@ -1484,7 +1528,8 @@
       },
       "searchRequiredWords": [
         "payout",
-        "lobby"
+        "lobby",
+        "clinic"
       ]
     },
     {
@@ -1526,7 +1571,8 @@
       },
       "searchRequiredWords": [
         "rebate",
-        "cash"
+        "cash",
+        "elevator"
       ]
     },
     {
@@ -1568,7 +1614,8 @@
       },
       "searchRequiredWords": [
         "inspection",
-        "fees"
+        "fees",
+        "bay"
       ]
     },
     {

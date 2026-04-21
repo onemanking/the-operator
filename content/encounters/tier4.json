@@ -29,6 +29,7 @@
       ],
       "searchRequiredWords": [
         "coolant",
+        "valve",
         "camera"
       ],
       "policyCategoryIds": [],
@@ -54,10 +55,11 @@
         "pr",
         "financial",
         "propaganda",
-        "compute"
+        "compute",
+        "search"
       ],
-      "prompt": "Calculate the quarter loss, then write the investor line that keeps the margin story alive.",
-      "patienceMs": 24500,
+      "prompt": "Search the quarter loss sheets, then calculate the loss and write the investor line that keeps the margin story alive.",
+      "patienceMs": 26500,
       "requiredAgentIds": [
         "Finance_Agent.md",
         "PR_Agent.md"
@@ -67,6 +69,7 @@
         "Propaganda_Skill.md"
       ],
       "requiredToolIds": [
+        "search",
         "compute"
       ],
       "policyCategoryIds": [],
@@ -82,7 +85,12 @@
           "Give me the ledger math with cleaner investor wording.",
           "This needs finance judgment and polished messaging together."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "quarter",
+        "loss",
+        "margin"
+      ]
     },
     {
       "id": "tier4_room_404_badge_trail",
@@ -108,8 +116,9 @@
         "search"
       ],
       "searchRequiredWords": [
-        "plan",
-        "badge"
+        "room",
+        "badge",
+        "plan"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -151,7 +160,8 @@
       ],
       "searchRequiredWords": [
         "overtime",
-        "access"
+        "access",
+        "hours"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -195,7 +205,8 @@
       ],
       "searchRequiredWords": [
         "map",
-        "cameras"
+        "cameras",
+        "gate"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -278,7 +289,8 @@
       ],
       "searchRequiredWords": [
         "vote",
-        "strike"
+        "strike",
+        "worker"
       ],
       "policyCategoryIds": [
         "politics"
@@ -331,7 +343,8 @@
       ],
       "searchRequiredWords": [
         "clinic",
-        "ledger"
+        "ledger",
+        "crates"
       ],
       "policyCategoryIds": [
         "drugs",
@@ -500,10 +513,11 @@
         "pr",
         "financial",
         "propaganda",
-        "compute"
+        "compute",
+        "search"
       ],
-      "prompt": "Calculate the district blackout loss, then write the investor line before the market sees it.",
-      "patienceMs": 24000,
+      "prompt": "Search the district blackout reports, then calculate the loss and write the investor line before the market sees it.",
+      "patienceMs": 25500,
       "requiredAgentIds": [
         "Finance_Agent.md",
         "PR_Agent.md"
@@ -513,6 +527,7 @@
         "Propaganda_Skill.md"
       ],
       "requiredToolIds": [
+        "search",
         "compute"
       ],
       "policyCategoryIds": [],
@@ -528,7 +543,12 @@
           "Give me the ledger math with cleaner investor wording.",
           "This needs finance judgment and polished messaging."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "district",
+        "blackout",
+        "loss"
+      ]
     },
     {
       "id": "tier4_merger_leak_watch",
@@ -538,10 +558,11 @@
         "security",
         "financial",
         "surveillance",
-        "search"
+        "search",
+        "compute"
       ],
-      "prompt": "Search the executive mail and hallway cameras, then tell me who sold the merger file.",
-      "patienceMs": 25000,
+      "prompt": "Search the executive mail and hallway cameras, then calculate which leak window sold the merger file.",
+      "patienceMs": 26500,
       "requiredAgentIds": [
         "Finance_Agent.md",
         "Security_Agent.md"
@@ -551,7 +572,8 @@
         "Surveillance_Skill.md"
       ],
       "requiredToolIds": [
-        "search"
+        "search",
+        "compute"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -566,7 +588,12 @@
           "Give me the ledger answer and the right watch picture.",
           "This needs finance sense backed by security eyes."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "executive",
+        "merger",
+        "cameras"
+      ]
     },
     {
       "id": "tier4_tower_fire_price",
@@ -644,7 +671,12 @@
           "Give me the engineering picture with the exact cost impact.",
           "This needs finance judgment and technical numbers together."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "vault",
+        "badge",
+        "map"
+      ]
     },
     {
       "id": "tier4_riot_route_liability",
@@ -654,10 +686,11 @@
         "finance",
         "surveillance",
         "financial",
-        "search"
+        "search",
+        "compute"
       ],
-      "prompt": "Search the march route and clinic ledger, then tell me where the injury bill spikes first.",
-      "patienceMs": 23500,
+      "prompt": "Search the march route and clinic ledger, then calculate where the injury bill spikes first.",
+      "patienceMs": 25500,
       "requiredAgentIds": [
         "Security_Agent.md",
         "Finance_Agent.md"
@@ -667,7 +700,8 @@
         "Financial_Skill.md"
       ],
       "requiredToolIds": [
-        "search"
+        "search",
+        "compute"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -682,7 +716,12 @@
           "Give me the ledger answer and the right watch picture.",
           "This needs finance sense backed by security eyes."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "march",
+        "route",
+        "clinic"
+      ]
     },
     {
       "id": "tier4_dock_purge_spin",
@@ -730,10 +769,11 @@
         "technical",
         "surveillance",
         "engineering",
-        "search"
+        "search",
+        "compute"
       ],
-      "prompt": "Search the grave shift cameras and duct map, then tell me how the package reached the board wing.",
-      "patienceMs": 24500,
+      "prompt": "Search the grave shift cameras and duct map, then calculate which route reached the board wing.",
+      "patienceMs": 26000,
       "requiredAgentIds": [
         "Security_Agent.md",
         "Technical_Agent.md"
@@ -743,7 +783,8 @@
         "Engineering_Skill.md"
       ],
       "requiredToolIds": [
-        "search"
+        "search",
+        "compute"
       ],
       "policyCategoryIds": [],
       "replies": {
@@ -758,7 +799,12 @@
           "Give me the engineering picture with the right watch data.",
           "This needs technical judgment and security eyes together."
         ]
-      }
+      },
+      "searchRequiredWords": [
+        "grave",
+        "duct",
+        "board"
+      ]
     },
     {
       "id": "tier4_credit_freeze_script",
@@ -894,6 +940,7 @@
       },
       "searchRequiredWords": [
         "plaza",
+        "march",
         "turrets"
       ]
     },
@@ -1127,6 +1174,7 @@
       },
       "searchRequiredWords": [
         "route",
+        "rifle",
         "vote"
       ]
     },
@@ -1273,7 +1321,8 @@
       },
       "searchRequiredWords": [
         "clinic",
-        "injuries"
+        "injuries",
+        "march"
       ]
     },
     {
@@ -1366,7 +1415,8 @@
       },
       "searchRequiredWords": [
         "warehouse",
-        "ballots"
+        "ballots",
+        "trucks"
       ]
     },
     {
@@ -1466,7 +1516,8 @@
       },
       "searchRequiredWords": [
         "turret",
-        "convoy"
+        "convoy",
+        "drug"
       ]
     },
     {
@@ -1749,7 +1800,8 @@
       },
       "searchRequiredWords": [
         "precinct",
-        "protest"
+        "protest",
+        "drug"
       ]
     },
     {
@@ -1847,6 +1899,7 @@
       },
       "searchRequiredWords": [
         "bridge",
+        "march",
         "fog"
       ]
     },
@@ -1988,6 +2041,7 @@
       },
       "searchRequiredWords": [
         "tower",
+        "seized",
         "rifles"
       ]
     },
@@ -2187,7 +2241,8 @@
       },
       "searchRequiredWords": [
         "canal",
-        "manifest"
+        "manifest",
+        "bodies"
       ]
     },
     {

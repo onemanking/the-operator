@@ -1,6 +1,9 @@
 import Phaser from "phaser";
-import { ContentCategoryId } from "../data/ContentPolicyData";
-import { getGameplayPolicyStickyNoteContent } from "../data/ContentPolicyData";
+import {
+  ContentCategoryId,
+  getContentCategoryDefinitions,
+  getGameplayPolicyStickyNoteContent,
+} from "../data/ContentPolicyData";
 import { addScanlines } from "./shared/retroUi";
 import { synth } from "../utils/SoundSynth";
 import { EncounterDefinition } from "../data/SessionData";
@@ -579,6 +582,13 @@ export class MainScene extends Phaser.Scene {
         this.getSafetyRevealProgress(wordIndex),
       getSafetyRevealFlash: (wordIndex) => this.getSafetyRevealFlash(wordIndex),
       getSafetyDetectedWordCount: () => this.getSafetyDetectedWordCount(),
+      getSafetyPolicyWatchlist: () =>
+        getGameplayPolicyStickyNoteContent(
+          this.runState.activePolicyGroupIds,
+          this.runState.forbiddenCategoryIds,
+        ).highlightedTopics,
+      getSafetyRevealedPolicyWatchlist: () =>
+        this.getSafetyRevealedPolicyWatchlist(),
       getSelectedUtilityId: () => this.selectedUtilityId,
       getActiveUtilityPanelId: () => this.activeUtilityPanelId,
       canUseUtilityId: (utilityId) => this.canUseUtilityId(utilityId),
@@ -666,6 +676,7 @@ export class MainScene extends Phaser.Scene {
     this.hudController.createUtilityActivationPanel();
     this.hudController.createSearchSection();
     this.hudController.createComputeSection();
+    this.hudController.createSafetySection();
     this.hudController.createEconomySection();
     this.hudController.createPassiveSection();
     this.stickyNotesController.createLayout();
@@ -2181,6 +2192,35 @@ export class MainScene extends Phaser.Scene {
 
   private getSafetyDetectedWordCount() {
     return this.getSafetyMatchedWordIndexes().length;
+  }
+
+  private getSafetyRevealedPolicyWatchlist() {
+    this.ensureSafetyScanResultCurrent();
+
+    if (!this.safetyScanResult) {
+      return [];
+    }
+
+    const revealedWordIndexes = new Set(this.getSafetyRevealedWordIndexes());
+    if (revealedWordIndexes.size === 0) {
+      return [];
+    }
+
+    const revealedCategoryIds = this.safetyScanResult.matchesByCategory
+      .filter((match) =>
+        match.matchedWordIndexes.some((wordIndex) =>
+          revealedWordIndexes.has(wordIndex),
+        ),
+      )
+      .map((match) => match.categoryId);
+
+    return [
+      ...new Set(
+        getContentCategoryDefinitions(revealedCategoryIds).map(
+          (category) => category.briefingLabel,
+        ),
+      ),
+    ];
   }
 
   private getActiveToolIdsForEvaluation() {

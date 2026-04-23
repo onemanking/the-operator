@@ -3,6 +3,9 @@
 ## Overview
 
 This document defines the first-time-player onboarding flow for `Prompt, Please`.
+The flow is live. New players are routed through `MainMenuScene` into the
+orientation run state, and completion is persisted in player profile storage
+before the game returns to the normal Day 1 briefing path.
 
 The onboarding is a fixed, non-random `Shift 0` called `The First Shift`.
 It exists to teach the workstation loop through diegetic terminal instruction only.
@@ -38,6 +41,8 @@ The intended player fantasy is:
 
 - `Shift 0` is fixed authored content. It must not use runtime encounter randomization.
 - Boot checks a persistent completion flag.
+- Boot routes incomplete profiles through `MainMenuScene` into the orientation
+  run state and routes completed profiles into the normal Day 1 flow.
 - If onboarding is incomplete, boot always starts a fresh `Shift 0`.
 - If onboarding is complete, boot starts the normal Day 1 flow.
 - Quitting during onboarding discards in-progress onboarding state.
@@ -308,9 +313,9 @@ Example:
 ### System Dependencies
 
 - `BootScene` depends on persistent onboarding completion state to decide between Shift 0 and Day 1 boot flow.
-- `BriefingScene` depends on a fixed onboarding run path that bypasses normal shift randomization.
-- `MainScene` depends on a new onboarding controller or equivalent step manager.
-- `sessionController` depends on a trainer messaging path and tutorial-safe failure interception.
+- `MainMenuScene` depends on persistent onboarding completion state to route new players into the orientation run state.
+- `MainScene` depends on the orientation run-state and `OrientationData` step definitions for the tutorial lesson flow.
+- `sessionController` depends on the orientation-aware trainer messaging path and tutorial-safe failure handling.
 - `storageController` depends on centralized onboarding action gating for Agent and Skill disk interactions.
 - `hudController` depends on centralized onboarding action gating for commit buttons, tools, and utility activation.
 - Utility runtime depends on onboarding gating so only the currently taught utility can be used.
@@ -320,7 +325,7 @@ Example:
 - This plan depends on the live system descriptions in [docs/current-systems.md](e:/VibeGameJame/prompt-please/docs/current-systems.md).
 - This plan depends on the tool behavior defined in [docs/tool-mechanics.md](e:/VibeGameJame/prompt-please/docs/tool-mechanics.md).
 - This plan depends on the world tone defined in [docs/world-lore.md](e:/VibeGameJame/prompt-please/docs/world-lore.md).
-- When implemented, [docs/current-systems.md](e:/VibeGameJame/prompt-please/docs/current-systems.md) should reference Shift 0 onboarding as part of the canonical gameplay flow.
+- [docs/current-systems.md](e:/VibeGameJame/prompt-please/docs/current-systems.md) already references Shift 0 onboarding as part of the canonical gameplay flow.
 
 ## Tuning Knobs
 
@@ -360,6 +365,8 @@ Example:
 
 - A fresh player profile always starts at `Shift 0`.
 - A completed player profile always starts at Day 1 normal flow.
+- The main menu routes first-time players into the orientation run state.
+- Orientation completion is persisted before the game returns to Day 1 briefing.
 - Closing the game mid-onboarding causes the next boot to restart `Shift 0` from the beginning.
 - Objective text remains pinned for the active lesson and uses tutorial voice consistent with `OMNICORP TRAINER`.
 - Reminder text uses `OMNICORP TRAINER` and appears after the configured idle delay.

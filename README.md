@@ -1,6 +1,6 @@
 # The Operator
 
-A "Papers, Please" style simulation game about managing an LLM server, built with Phaser 3 and React.
+A "Papers, Please" style simulation game about managing an LLM server, built with Phaser 3, React 19, and Vite.
 
 ## Concept
 
@@ -46,7 +46,9 @@ Review your performance. You earn credits for successful inferences and correct 
 ## Code Architecture
 
 - **React Shell**: `App.tsx` and `src/components/GameViewport.tsx` only mount and destroy the Phaser game.
-- **Scene Flow**: `BootScene -> BriefingScene -> MainScene -> MaintenanceScene`.
+- **Scene Flow**: `BootScene -> MainMenuScene -> BriefingScene -> MainScene -> MaintenanceScene`.
+- **Boot Routing**: `BootScene` routes test scenarios directly, otherwise it opens `MainMenuScene`.
+- **Main Menu Onboarding**: `MainMenuScene` sends returning players to briefing and first-time players into the orientation run state before Day 1.
 - **MainScene Composition**: `src/game/scenes/MainScene.ts` is an orchestration layer that wires focused modules under `src/game/scenes/main/`.
 - **Runtime State**: `MainScene.ts` currently owns shift/session/context state and passes focused bindings into scene modules.
 - **Controllers**:
@@ -76,15 +78,17 @@ Review your performance. You earn credits for successful inferences and correct 
 
 ## Tool Test Scripts
 
-- Run `npm run dev:test:guard` to boot directly into a content-policy guard scenario on port 3000.
-- Run `npm run dev:debug` to boot the normal game with a live run-debug panel in the lower section of the right sidebar.
-- Run `npm run dev:test:compute` to boot directly into a compute-focused scenario on port 3000.
-- Run `npm run dev:test:search` to boot directly into a search-focused scenario on port 3000.
-- Run `npm run dev:test:utility` to boot directly into a utility-suite scenario on port 3000.
-- Each script skips the briefing scene and opens straight into `MainScene` with the correct encounter queued and the matching prompt tool pre-selected when that scenario uses one.
+- Run `npm run dev:test:onboarding` to boot the orientation lesson on port 3000.
+- Run `npm run dev:test:guard`, `npm run dev:test:search-guard`, `npm run dev:test:compute`, `npm run dev:test:search`, or `npm run dev:test:utility` to boot focused `MainScene` scenarios on port 3000.
+- Run `npm run dev:test:maintenance`, `npm run dev:test:maintenance-victory`, `npm run dev:test:maintenance-dead`, or `npm run dev:test:maintenance-negative` to boot maintenance-state scenarios on port 3000.
+- Run `npm run dev:test:content-exhausted` or `npm run dev:test:tier1` through `npm run dev:test:tier4` to boot content-generation and progression stress cases.
+- Run the matching `:debug` variant when you want the live run-debug panel.
+- Most test scripts boot straight into the matching scene with the correct run state preloaded; onboarding starts in the tutorial path, maintenance scripts start in `MaintenanceScene`, and the tier scripts start in `MainScene` with authored encounter lists.
 - Test scenarios are only available through these scripts and their Vite mode environment variables; opening the game with a URL query no longer changes the scenario.
 
 ## How to Play
+
+New players will first see the main menu and short orientation lesson before the Day 1 briefing.
 
 1. Read the daily briefing.
 2. Check which disk families the current day has unlocked. Day 1 only gives you Technical/Security with one slot each for agents and skills.

@@ -14,6 +14,7 @@ import { synth } from "../../utils/SoundSynth";
 import { createHallucinationFeedbackShader } from "./hallucinationFeedbackShader";
 import { PROMPT_TOOLS } from "./config";
 import { createSafetyFilterShader } from "./safetyFilterShader";
+import { MainSceneSafetyToolPanelController } from "./safetyToolPanelController";
 import { createThermalFeedbackShader } from "./thermalFeedbackShader";
 import {
   TERMINAL_PROMPT_LINE_HEIGHT,
@@ -92,6 +93,8 @@ interface HudControllerBindings {
   getSafetyRevealProgress: (wordIndex: number) => number;
   getSafetyRevealFlash: (wordIndex: number) => number;
   getSafetyDetectedWordCount: () => number;
+  getSafetyPolicyWatchlist: () => readonly string[];
+  getSafetyRevealedPolicyWatchlist: () => readonly string[];
   getSelectedUtilityId: () => ActiveUtilityId | null;
   getActiveUtilityPanelId: () => ActiveUtilityId | null;
   canUseUtilityId: (utilityId: ActiveUtilityId) => boolean;
@@ -213,6 +216,7 @@ export class MainSceneHudController {
   private hallucinationWarningLampHalo!: Phaser.GameObjects.Arc;
   private heatPreviewFill!: Phaser.GameObjects.Rectangle;
   private searchPanelController!: MainSceneSearchToolPanelController;
+  private safetyPanelController!: MainSceneSafetyToolPanelController;
   private computePanel!: Phaser.GameObjects.Container;
   private computeGaugeSegments: Phaser.GameObjects.Rectangle[] = [];
   private computeCoreGraphics!: Phaser.GameObjects.Graphics;
@@ -795,6 +799,23 @@ export class MainSceneHudController {
     this.searchPanelController.create();
   }
 
+  createSafetySection() {
+    this.safetyPanelController = new MainSceneSafetyToolPanelController(
+      this.scene,
+      {
+        isSafetyToolSelected: () => this.bindings.isSafetyModeSelected(),
+        isSafetyScanning: () => this.bindings.isSafetyScanning(),
+        getSafetyRevealedWordCount: () =>
+          this.bindings.getSafetyRevealedWordIndexes().length,
+        getSafetyPolicyWatchlist: () =>
+          this.bindings.getSafetyPolicyWatchlist(),
+        getSafetyRevealedPolicyWatchlist: () =>
+          this.bindings.getSafetyRevealedPolicyWatchlist(),
+      },
+    );
+    this.safetyPanelController.create();
+  }
+
   createUtilitySection() {
     this.scene.add.rectangle(804, 544, 200, 106, 0x232323).setOrigin(0);
     this.scene.add.rectangle(804, 540, 200, 4, 0x111111).setOrigin(0);
@@ -1232,6 +1253,7 @@ export class MainSceneHudController {
     };
 
     this.cleanupHandler = () => {
+      this.destroyControllers();
       this.cleanupSceneListeners();
     };
 
@@ -1385,9 +1407,9 @@ export class MainSceneHudController {
           : isSearchArmed
             ? 0xffc84d
             : isSafetyComplete
-              ? 0x9cfb64
+              ? 0xff6f61
               : isSafetyArmed
-                ? 0x33ff33
+                ? 0xd15f4a
                 : isComputeReady
                   ? 0xffc84d
                   : isSelected
@@ -1400,9 +1422,9 @@ export class MainSceneHudController {
           : isSearchArmed
             ? 0x5a4312
             : isSafetyComplete
-              ? 0x2c5824
+              ? 0x5a1915
               : isSafetyArmed
-                ? 0x294829
+                ? 0x4a1f19
                 : isComputeReady
                   ? 0x5a4312
                   : isSelected
@@ -2378,17 +2400,20 @@ export class MainSceneHudController {
     this.syncFloatingPanelDepths();
     this.utilityPanelController?.update();
     this.searchPanelController?.update();
+    this.safetyPanelController?.update();
   }
 
   private syncFloatingPanelDepths() {
     const isPromptPanelVisible =
       this.bindings.isSearchModeSelected() ||
-      this.bindings.isComputeToolSelected();
+      this.bindings.isComputeToolSelected() ||
+      this.bindings.isSafetyModeSelected();
     const isUtilityPanelVisible =
       this.bindings.getActiveUtilityPanelId() !== null;
     const promptPanelSignature = [
       this.bindings.isSearchModeSelected() ? "search" : "",
       this.bindings.isComputeToolSelected() ? "compute" : "",
+      this.bindings.isSafetyModeSelected() ? "safety" : "",
     ]
       .filter(Boolean)
       .join("|");
@@ -2430,6 +2455,7 @@ export class MainSceneHudController {
       this.currentPromptPanelDepth = nextPromptPanelDepth;
       this.computePanel?.setDepth(nextPromptPanelDepth);
       this.searchPanelController?.setPanelDepth(nextPromptPanelDepth);
+      this.safetyPanelController?.setPanelDepth(nextPromptPanelDepth);
     }
 
     if (this.currentUtilityPanelDepth !== nextUtilityPanelDepth) {
@@ -2439,9 +2465,6 @@ export class MainSceneHudController {
   }
 
   private cleanupSceneListeners() {
-    this.terminalPromptController?.destroy();
-    this.utilityPanelController?.destroy();
-
     if (this.updateBarsHandler) {
       this.scene.events.off("updateBars", this.updateBarsHandler);
       this.updateBarsHandler = undefined;
@@ -2467,5 +2490,12 @@ export class MainSceneHudController {
       this.thermalPulseTimer.destroy();
       this.thermalPulseTimer = undefined;
     }
+  }
+
+  private destroyControllers() {
+    this.terminalPromptController?.destroy();
+    this.utilityPanelController?.destroy();
+    this.searchPanelController?.destroy();
+    this.safetyPanelController?.destroy();
   }
 }

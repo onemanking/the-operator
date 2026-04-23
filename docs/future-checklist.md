@@ -14,9 +14,9 @@ this file should be read as next-step work only.
 
 ## Onboarding and Flow
 
-- [ ] Build an onboarding / tutorial flow for new players.
-- [ ] Improve the briefing screen from a static memo into a stronger day-start presentation.
-- [ ] Improve the end-shift screen with a clearer breakdown, consequences, and next-day setup.
+- [x] Build an onboarding / tutorial flow for new players. Implemented via MainMenuScene and the orientation run state.
+- [x] Improve the briefing screen from a static memo into a stronger day-start presentation. Implemented as the staged BriefingScene feed.
+- [x] Improve the end-shift screen with a clearer breakdown, consequences, and next-day setup. Implemented as the maintenance result scenes.
 
 ## Narrative and Worldbuilding
 
